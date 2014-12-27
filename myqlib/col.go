@@ -11,13 +11,60 @@ import(
 type Col interface {
   // outputs (write to the buffer)
   Help(b *bytes.Buffer) // short help
-  Header(b *bytes.Buffer) // header to print above data
+  Header1(b *bytes.Buffer) // if empty, must print width spaces
+  Header2(b *bytes.Buffer) // header to print above data
   
   // A full line of output given the state
   Data(b *bytes.Buffer, state MyqState)
   
   Width() uint8 // width of the column
 }
+
+// Groups of columns
+type GroupCol struct {
+  name string // name/header of the group
+  help string // short description of the group
+  
+  cols []Col // slice of columns in this group
+}
+func (c GroupCol) Help(b *bytes.Buffer) {  
+  b.WriteString( c.help )
+}
+func (c GroupCol) Width() uint8 {
+  var w uint8
+  for _, col := range c.cols {
+    w += col.Width() + 1
+  }
+  w -= 1
+  return w
+}
+
+func (c GroupCol) Header1(b *bytes.Buffer) {
+  b.WriteString( fmt.Sprintf( fmt.Sprint( `%-`, c.Width(), `s`), 
+    c.name ))  
+}
+func (c GroupCol) Header2(b *bytes.Buffer) {
+  space := false
+  for _, col := range c.cols {
+    if space {
+      b.WriteString( " " ) // one space before each column
+    }
+    col.Header2( b )
+    space = true
+  }
+}
+func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
+  
+  space := false
+  for _, col := range c.cols {
+    if space {
+      b.WriteString( " " ) // one space before each column
+    }
+    col.Data( b, state )
+    space = true
+  }
+}
+
 
 // Gauge Columns simply display SHOW STATUS variable
 type GaugeCol struct {
@@ -29,14 +76,13 @@ type GaugeCol struct {
   precision uint8 // # of decimals to show on floats (optional)
 }
 
-func (c GaugeCol) Help(b *bytes.Buffer) {
-  b.WriteString( c.help )
+func (c GaugeCol) Help(b *bytes.Buffer) { b.WriteString( c.help ) }
+func (c GaugeCol) Width() uint8 { return c.width }
+func (c GaugeCol) Header1(b *bytes.Buffer) {
+  b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.width, `s`), 
+    "" ))
 }
-func (c GaugeCol) Width() uint8 {
-  return c.width
-}
-
-func (c GaugeCol) Header(b *bytes.Buffer) {
+func (c GaugeCol) Header2(b *bytes.Buffer) {
   b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.width, `s`), 
     c.name ))
 }
@@ -81,8 +127,11 @@ func (c RateCol) Help(b *bytes.Buffer) {
 func (c RateCol) Width() uint8 {
   return c.width
 }
-
-func (c RateCol) Header(b *bytes.Buffer) {
+func (c RateCol) Header1(b *bytes.Buffer) {
+  b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.width, `s`), 
+    "" ))
+}
+func (c RateCol) Header2(b *bytes.Buffer) {
   b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.width, `s`), 
     c.name ))
 }
