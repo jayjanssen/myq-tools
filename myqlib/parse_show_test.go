@@ -46,6 +46,10 @@ func TestTwoSamples(t *testing.T) {
 }
 
 func TestManySamples(t *testing.T) {
+  if testing.Short() {
+    return
+  }
+  
   samples, err := GetSamplesFile("../testdata/mysqladmin.lots")
 
   if err != nil {
@@ -78,12 +82,22 @@ func checksamples(t *testing.T, samples chan MyqSample, expected int) {
       }
       t.Fatal()
     }
-    foo := sample
-    prev = foo
+    prev = sample
     i++
   }
 
   if(i != expected) {
     t.Errorf("Got unexpected number of samples: %d", i)
+  }
+}
+
+func BenchmarkSampleParse(b *testing.B) {
+  for i := 0; i < b.N; i++ {
+    samples, err := GetSamplesFile("../testdata/mysqladmin.single")
+
+    if err != nil {
+      b.Error( err )
+    }
+    <- samples
   }
 }

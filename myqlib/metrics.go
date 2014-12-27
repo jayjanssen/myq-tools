@@ -7,3 +7,12 @@ type MyqSample map[string]interface{}
 func (s MyqSample) Length() int {
   return len(s)
 }
+
+// MyqState contains the current and previous SHOW STATUS outputs.  Also SHOW VARIABLES.  
+// Prev and Vars might be nil
+type MyqState struct {
+  Cur MyqSample
+  Prev MyqSample
+  Vars MyqSample
+  TimeDiff float64 
+}
