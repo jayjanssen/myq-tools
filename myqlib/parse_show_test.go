@@ -16,7 +16,7 @@ func TestSingleSample(t *testing.T) {
   // Check some types on some known metrics to verify autodetection
   sample := <- samples
   typeTests := map[string]string{
-    "connections": "uint64",
+    "connections": "int64",
     "compression": "bool",
     "wsrep_local_send_queue_avg": "float64",
     "binlog_snapshot_file": "string",

@@ -1,64 +1,103 @@
 package myqlib
 
-import (
+import(
   "bytes"
   "fmt"
   "errors"
   // "reflect"
 )
 
-type MetricType uint8
-const (
-	Gauge MetricType = iota
-	Rate
-  Function
-)
-
-type Units uint8
-const (
-  None Units = iota
-  Bytes
-  Seconds
-)
-
-type colDef struct {
-  name string           // name of the metric
-  header string         // column header
-  format_hdr string     // printf format of header
-  format_val string     // printf format of value
-  valtype MetricType    // How to compute the value of the col 
-  valunits Units        // how to colapse and label values
+// All Columns must implement the following
+type Col interface {
+  // outputs (write to the buffer)
+  Help(b *bytes.Buffer) // short help
+  Header(b *bytes.Buffer) // header to print above data
+  
+  // A full line of output given the state
+  Data(b *bytes.Buffer, state MyqState)
+  
+  Width() uint8 // width of the column
 }
 
-func NewcolDef(name, header, format_hdr, format_val string ) *colDef {
-    return &colDef{
-      name: name,
-      header: header,
-      format_hdr: format_hdr,
-      format_val: format_val,
-      valtype: Gauge,
-      valunits: None,
-    }
+// Gauge Columns simply display SHOW STATUS variable
+type GaugeCol struct {
+  name string // name/header of the column
+  variable_name string // SHOW STATUS variable of this column
+  help string // short description of the view
+
+  width uint8 // width of the column output (header and data)
+  precision uint8 // # of decimals to show on floats (optional)
 }
 
-// Write a column's data
-func (c colDef) Output( b *bytes.Buffer, state MyqState) {
-	switch c.valtype {
-  case Function:
-    fallthrough
-	case Rate: 
-    // !! still not sure I like the uptime here
-    diff, err :=  calculate_rate( state.Cur[c.name], state.Prev[c.name], state.TimeDiff )
-    if err != nil {
-      b.WriteString( fmt.Sprint( "-")) // !! don't like this either
-    } else {
-      b.WriteString( fmt.Sprintf( c.format_val, diff ))
+func (c GaugeCol) Help(b *bytes.Buffer) {
+  b.WriteString( c.help )
+}
+func (c GaugeCol) Width() uint8 {
+  return c.width
+}
+
+func (c GaugeCol) Header(b *bytes.Buffer) {
+  b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.width, `s`), 
+    c.name ))
+}
+
+func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
+  val := state.Cur[c.variable_name]
+  
+  switch v := val.(type) {
+  case int64:
+    // format number here
+    b.WriteString( 
+      fmt.Sprintf( fmt.Sprint( `%`, c.width, `d`), v ))
+  case float64:
+    // format number here
+    // precision subtracts from total width (+ the decimal point)
+    width := c.width
+    if c.precision > 0 {
+      width = width - (c.precision + 1)
     }
-	case Gauge:
-    fallthrough
+    b.WriteString( fmt.Sprintf( 
+        fmt.Sprint( `%`, width, `.`, c.precision, `f`), v ))
+  case string:
+    b.WriteString( v )
   default:
-    b.WriteString( fmt.Sprintf( c.format_val, state.Cur[c.name]))
-	}
+    filler( b, c )
+  }  
+}
+
+// Rate Columns the rate of change of a SHOW STATUS variable
+type RateCol struct {
+  name string // name/header of the column
+  variable_name string // SHOW STATUS variable of this column
+  help string // short description of the view
+
+  width uint8 // width of the column output (header and data)
+  precision uint8 // # of decimals to show on floats (optional)
+}
+
+func (c RateCol) Help(b *bytes.Buffer) {
+  b.WriteString( c.help )
+}
+func (c RateCol) Width() uint8 {
+  return c.width
+}
+
+func (c RateCol) Header(b *bytes.Buffer) {
+  b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.width, `s`), 
+    c.name ))
+}
+
+func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
+  // !! still not sure I like the uptime here
+  diff, err := calculate_rate( state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff )
+  if err != nil {
+    // Can't output, just put a filler
+    // fmt.Println( err )
+    filler( b, c )
+  } else {
+    b.WriteString( fmt.Sprintf( 
+      fmt.Sprint( `%`, c.width, `.`, c.precision, `f`), diff ))
+  }
 }
 
 // calculate the difference over the time to get the rate.  This is complex, and we need to verify several things:
@@ -74,9 +113,10 @@ func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
   }
 
   // Rates only work on numeric types.  Error on non-numeric and convert numerics to float64 as needed
+  // fmt.Println( reflect.TypeOf( cur ))
   var c, p float64
   switch cu := cur.(type) {
-  case int:
+  case int64:
     c = float64( cu )
   case float64:
     c = cu
@@ -86,7 +126,7 @@ func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
   
   if prev != nil {
     switch pr := prev.(type) {
-    case int:
+    case int64:
       p = float64( pr )
     case float64:
       p = pr
@@ -94,7 +134,6 @@ func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
       return 0.00, errors.New( "prev is not numeric!")
     }
   }
-
   
   if prev == nil || time <= 0 {
     return c, nil
@@ -103,4 +142,9 @@ func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
   } else {
     return (c - p) / time, nil
   }
+}
+
+func filler(b *bytes.Buffer, c Col) {
+  b.WriteString( fmt.Sprintf( 
+    fmt.Sprint( `%`, c.Width(), `s`), "-")) 
 }

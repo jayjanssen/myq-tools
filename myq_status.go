@@ -2,8 +2,9 @@ package main
 
 import (
     "fmt"
-    "./myqlib"
     "bytes"
+    "os"
+    "./myqlib"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
   fmt.Println( file, view )
   
   // Load default and custom Views/MetricDefs
-  views := myqlib.DefaultMyqViews()
+  views := myqlib.DefaultViews()
   v, ok := views[view]
   if !ok {
     panic( "Unknown view" )
@@ -31,19 +32,19 @@ func main() {
   // Apply selected view to output each sample
   i:= 0
   state := myqlib.MyqState{}
-  var buf bytes.Buffer
   for cur := range samples {   
+    var buf bytes.Buffer
     state.Cur = cur
+    if( state.Prev != nil ) {
+      state.TimeDiff = float64( state.Cur["uptime"].(int64) - state.Prev["uptime"].(int64))
+    }
     
     if i % hdrEvery == 0 {
-      v.WriteHeader( &buf )
-      buf.WriteString( fmt.Sprintln())
+      v.Header( &buf )
     } 
-    v.WriteData( &buf, state, true )
-    buf.WriteString( fmt.Sprintln())
+    v.Data( &buf, state, true )
     
-    fmt.Print( buf.String())
-    buf.Reset()
+    buf.WriteTo( os.Stdout )
     
     state.Prev = cur
     i++

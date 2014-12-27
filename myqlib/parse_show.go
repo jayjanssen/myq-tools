@@ -48,7 +48,8 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 // Detect the type of the input string based on regexes
 func convert(s string) interface{} {
   if mysqlUIntType.MatchString(s) {
-    ans, _ := strconv.ParseUint(s, 0, 64)
+    // To int or uint, that is the question
+    ans, _ := strconv.ParseInt(s, 0, 64)  
     return ans
   } else if mysqlFloatType.MatchString(s) {
     ans, _ := strconv.ParseFloat(s, 64)
