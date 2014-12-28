@@ -1,8 +1,8 @@
 package myqlib
 
 import (
-  "os"
-  "bufio"
+	"bufio"
+	"os"
 )
 
 // Load mysql status output from a mysqladmin output file

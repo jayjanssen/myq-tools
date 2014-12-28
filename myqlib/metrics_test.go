@@ -1,19 +1,20 @@
 package myqlib
 
 import (
-    "testing"
-    // "reflect"
+	"testing"
+	// "reflect"
 )
 
 func TestMetric(t *testing.T) {
-  sample := make( MyqSample )
-  
-  sample["key"] = "value"
-  
-  if( sample.Length() != 1 ) {
-    t.Fatal("Expecting 1 KV, got", sample.Length())
-  }
+	sample := make(MyqSample)
+
+	sample["key"] = "value"
+
+	if sample.Length() != 1 {
+		t.Fatal("Expecting 1 KV, got", sample.Length())
+	}
 }
+
 //
 // func TestConversion(t *testing.T) {
 //   first, second := make( MyqSample ), make( MyqSample)
