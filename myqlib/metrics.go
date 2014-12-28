@@ -11,9 +11,7 @@ func (s MyqSample) Length() int {
 // MyqState contains the current and previous SHOW STATUS outputs.  Also SHOW VARIABLES.
 // Prev and Vars might be nil
 type MyqState struct {
-	Cur      MyqSample
-	Prev     MyqSample
-	Vars     MyqSample
-	TimeDiff float64
-	Count    uint
+	Cur, Prev, Vars MyqSample
+	TimeDiff        float64
+	Count           uint
 }

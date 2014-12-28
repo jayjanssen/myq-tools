@@ -12,16 +12,14 @@ func main() {
 	var file = "./testdata/mysqladmin.lots"
 	var view = "cttf"
 
-	var hdrEvery = int64(10)
+	var hdrEvery = int64(20)
 
 	fmt.Println(file, view)
 
 	// Load default and custom Views/MetricDefs
 	views := myqlib.DefaultViews()
 	v, ok := views[view]
-	if !ok {
-		panic("Unknown view")
-	}
+	if !ok { panic("Unknown view") }
 
 	time := myqlib.UPTIME
 	v.SetTime(time)
@@ -46,7 +44,7 @@ func main() {
 		}
 
 		// Output a header if necessary
-		if i%hdrEvery == 0 {
+		if i % hdrEvery == 0 {
 			v.Header(&buf)
 		}
 		// Output data
