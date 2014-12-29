@@ -14,4 +14,5 @@ type MyqState struct {
 	Cur, Prev, Vars MyqSample
 	TimeDiff        float64
 	Count           uint
+  FirstUptime     int64
 }

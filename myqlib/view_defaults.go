@@ -1,9 +1,33 @@
 package myqlib
 
+import( 
+  "fmt"
+  "bytes"
+  "time"
+)
+
+// Time Columns
+var (
+  Timestamp_col FuncCol = FuncCol{ "time", 
+    "Time data was printed", 8, 0,
+    func(b *bytes.Buffer, state MyqState, c Col) {
+      b.WriteString( time.Now().Format("15:04:05"))
+    },
+  }
+  Runtime_col FuncCol = FuncCol{ "time", 
+    "Interval since data started", 8, 0,
+    func(b *bytes.Buffer, state MyqState, c Col) {
+      runtime := time.Duration( state.Cur[`uptime`].(int64) - state.FirstUptime) * time.Second
+      b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`),
+        runtime.String() ))
+    },
+  }
+)
+
 func DefaultViews() map[string]View {
 	return map[string]View{
 		"cttf": NormalView{
-			help: "Connections, Threads, Tables, and Files", time: UPTIME,
+			help: "Connections, Threads, Tables, and Files",
 			cols: []Col{
 				GroupCol{
 					"Connects", "Connection related metrics", []Col{
@@ -48,11 +72,3 @@ func DefaultViews() map[string]View {
 		},
 	}
 }
-
-// var uptime_col FuncCol = FuncCol{ "time", "Uptime", 6, 0,
-//   func(b *bytes.Buffer, state MyqState, c Col) {
-//     uptime := time.Duration( state.Cur[`uptime`].(int64)) *
-//      time.Second
-//     b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`),
-//       uptime.String() ))
-//   }}

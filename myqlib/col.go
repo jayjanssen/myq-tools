@@ -193,7 +193,8 @@ type FuncCol struct {
 	name string // name/header of the column
 	help string // short description of the view
 
-	width     uint8 // width of the column output (header and data)
+	width uint8 // width of the column output (header and data)
+  
 	precision uint8 // # of decimals to show on floats (optional)
 
 	fn func(b *bytes.Buffer, state MyqState, c Col) // takes the state and returns the (unformatted) value
