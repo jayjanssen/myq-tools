@@ -19,17 +19,27 @@ type Col interface {
 	Width() uint8 // width of the column
 }
 
-// Groups of columns
-type GroupCol struct {
+// 'Default' column -- "inherited" by others
+type DefaultCol struct {
 	name string // name/header of the group
 	help string // short description of the group
+	width uint8 // width of the column output (header and data)
+}
+func (c DefaultCol) Help(b *bytes.Buffer) { b.WriteString(c.help) }
+func (c DefaultCol) Width() uint8 { return c.width }
+func (c DefaultCol) Header1(b *bytes.Buffer) {
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), ""))
+}
+func (c DefaultCol) Header2(b *bytes.Buffer) {
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), c.name))
+}
 
+// Groups of columns
+type GroupCol struct {
+  DefaultCol
 	cols []Col // slice of columns in this group
 }
 
-func (c GroupCol) Help(b *bytes.Buffer) {
-	b.WriteString(c.help)
-}
 func (c GroupCol) Width() uint8 {
 	var w uint8
 	for _, col := range c.cols {
@@ -67,21 +77,9 @@ func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
 
 // Gauge Columns simply display SHOW STATUS variable
 type GaugeCol struct {
-	name          string // name/header of the column
+  DefaultCol
 	variable_name string // SHOW STATUS variable of this column
-	help          string // short description of the view
-
-	width     uint8 // width of the column output (header and data)
 	precision uint8 // # of decimals to show on floats (optional)
-}
-
-func (c GaugeCol) Help(b *bytes.Buffer) { b.WriteString(c.help) }
-func (c GaugeCol) Width() uint8         { return c.width }
-func (c GaugeCol) Header1(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), ""))
-}
-func (c GaugeCol) Header2(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), c.name))
 }
 
 func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
@@ -110,21 +108,9 @@ func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
 
 // Rate Columns the rate of change of a SHOW STATUS variable
 type RateCol struct {
-	name          string // name/header of the column
+  DefaultCol
 	variable_name string // SHOW STATUS variable of this column
-	help          string // short description of the view
-
-	width     uint8 // width of the column output (header and data)
 	precision uint8 // # of decimals to show on floats (optional)
-}
-
-func (c RateCol) Help(b *bytes.Buffer) { b.WriteString(c.help) }
-func (c RateCol) Width() uint8 { return c.width }
-func (c RateCol) Header1(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), ""))
-}
-func (c RateCol) Header2(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), c.name))
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
@@ -190,25 +176,10 @@ func filler(b *bytes.Buffer, c Col) {
 
 // Func Columns run a custom function to produce their output
 type FuncCol struct {
-	name string // name/header of the column
-	help string // short description of the view
-
-	width uint8 // width of the column output (header and data)
-  
+  DefaultCol
 	precision uint8 // # of decimals to show on floats (optional)
-
 	fn func(b *bytes.Buffer, state MyqState, c Col) // takes the state and returns the (unformatted) value
 }
-
-func (c FuncCol) Help(b *bytes.Buffer) { b.WriteString(c.help) }
-func (c FuncCol) Width() uint8         { return c.width }
-func (c FuncCol) Header1(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), ""))
-}
-func (c FuncCol) Header2(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), c.name))
-}
-
 func (c FuncCol) Data(b *bytes.Buffer, state MyqState) {
 	c.fn(b, state, c)
 }
