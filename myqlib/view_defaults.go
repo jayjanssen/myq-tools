@@ -76,5 +76,11 @@ func DefaultViews() map[string]View {
 				},
 			},
 		},
+    "coms": NormalView{
+      help: "MySQL Commands",
+      cols: []Col{
+            RateCol{DefaultCol{"sel", "Selects per second", 4}, "com_select", 0, NumberUnits},
+      },
+    },
 	}
 }

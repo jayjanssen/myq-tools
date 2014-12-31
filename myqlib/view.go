@@ -27,7 +27,7 @@ type NormalView struct {
 
 func (v NormalView) Help(b *bytes.Buffer, short bool) {
 	b.WriteString(v.help)
-	b.WriteString(" View\n")
+	b.WriteString("\n\n")
   if !short {
   	for _, col := range v.Cols() {
       col.Help(b)
@@ -41,7 +41,7 @@ func (v NormalView) Header1(b *bytes.Buffer) {
 	var header1 bytes.Buffer
 	for _, col := range v.Cols() {
 		col.Header1(&header1)
-		b.WriteString(" ")
+		header1.WriteString(" ")
 	}
 	// If the header1 buffer is all spaces, skip printing it
 	hdr := strings.TrimSpace(header1.String())

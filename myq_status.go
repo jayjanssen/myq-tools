@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
   "flag"
-	"./myqlib"
+	"./myqlib"  
 )
 
 // Exit codes
@@ -70,11 +70,11 @@ func main() {
   }
   
   if *help {
-		var view_usage bytes.Buffer
+      var view_usage bytes.Buffer
+    view_usage.WriteString( fmt.Sprint("'", view, "' Help: "))
     v.Help(&view_usage, false)
-		view_usage.WriteString("\n")
     view_usage.WriteTo(os.Stderr)
-    os.Exit(OK)  
+    os.Exit(OK)
   }
 
 	// Load data
@@ -115,7 +115,7 @@ func main() {
 
 		// Output a header if necessary
 		if lines % *header == 0 { 
-      timecol.Header1(&buf); buf.WriteString(" "); v.Header1(&buf) 
+      timecol.Header1(&buf); buf.WriteString(" "); v.Header1(&buf)
       timecol.Header2(&buf); buf.WriteString(" "); v.Header2(&buf)
     }
 		// Output data

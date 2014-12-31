@@ -30,10 +30,10 @@ func (c DefaultCol) Help(b *bytes.Buffer) {
 }
 func (c DefaultCol) Width() uint8 { return c.width }
 func (c DefaultCol) Header1(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), ""))
+  b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), ""))
 }
 func (c DefaultCol) Header2(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), c.name))
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), c.name))
 }
 
 // Groups of columns
@@ -60,8 +60,8 @@ func (c GroupCol) Width() uint8 {
 	return w
 }
 func (c GroupCol) Header1(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`),
-    c.name))
+  b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`),
+      c.name))
 }
 func (c GroupCol) Header2(b *bytes.Buffer) {
 	space := false
@@ -74,7 +74,6 @@ func (c GroupCol) Header2(b *bytes.Buffer) {
 	}
 }
 func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
-
 	space := false
 	for _, col := range c.cols {
 		if space {
