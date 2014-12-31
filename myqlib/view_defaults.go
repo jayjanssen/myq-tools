@@ -79,8 +79,21 @@ func DefaultViews() map[string]View {
     "coms": NormalView{
       help: "MySQL Commands",
       cols: []Col{
-            RateCol{DefaultCol{"sel", "Selects per second", 4}, "com_select", 0, NumberUnits},
+        RateCol{DefaultCol{"sel", "Selects per second", 4}, "com_select", 0, NumberUnits},
       },
     },
+    "throughput": NormalView{
+      help: "MySQL Server Throughput",
+      cols: []Col{
+        GroupCol {
+          DefaultCol{"Throughput", "Bytes in/out of the server",0},
+          []Col{
+						RateCol{DefaultCol{"recv", "Bytes received / sec", 5}, "bytes_received", 0, MemoryUnits},
+						RateCol{DefaultCol{"sent", "Bytes sent / sec", 5}, "bytes_sent", 0, MemoryUnits},
+          },
+        },
+      },
+    },
+    
 	}
 }

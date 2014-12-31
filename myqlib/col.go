@@ -114,7 +114,7 @@ type RateCol struct {
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
 	// !! still not sure I like the uptime here
-	diff, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff)
+	diff, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff )
 	if err != nil {
 		// Can't output, just put a filler
 		// fmt.Println( err )

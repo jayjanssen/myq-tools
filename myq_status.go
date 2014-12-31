@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
   "flag"
+  "strings"
+  "time"
 	"./myqlib"  
 )
 
@@ -28,8 +30,8 @@ func main() {
   // ask_pass := flag.Bool("askpass", false, "Prompt for MySQL password")
   mysql_args := flag.String("mysqlargs", "", "Arguments to pass to mysqladmin (used for connection options)")
   flag.StringVar(mysql_args,"a", "", "Short for -mysqlargs")
-  interval := flag.Int64("interval", 1, "Time (seconds) between samples")
-  flag.Int64Var(interval, "i", 1, "short for -interval")
+  interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
+  flag.DurationVar(interval, "i", time.Second, "short for -interval")
   
   
   file := flag.String("file", "", "parse mysqladmin ext output file instead of connecting to mysql")
@@ -111,11 +113,20 @@ func main() {
     }
 		if state.Prev != nil {
 			state.TimeDiff = float64(state.Cur["uptime"].(int64) - state.Prev["uptime"].(int64))
+      
+      // Skip to the next sample if TimeDiff is < the interval
+      if state.TimeDiff < interval.Seconds() { continue }
 		}
 
 		// Output a header if necessary
-		if lines % *header == 0 { 
-      timecol.Header1(&buf); buf.WriteString(" "); v.Header1(&buf)
+		if lines % *header == 0 {
+      var hd1 bytes.Buffer 
+      timecol.Header1(&hd1); hd1.WriteString(" "); v.Header1(&hd1)
+    	hdr1 := strings.TrimSpace(hd1.String())
+    	if hdr1 != "" {
+        buf.WriteString(hd1.String());
+    	}
+      
       timecol.Header2(&buf); buf.WriteString(" "); v.Header2(&buf)
     }
 		// Output data

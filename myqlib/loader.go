@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"os"
   "os/exec"
-  "strconv"
   "fmt"
   "bytes"
+  "time"
 )
 
 const (
@@ -40,7 +40,7 @@ func (l FileLoader) GetSamples() (chan MyqSample, error) {
 
 // SHOW STATUS output via mysqladmin
 type MySQLAdminStatusLoader struct {
-  Interval int64 // -i option to mysqladmin
+  Interval time.Duration // -i option to mysqladmin
   Args string // other args for mysqladmin (like -u, -p, -h, etc.)
 }
 func (l MySQLAdminStatusLoader) GetSamples() (chan MyqSample, error) {
@@ -50,8 +50,11 @@ func (l MySQLAdminStatusLoader) GetSamples() (chan MyqSample, error) {
   
   // Build the argument list
   args := []string{
-    STATUS_COMMAND, "-i", strconv.FormatInt(l.Interval,10)} 
+    STATUS_COMMAND, "-i", 
+    fmt.Sprintf("%.0f", l.Interval.Seconds()),
+  } 
   if l.Args != "" { args = append( args, l.Args )}
+  // fmt.Println( args )
   
   // Initialize the command
   cmd := exec.Command( path, args...)
