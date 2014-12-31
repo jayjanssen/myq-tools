@@ -150,5 +150,49 @@ func DefaultViews() map[string]View {
         },
       },
     },
+    "innodb": NormalView{
+      help: "Innodb metrics",
+      cols: []Col{
+        GroupCol { DefaultCol{"Row Operations", "Row-level operations",0},
+          []Col{
+    				RateCol{DefaultCol{"read", "Reads / s", 5}, "innodb_rows_read", 0, NumberUnits},
+    				RateCol{DefaultCol{"ins", "Inserts / s", 5}, "innodb_rows_inserted", 0, NumberUnits},
+    				RateCol{DefaultCol{"upd", "Updates / s", 5}, "innodb_rows_updated", 0, NumberUnits},
+    				RateCol{DefaultCol{"del", "Deletes / s", 5}, "innodb_rows_deleted", 0, NumberUnits},
+          },
+        },
+        GroupCol { DefaultCol{"Buffer Pool (pages)", "Page-level operations",0},
+          []Col{
+    				RateCol{DefaultCol{"logr", "Read Requests (Logical) / s", 5}, "innodb_buffer_pool_read_requests", 0, NumberUnits},
+    				RateCol{DefaultCol{"phyr", "Reads (Physical) / s", 5}, "innodb_buffer_pool_reads", 0, NumberUnits},
+    				RateCol{DefaultCol{"logw", "Write Requests / s", 5}, "innodb_buffer_pool_write_requests", 0, NumberUnits},
+    				RateCol{DefaultCol{"phyw", "Writes (Physical) / s", 5}, "innodb_buffer_pool_pages_flushed", 0, NumberUnits},
+    				PercentCol{DefaultCol{`%dirt`, `Buffer pool %dirty`, 5}, "innodb_buffer_pool_pages_dirty", "innodb_buffer_pool_pages_total", 0},
+          },
+        },
+      },
+    },
+    "innodb_buffer_pool": NormalView{
+      help: "Innodb Buffer Pool stats",
+      cols: []Col{
+        GroupCol { DefaultCol{"Row Operations", "Row-level operations",0},
+          []Col{
+    				RateCol{DefaultCol{"read", "Reads / s", 5}, "innodb_rows_read", 0, NumberUnits},
+    				RateCol{DefaultCol{"ins", "Inserts / s", 5}, "innodb_rows_inserted", 0, NumberUnits},
+    				RateCol{DefaultCol{"upd", "Updates / s", 5}, "innodb_rows_updated", 0, NumberUnits},
+    				RateCol{DefaultCol{"del", "Deletes / s", 5}, "innodb_rows_deleted", 0, NumberUnits},
+          },
+        },
+        GroupCol { DefaultCol{"Buffer Pool (pages)", "Page-level operations",0},
+          []Col{
+    				RateCol{DefaultCol{"logr", "Read Requests (Logical) / s", 5}, "innodb_buffer_pool_read_requests", 0, NumberUnits},
+    				RateCol{DefaultCol{"phyr", "Reads (Physical) / s", 5}, "innodb_buffer_pool_reads", 0, NumberUnits},
+    				RateCol{DefaultCol{"logw", "Write Requests / s", 5}, "innodb_buffer_pool_write_requests", 0, NumberUnits},
+    				RateCol{DefaultCol{"phyw", "Writes (Physical) / s", 5}, "innodb_buffer_pool_pages_flushed", 0, NumberUnits},
+    				PercentCol{DefaultCol{`%dirt`, `Buffer pool %dirty`, 5}, "innodb_buffer_pool_pages_dirty", "innodb_buffer_pool_pages_total", 0},
+          },
+        },
+      },
+    },
 	}
 }

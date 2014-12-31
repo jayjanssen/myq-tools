@@ -113,11 +113,10 @@ type RateCol struct {
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
-	// !! still not sure I like the uptime here
 	diff, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff )
 	if err != nil {
 		// Can't output, just put a filler
-		// fmt.Println( err )
+    // fmt.Println( err )
 		filler(b, c)
 	} else {
     cv := collapse_number( diff, int64(c.width), int64(c.precision), c.units )    
@@ -181,4 +180,44 @@ type FuncCol struct {
 }
 func (c FuncCol) Data(b *bytes.Buffer, state MyqState) {
 	c.fn(b, state, c)
+}
+
+// Percent Columns calculate a ratio between two metrics
+type PercentCol struct {
+  DefaultCol
+	numerator_name string // SHOW STATUS variable of this column
+	denomenator_name string // SHOW STATUS variable of this column
+	precision uint8 // # of decimals to show on floats (optional)
+}
+
+func (c PercentCol) Data(b *bytes.Buffer, state MyqState) {
+  var numerator, denomenator float64
+  
+	nval := state.Cur[c.numerator_name]
+	switch nv := nval.(type) {
+	case int64:
+    numerator = float64(nv)
+  case float64:
+    numerator = nv
+	default:
+		filler(b, c)
+    return
+	}
+  
+	dval := state.Cur[c.denomenator_name]
+	switch dv := dval.(type) {
+	case int64:
+    denomenator = float64(dv)
+  case float64:
+    denomenator = dv
+	default:
+		filler(b, c)
+    return
+	}
+  
+  cv := collapse_number( (numerator / denomenator)*100, int64(c.width), int64(c.precision), PercentUnits )
+
+	b.WriteString(
+		fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
+
 }

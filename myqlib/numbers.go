@@ -26,6 +26,9 @@ var (
     1000: `ms`,
     1: `µs`,
   }
+  PercentUnits UnitsDef = UnitsDef{
+    1: `%`,
+  }
 )
 
 func collapse_number( value float64, width int64, precision int64, units UnitsDef ) string {
