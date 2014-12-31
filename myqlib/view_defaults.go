@@ -94,6 +94,29 @@ func DefaultViews() map[string]View {
         },
       },
     },
+    "query": NormalView{
+      help: "Query types and sorts",
+      cols: []Col{
+        RateCol{DefaultCol{"slow", "Slow queries per second", 4}, "slow_queries", 0, NumberUnits},
+        GroupCol { DefaultCol{"Selects", "Select Types",0},
+          []Col{
+						RateCol{DefaultCol{"fjn", "Full Joins / sec", 5}, "select_full_join", 0, NumberUnits},
+						RateCol{DefaultCol{"frj", "Full Range Joins / sec", 5}, "select_full_range_join", 0, NumberUnits},
+						RateCol{DefaultCol{"rang", "Range / sec", 5}, "select_range", 0, NumberUnits},
+						RateCol{DefaultCol{"rchk", "Range Check / sec", 5}, "select_range_check", 0, NumberUnits},
+						RateCol{DefaultCol{"scan", "Scan / sec", 5}, "select_scan", 0, NumberUnits},
+          },
+        },
+        GroupCol { DefaultCol{"Sorts", "Sort Types",0},
+          []Col{
+						RateCol{DefaultCol{"pass", "Merge Passes / sec", 5}, "sort_merge_passes", 0, NumberUnits},
+						RateCol{DefaultCol{"rang", "Range / sec", 5}, "sort_range", 0, NumberUnits},
+						RateCol{DefaultCol{"rows", "Rows / sec", 5}, "sort_rows", 0, NumberUnits},
+						RateCol{DefaultCol{"scan", "Scan / sec", 5}, "sort_scan", 0, NumberUnits},
+          },
+        },
+      },
+    },
     
 	}
 }

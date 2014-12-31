@@ -46,7 +46,7 @@ func (c GroupCol) Help(b *bytes.Buffer) {
   b.WriteString(c.help) 
   b.WriteString("\n")
 	for _, col := range c.cols {
-    b.WriteString("\t")
+    b.WriteString("  ")
     col.Help(b)
     b.WriteString("\n")
 	}
