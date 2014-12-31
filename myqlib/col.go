@@ -51,13 +51,10 @@ func (c GroupCol) Help(b *bytes.Buffer) {
     b.WriteString("\n")
 	}
 }
-func (c GroupCol) Width() uint8 {
-	var w uint8
-	for _, col := range c.cols {
-		w += col.Width() + 1
-	}
+func (c GroupCol) Width() (w uint8) {
+	for _, col := range c.cols { w += col.Width() + 1 }
 	w -= 1
-	return w
+	return
 }
 func (c GroupCol) Header1(b *bytes.Buffer) {
   b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`),
@@ -66,21 +63,15 @@ func (c GroupCol) Header1(b *bytes.Buffer) {
 func (c GroupCol) Header2(b *bytes.Buffer) {
 	space := false
 	for _, col := range c.cols {
-		if space {
-			b.WriteString(" ") // one space before each column
-		}
+		if space {b.WriteString(" ")} else {space = true}
 		col.Header2(b)
-		space = true
 	}
 }
 func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
 	space := false
 	for _, col := range c.cols {
-		if space {
-			b.WriteString(" ") // one space before each column
-		}
+		if space {b.WriteString(" ")} else {space = true}
 		col.Data(b, state)
-		space = true
 	}
 }
 
