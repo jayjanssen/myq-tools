@@ -7,13 +7,7 @@ import (
 
 func TestIntCol(t *testing.T) {
 	var b bytes.Buffer
-	col := GaugeCol{
-		name:          "trun",
-		variable_name: "threads_running",
-		help:          "Threads running",
-		width:         5,
-		precision:     0,
-	}
+	col := GaugeCol{DefaultCol{"run", "Threads running", 5}, "threads_running", 0}
 
 	state := MyqState{}
 	state.Cur = make(MyqSample)
@@ -28,13 +22,8 @@ func TestIntCol(t *testing.T) {
 
 func TestFloatCol(t *testing.T) {
 	var b bytes.Buffer
-	col := GaugeCol{
-		name:          "oooe",
-		variable_name: "wsrep_apply_oooe",
-		help:          "Galera OOO E",
-		width:         5,
-		precision:     3,
-	}
+	col := GaugeCol{DefaultCol{"oooe", "Galera OOO E", 5}, "wsrep_apply_oooe", 3}
+  
 	state := MyqState{}
 	state.Cur = make(MyqSample)
 	state.Cur["wsrep_apply_oooe"] = float64(0.015600)
@@ -87,13 +76,7 @@ func TestDiff(t *testing.T) {
 
 func TestRateCol(t *testing.T) {
 	var b bytes.Buffer
-	col := RateCol{
-		name:          "cons",
-		variable_name: "connections",
-		help:          "Connections per second",
-		width:         5,
-		precision:     0,
-	}
+	col := RateCol{DefaultCol{"cons", "Connections per second", 5}, "connections", 0}
 
 	state := MyqState{}
 	state.Cur = make(MyqSample)

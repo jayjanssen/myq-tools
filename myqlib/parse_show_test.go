@@ -8,7 +8,8 @@ import (
 )
 
 func TestSingleSample(t *testing.T) {
-	samples, err := GetSamplesFile("../testdata/mysqladmin.single")
+  loader := FileLoader{"../testdata/mysqladmin.single"}
+	samples, err := loader.GetSamples()
 	if err != nil {
 		t.Error(err)
 	}
@@ -36,8 +37,9 @@ func TestSingleSample(t *testing.T) {
 }
 
 func TestTwoSamples(t *testing.T) {
-	samples, err := GetSamplesFile("../testdata/mysqladmin.two")
-
+  loader := FileLoader{"../testdata/mysqladmin.two"}
+	samples, err := loader.GetSamples()
+  
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +52,8 @@ func TestManySamples(t *testing.T) {
 		return
 	}
 
-	samples, err := GetSamplesFile("../testdata/mysqladmin.lots")
+  loader := FileLoader{"../testdata/mysqladmin.lots"}
+	samples, err := loader.GetSamples()
 
 	if err != nil {
 		t.Error(err)
@@ -93,7 +96,8 @@ func checksamples(t *testing.T, samples chan MyqSample, expected int) {
 
 func BenchmarkSampleParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		samples, err := GetSamplesFile("../testdata/mysqladmin.single")
+    loader := FileLoader{"../testdata/mysqladmin.single"}
+  	samples, err := loader.GetSamples()
 
 		if err != nil {
 			b.Error(err)

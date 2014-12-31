@@ -3,7 +3,8 @@ package myqlib
 import "testing"
 
 func TestBadFile(t *testing.T) {
-	_, err := GetSamplesFile("/fooey/kablooie")
+  loader := FileLoader{"/fooey/kablooie"}
+	_, err := loader.GetSamples()
 
 	if err == nil {
 		t.Error("Somehow able to open /fooey/kablooie")
@@ -11,7 +12,8 @@ func TestBadFile(t *testing.T) {
 }
 
 func TestEmpty(t *testing.T) {
-	ch, err := GetSamplesFile("/dev/null")
+  loader := FileLoader{"/dev/null"}
+	ch, err := loader.GetSamples()
 	if err != nil {
 		t.Error("Got error opening /dev/null:", err)
 	}
