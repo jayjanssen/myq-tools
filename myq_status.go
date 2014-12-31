@@ -51,22 +51,30 @@ func main() {
 		var view_usage bytes.Buffer
     for name, view := range views {
   		view_usage.WriteString( fmt.Sprint("  ", name, ": "))
-      view.Help(&view_usage)
+      view.Help(&view_usage, true)
   		view_usage.WriteString("\n")
     }
     view_usage.WriteTo(os.Stderr)
     os.Exit(BAD_ARGS)    
   }
   
-  if *help || flag.NArg() != 1 {
-    flag.Usage()    
-  }  
+  if flag.NArg() != 1 {
+    flag.Usage()
+  }
   
   view := flag.Arg(0)
 	v, ok := views[view]
 	if !ok { 
     fmt.Fprintln(os.Stderr, "Error: view", view, "not found")
     flag.Usage()
+  }
+  
+  if *help {
+		var view_usage bytes.Buffer
+    v.Help(&view_usage, false)
+		view_usage.WriteString("\n")
+    view_usage.WriteTo(os.Stderr)
+    os.Exit(OK)  
   }
 
 	// Load data
@@ -117,4 +125,5 @@ func main() {
 		// Set the state for the next round
 		state.Prev = sample; lines++
 	}
+  os.Exit(OK)  
 }

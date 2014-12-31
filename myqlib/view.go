@@ -8,7 +8,7 @@ import (
 // All Views must implement the following
 type View interface {
 	// outputs (write to the buffer)
-	Help(b *bytes.Buffer)   // short help
+	Help(b *bytes.Buffer, short bool)   // help
 	Header1(b *bytes.Buffer) // header to print above data
 	Header2(b *bytes.Buffer) // header to print above data
 
@@ -25,8 +25,15 @@ type NormalView struct {
   help string  // short description of the view
 }
 
-func (v NormalView) Help(b *bytes.Buffer) {
+func (v NormalView) Help(b *bytes.Buffer, short bool) {
 	b.WriteString(v.help)
+	b.WriteString(" View\n")
+  if !short {
+  	for _, col := range v.Cols() {
+      col.Help(b)
+  		b.WriteString("\n")
+    }
+  }
 }
 
 func (v NormalView) Header1(b *bytes.Buffer) {

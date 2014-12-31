@@ -25,7 +25,9 @@ type DefaultCol struct {
 	help string // short description of the group
 	width uint8 // width of the column output (header and data)
 }
-func (c DefaultCol) Help(b *bytes.Buffer) { b.WriteString(c.help) }
+func (c DefaultCol) Help(b *bytes.Buffer) { 
+  b.WriteString(fmt.Sprint( c.name, ": ", c.help))
+}
 func (c DefaultCol) Width() uint8 { return c.width }
 func (c DefaultCol) Header1(b *bytes.Buffer) {
 	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), ""))
@@ -40,6 +42,15 @@ type GroupCol struct {
 	cols []Col // slice of columns in this group
 }
 
+func (c GroupCol) Help(b *bytes.Buffer) { 
+  b.WriteString(c.help) 
+  b.WriteString("\n")
+	for _, col := range c.cols {
+    b.WriteString("\t")
+    col.Help(b)
+    b.WriteString("\n")
+	}
+}
 func (c GroupCol) Width() uint8 {
 	var w uint8
 	for _, col := range c.cols {
@@ -48,7 +59,6 @@ func (c GroupCol) Width() uint8 {
 	w -= 1
 	return w
 }
-
 func (c GroupCol) Header1(b *bytes.Buffer) {
 	b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`),
     c.name))
@@ -80,6 +90,7 @@ type GaugeCol struct {
   DefaultCol
 	variable_name string // SHOW STATUS variable of this column
 	precision uint8 // # of decimals to show on floats (optional)
+  units UnitsDef
 }
 
 func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
@@ -88,17 +99,14 @@ func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
 	switch v := val.(type) {
 	case int64:
 		// format number here
+    cv := collapse_number( float64(v), int64(c.width), int64(c.precision), c.units )
 		b.WriteString(
-			fmt.Sprintf(fmt.Sprint(`%`, c.width, `d`), v))
+			fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	case float64:
 		// format number here
 		// precision subtracts from total width (+ the decimal point)
-		width := c.width
-		if c.precision > 0 {
-			width = width - (c.precision + 1)
-		}
-		b.WriteString(fmt.Sprintf(
-			fmt.Sprint(`%`, width, `.`, c.precision, `f`), v))
+    cv := collapse_number( v, int64(c.width), int64(c.precision), c.units )
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	case string:
 		b.WriteString(v)
 	default:
@@ -111,6 +119,7 @@ type RateCol struct {
   DefaultCol
 	variable_name string // SHOW STATUS variable of this column
 	precision uint8 // # of decimals to show on floats (optional)
+  units UnitsDef
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
@@ -121,8 +130,8 @@ func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
 		// fmt.Println( err )
 		filler(b, c)
 	} else {
-		b.WriteString(fmt.Sprintf(
-			fmt.Sprint(`%`, c.width, `.`, c.precision, `f`), diff))
+    cv := collapse_number( diff, int64(c.width), int64(c.precision), c.units )    
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	}
 }
 
