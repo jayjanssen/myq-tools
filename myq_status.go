@@ -54,7 +54,6 @@ func main() {
     for name, view := range views {
   		view_usage.WriteString( fmt.Sprint("  ", name, ": "))
       view.Help(&view_usage, true)
-  		view_usage.WriteString("\n")
     }
     view_usage.WriteTo(os.Stderr)
     os.Exit(BAD_ARGS)    

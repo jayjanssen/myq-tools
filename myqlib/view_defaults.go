@@ -117,6 +117,38 @@ func DefaultViews() map[string]View {
         },
       },
     },
-    
+    "temp": NormalView{
+      help: "Internal Temporary Tables",
+      cols: []Col{
+				RateCol{DefaultCol{"tmps", "Temporary Tables / second", 5}, "created_tmp_tables", 0, NumberUnits},
+				RateCol{DefaultCol{"disk", "On Disk Temp Tables / second", 5}, "created_tmp_disk_tables", 0, NumberUnits},
+				RateCol{DefaultCol{"files", "Temp Files / second", 5}, "created_tmp_files", 0, NumberUnits},
+      },
+    },
+    "handler": NormalView{
+      help: "Storage Engine Handler metrics",
+      cols: []Col{
+        GroupCol { DefaultCol{"Reads", "Handler read stats",0},
+          []Col{
+    				RateCol{DefaultCol{"rfst", "Read First / s", 5}, "handler_read_first", 0, NumberUnits},
+    				RateCol{DefaultCol{"rkey", "Read Key / s", 5}, "handler_read_key", 0, NumberUnits},
+    				RateCol{DefaultCol{"rnex", "Read Next / s", 5}, "handler_read_next", 0, NumberUnits},
+    				RateCol{DefaultCol{"rprv", "Read Prev / s", 5}, "handler_read_prev", 0, NumberUnits},
+    				RateCol{DefaultCol{"rrd", "Random reads / s", 5}, "handler_read_rnd", 0, NumberUnits},
+    				RateCol{DefaultCol{"rrdn", "Read First / s", 5}, "handler_read_rnd_next", 0, NumberUnits},
+          },
+        },
+        GroupCol { DefaultCol{"Other", "Other handler stats",0},
+          []Col{
+    				RateCol{DefaultCol{"ins", "Inserts / s", 5}, "handler_write", 0, NumberUnits},
+    				RateCol{DefaultCol{"upd", "Updates / s", 5}, "handler_update", 0, NumberUnits},
+    				RateCol{DefaultCol{"del", "Deletes / s", 5}, "handler_delete", 0, NumberUnits},
+    				RateCol{DefaultCol{"cmt", "Commits / s", 5}, "handler_commit", 0, NumberUnits},
+    				RateCol{DefaultCol{"rbk", "Rollbacks / s", 5}, "handler_rollback", 0, NumberUnits},
+    				RateCol{DefaultCol{"disc", "Discovers / s", 5}, "handler_discover", 0, NumberUnits},
+          },
+        },
+      },
+    },
 	}
 }

@@ -27,8 +27,9 @@ type NormalView struct {
 
 func (v NormalView) Help(b *bytes.Buffer, short bool) {
 	b.WriteString(v.help)
-	b.WriteString("\n\n")
+	b.WriteString("\n")
   if !short {
+  	b.WriteString("\n")
   	for _, col := range v.Cols() {
       col.Help(b)
   		b.WriteString("\n")
