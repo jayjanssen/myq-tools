@@ -4,18 +4,19 @@ import(
   "fmt"
   "bytes"
   "time"
+  "strconv"
 )
 
 // Time Columns
 var (
   Timestamp_col FuncCol = FuncCol{ 
-    DefaultCol{"time", "Time data was printed", 8}, 0,
+    DefaultCol{"time", "Time data was printed", 8},
     func(b *bytes.Buffer, state MyqState, c Col) {
       b.WriteString( time.Now().Format("15:04:05"))
     },
   }
   Runtime_col FuncCol = FuncCol{ 
-    DefaultCol{"time", "Interval since data started", 8}, 0,
+    DefaultCol{"time", "Interval since data started", 8},
     func(b *bytes.Buffer, state MyqState, c Col) {
       runtime := time.Duration( state.Cur[`uptime`].(int64) - state.FirstUptime) * time.Second
       b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`),
@@ -192,6 +193,61 @@ func DefaultViews() map[string]View {
     				PercentCol{DefaultCol{`%dirt`, `Buffer pool %dirty`, 5}, "innodb_buffer_pool_pages_dirty", "innodb_buffer_pool_pages_total", 0},
           },
         },
+      },
+    },
+    "wsrep": NormalView{
+      help: "Galera Wsrep statistics",
+      cols: []Col{
+        GroupCol { DefaultCol{"Cluster", "Cluster-wide stats (at least according to this node)",0},
+          []Col{
+    				StringCol{ DefaultCol{"P", "Primary (P) or Non-primary (N)", 1}, "wsrep_cluster_status"},
+            // GaugeCol{ DefaultCol{"cnf", , 3}, "wsrep_cluster_conf_id", 0, NumberUnits},
+            FuncCol{ DefaultCol{"cnf", "Cluster configuration id (increments every time a node joins/leaves the cluster)", 3},
+              func(b *bytes.Buffer, state MyqState, c Col) {
+                // We show the least-significant width digits of the value
+                id := strconv.Itoa(int(state.Cur[`wsrep_cluster_conf_id`].(int64)))
+                b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`), id[len(id)-int(c.Width()):] ))
+              },
+            },
+						GaugeCol{DefaultCol{"#", "Cluster size", 2}, "wsrep_cluster_size", 0, NumberUnits},
+          },
+        },
+        GroupCol{ DefaultCol{"Node", "Node's specific state", 0},
+          []Col{
+    				StringCol{ DefaultCol{"State", "State of this node", 4}, "wsrep_local_state_comment"},
+          },
+        },
+        GroupCol{ DefaultCol{"Replicated", "Sent replication events", 0},
+          []Col{
+						GaugeCol{DefaultCol{"Q", "Outbound replication queue", 4}, "wsrep_local_send_queue", 0, NumberUnits},
+    				RateCol{DefaultCol{"trxs", "Replicated transactions per second", 5}, "wsrep_replicated", 0, NumberUnits},
+						RateCol{DefaultCol{"data", "Replicated bytes per second", 5}, "wsrep_replicated_bytes", 0, MemoryUnits},            
+          },
+        },
+        GroupCol{ DefaultCol{"Received", "Inbound replication events", 0},
+          []Col{
+						GaugeCol{DefaultCol{"Q", "Received replication apply queue", 4}, "wsrep_local_recv_queue", 0, NumberUnits},
+    				RateCol{DefaultCol{"trxs", "Received transactions per second", 5}, "wsrep_received", 0, NumberUnits},
+						RateCol{DefaultCol{"data", "Received bytes per second", 5}, "wsrep_received_bytes", 0, MemoryUnits},            
+          },
+        },
+        GroupCol{ DefaultCol{"Cnflcts", "Galera replication conflicts (on this node)", 0},
+          []Col{
+    				DiffCol{DefaultCol{"lcf", "Local certification failures since last sample", 3}, "wsrep_local_cert_failures", 0, NumberUnits},
+						DiffCol{DefaultCol{"bfa", "Brute force aborts since last sample", 3}, "wsrep_local_bf_aborts", 0, NumberUnits},            
+          },
+        }, 
+        GroupCol{ DefaultCol{"Gcache", "Galera cache (gcache) information", 0},
+          []Col{
+						GaugeCol{DefaultCol{"idx", "Certification index size (keys)", 4}, "wsrep_cert_index_size", 0, NumberUnits},
+          },
+        },
+        GroupCol{ DefaultCol{"Apply", "Theoretical and actual apply efficiency", 0},
+          []Col{
+						GaugeCol{DefaultCol{"dst", "Distance between forced-apply-order transactions in the replication stream", 4}, "wsrep_cert_deps_distance", 0, NumberUnits},
+						GaugeCol{DefaultCol{"apl", "Number of slave threads actually used", 3}, "wsrep_apply_window", 0, NumberUnits},  
+          },
+        },            
       },
     },
 	}

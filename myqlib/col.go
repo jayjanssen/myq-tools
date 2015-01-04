@@ -33,7 +33,11 @@ func (c DefaultCol) Header1(b *bytes.Buffer) {
   b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), ""))
 }
 func (c DefaultCol) Header2(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), c.name))
+  str := c.name
+  if len(str) > int(c.Width()) {
+    str = c.name[0:c.Width()]
+  }
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), str))
 }
 
 // Groups of columns
@@ -57,8 +61,11 @@ func (c GroupCol) Width() (w uint8) {
 	return
 }
 func (c GroupCol) Header1(b *bytes.Buffer) {
-  b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`),
-      c.name))
+  str := c.name
+  if len(str) > int(c.Width()) {
+    str = c.name[0:c.Width()]
+  }
+  b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), str))
 }
 func (c GroupCol) Header2(b *bytes.Buffer) {
 	space := false
@@ -98,7 +105,7 @@ func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
     cv := collapse_number( v, int64(c.width), int64(c.precision), c.units )
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	case string:
-		b.WriteString(v)
+		b.WriteString(v[0:c.width])  // first 'width' chars
 	default:
 		filler(b, c)
 	}
@@ -113,13 +120,13 @@ type RateCol struct {
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
-	diff, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff )
+	rate, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff)
 	if err != nil {
 		// Can't output, just put a filler
     // fmt.Println( err )
 		filler(b, c)
 	} else {
-    cv := collapse_number( diff, int64(c.width), int64(c.precision), c.units )    
+    cv := collapse_number( rate, int64(c.width), int64(c.precision), c.units )    
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	}
 }
@@ -131,6 +138,37 @@ func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
 // 4. output type always a float, deal with output format later
 // 5. handle cur < prev (usually time would be <0 here, but in case), by just returing cur / time
 func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
+  diff, err := calculate_diff( cur, prev )
+  if err != nil { return 0.00, err }
+  
+	if time <= 0 {
+		return diff, nil
+	} else {
+		return diff / time, nil
+	}  
+}
+
+
+// Diff Columns the difference of a SHOW STATUS variable between samples
+type DiffCol struct {
+  DefaultCol
+	variable_name string // SHOW STATUS variable of this column
+	precision uint8 // # of decimals to show on floats (optional)
+  units UnitsDef
+}
+
+func (c DiffCol) Data(b *bytes.Buffer, state MyqState) {
+	diff, err := calculate_diff(state.Cur[c.variable_name], state.Prev[c.variable_name])
+	if err != nil {
+		// Can't output, just put a filler
+    // fmt.Println( err )
+		filler(b, c)
+	} else {
+    cv := collapse_number( diff, int64(c.width), int64(c.precision), c.units )    
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
+	}
+}
+func calculate_diff(cur, prev interface{}) (float64, error) {
 	// cur and prev must not be nil
 	if cur == nil {
 		return 0.00, errors.New("nil cur")
@@ -159,14 +197,16 @@ func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
 		}
 	}
 
-	if prev == nil || time <= 0 {
+	if prev == nil {
 		return c, nil
-	} else if c < p {
-		return c / time, nil
+	} else if c < p { 
+    // special case -- if c is < p, the number rolled over or was reset, so best effort answer here.
+		return c , nil
 	} else {
-		return (c - p) / time, nil
+		return c - p, nil
 	}
 }
+
 
 func filler(b *bytes.Buffer, c Col) {
 	b.WriteString(fmt.Sprintf( fmt.Sprint(`%`, c.Width(), `s`), "-"))
@@ -175,7 +215,6 @@ func filler(b *bytes.Buffer, c Col) {
 // Func Columns run a custom function to produce their output
 type FuncCol struct {
   DefaultCol
-	precision uint8 // # of decimals to show on floats (optional)
 	fn func(b *bytes.Buffer, state MyqState, c Col) // takes the state and returns the (unformatted) value
 }
 func (c FuncCol) Data(b *bytes.Buffer, state MyqState) {
@@ -220,4 +259,21 @@ func (c PercentCol) Data(b *bytes.Buffer, state MyqState) {
 	b.WriteString(
 		fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 
+}
+
+// String Columns show a string (or substring up to width)
+type StringCol struct {
+  DefaultCol
+	variable_name string // SHOW STATUS variable of this column
+}
+
+func (c StringCol) Data(b *bytes.Buffer, state MyqState) {
+	val := state.Cur[c.variable_name]
+
+	switch v := val.(type) {
+	case string:
+		b.WriteString(v[0:c.width])  // first 'width' chars
+	default:
+		filler(b, c)
+	}
 }
