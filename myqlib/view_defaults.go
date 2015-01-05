@@ -5,6 +5,7 @@ import(
   "bytes"
   "time"
   "strconv"
+  "strings"
 )
 
 // Time Columns
@@ -214,21 +215,40 @@ func DefaultViews() map[string]View {
         },
         GroupCol{ DefaultCol{"Node", "Node's specific state", 0},
           []Col{
-    				StringCol{ DefaultCol{"State", "State of this node", 4}, "wsrep_local_state_comment"},
+    				StringCol{ DefaultCol{"state", "State of this node", 4}, "wsrep_local_state_comment"},
           },
         },
-        GroupCol{ DefaultCol{"Replicated", "Sent replication events", 0},
-          []Col{
-						GaugeCol{DefaultCol{"Q", "Outbound replication queue", 4}, "wsrep_local_send_queue", 0, NumberUnits},
-    				RateCol{DefaultCol{"trxs", "Replicated transactions per second", 5}, "wsrep_replicated", 0, NumberUnits},
-						RateCol{DefaultCol{"data", "Replicated bytes per second", 5}, "wsrep_replicated_bytes", 0, MemoryUnits},            
+        FuncCol{DefaultCol{"laten", "Average replication latency", 5},
+          func(b *bytes.Buffer, state MyqState, c Col) {
+            vals := strings.Split( state.Cur[`wsrep_evs_repl_latency`].(string), `/` )
+            // Expecting 5 vals here, filler if not
+            if len( vals ) != 5 { 
+              filler( b, c )
+            } else {
+              avg, _ := strconv.ParseFloat( vals[1], 64 )
+              cv := collapse_number( avg, int64(c.Width()), 2, SecondUnits )
+          		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))
+            }
           },
         },
-        GroupCol{ DefaultCol{"Received", "Inbound replication events", 0},
+        GroupCol{ DefaultCol{"Outbound Repl", "Sent replication events", 0},
           []Col{
-						GaugeCol{DefaultCol{"Q", "Received replication apply queue", 4}, "wsrep_local_recv_queue", 0, NumberUnits},
-    				RateCol{DefaultCol{"trxs", "Received transactions per second", 5}, "wsrep_received", 0, NumberUnits},
-						RateCol{DefaultCol{"data", "Received bytes per second", 5}, "wsrep_received_bytes", 0, MemoryUnits},            
+    				RateCol{DefaultCol{"trxs", "Replicated transactions per second", 4}, "wsrep_replicated", 0, NumberUnits},
+						RateCol{DefaultCol{"data", "Replicated bytes per second", 4}, "wsrep_replicated_bytes", 0, MemoryUnits},            
+						GaugeCol{DefaultCol{"queue", "Outbound replication queue", 3}, "wsrep_local_send_queue", 0, NumberUnits},
+          },
+        },
+        GroupCol{ DefaultCol{"Inbound Repl", "Received replication events", 0},
+          []Col{
+    				RateCol{DefaultCol{"trxs", "Received transactions per second", 4}, "wsrep_received", 0, NumberUnits},
+						RateCol{DefaultCol{"data", "Received bytes per second", 4}, "wsrep_received_bytes", 0, MemoryUnits},            
+						GaugeCol{DefaultCol{"queue", "Received replication apply queue", 3}, "wsrep_local_recv_queue", 0, NumberUnits},
+          },
+        },
+        GroupCol{ DefaultCol{"FlowC", "Flow control stats", 0},
+          []Col{
+            DiffCol{DefaultCol{"paused", "Flow control paused (could be from anywhere in the cluster)", 5}, "wsrep_flow_control_paused_ns", 0, NanoSecondUnits},
+            DiffCol{DefaultCol{"snt", "Flow control sent messages (could be starting or stopping FC)", 3}, "wsrep_flow_control_sent", 0, NumberUnits},
           },
         },
         GroupCol{ DefaultCol{"Cnflcts", "Galera replication conflicts (on this node)", 0},
@@ -239,6 +259,14 @@ func DefaultViews() map[string]View {
         }, 
         GroupCol{ DefaultCol{"Gcache", "Galera cache (gcache) information", 0},
           []Col{
+            FuncCol{DefaultCol{"ist", "Gcached transactions", 5},
+              func(b *bytes.Buffer, state MyqState, c Col) {
+                // my $ist_size = $status->{'wsrep_last_committed'} - $status->{'wsrep_local_cached_downto'};
+                diff := state.Cur[`wsrep_last_committed`].(int64) - state.Cur[`wsrep_local_cached_downto`].(int64)
+                cv := collapse_number( float64(diff), int64(c.Width()), 0, NumberUnits )
+            		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))
+              },
+            },
 						GaugeCol{DefaultCol{"idx", "Certification index size (keys)", 4}, "wsrep_cert_index_size", 0, NumberUnits},
           },
         },
@@ -247,7 +275,7 @@ func DefaultViews() map[string]View {
 						GaugeCol{DefaultCol{"dst", "Distance between forced-apply-order transactions in the replication stream", 4}, "wsrep_cert_deps_distance", 0, NumberUnits},
 						GaugeCol{DefaultCol{"apl", "Number of slave threads actually used", 3}, "wsrep_apply_window", 0, NumberUnits},  
           },
-        },            
+        },
       },
     },
 	}
