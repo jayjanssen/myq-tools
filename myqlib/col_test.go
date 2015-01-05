@@ -69,7 +69,7 @@ func TestDiff(t *testing.T) {
 
 	// time <= 0
 	d4, _ := calculate_rate(int64(20), int64(10), -10)
-	if d4 != 20.0 {
+	if d4 != 10.0 {
 		t.Error("d4 is", d4)
 	}
 }
