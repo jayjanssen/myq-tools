@@ -78,7 +78,7 @@ func main() {
     os.Exit(OK)
   }
 
-	// Load data
+	// Load SHOW GLOBAL STATUS data, either live or from the provided file
   loader, timecol := func() (myqlib.Loader, myqlib.Col) {
     if( *file == "" ) {
       // collect samples from myqladmin
