@@ -5,7 +5,7 @@ import (
   "sort"
 )
 
-type UnitsDef map[int64]string
+type UnitsDef map[float64]string
 var (
   NumberUnits UnitsDef = UnitsDef{
     1: ``,
@@ -20,11 +20,24 @@ var (
     1073741824: `G`,
     1099511627776: `T`,
   }
+  SecondUnits UnitsDef = UnitsDef{
+    1000: `ks`,
+    1: `s`,
+    0.001: `ms`,
+    0.000001: `µs`,
+    0.000000001: `ns`,
+  }
   MicroSecondUnits UnitsDef = UnitsDef{
     1000000000: `ks`,
     1000000: `s`,
     1000: `ms`,
     1: `µs`,
+  }
+  NanoSecondUnits UnitsDef = UnitsDef{
+    1000000000: `s`,
+    1000000: `ms`,
+    1000: `µs`,
+    1: `ns`,
   }
   PercentUnits UnitsDef = UnitsDef{
     1: `%`,
@@ -33,15 +46,15 @@ var (
 
 func collapse_number( value float64, width int64, precision int64, units UnitsDef ) string {
   // To store the keys in slice in sorted order
-  var factors []int
+  var factors []float64
   for k := range units {
-    factors = append(factors, int(k))
+    factors = append(factors, k)
   }
-  sort.Ints(factors)
+  sort.Float64s(factors)
      
   for _, factor:= range factors {
-    unit := units[int64(factor)]
-    raw := value / float64(factor)
+    unit := units[factor]
+    raw := value / factor
     str := fmt.Sprintf( fmt.Sprint( `%.`, precision, `f%s`), raw, unit )
     
     if raw != 0 && int64(len( str )) <= width + precision {
