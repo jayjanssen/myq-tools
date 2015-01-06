@@ -207,7 +207,11 @@ func DefaultViews() map[string]View {
               func(b *bytes.Buffer, state MyqState, c Col) {
                 // We show the least-significant width digits of the value
                 id := strconv.Itoa(int(state.Cur[`wsrep_cluster_conf_id`].(int64)))
-                b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`), id[len(id)-int(c.Width()):] ))
+                if len(id) > int(c.Width()) {
+                  b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`), id[len(id)-int(c.Width()):] ))
+                } else {
+                  b.WriteString( fmt.Sprintf( fmt.Sprint( `%`, c.Width(), `s`), id ))
+                }
               },
             },
 						GaugeCol{DefaultCol{"#", "Cluster size", 2}, "wsrep_cluster_size", 0, NumberUnits},
