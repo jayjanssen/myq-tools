@@ -1,70 +1,65 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
-Vagrant.configure(2) do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'vmware_fusion'
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "perconajayj/centos-x86_64"
+require File.dirname(__FILE__) + '/lib/vagrant-common.rb'
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+pxc_version = "56"
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+# Node group counts and aws security groups (if using aws provider)
+pxc_nodes = 2
+pxc_node_name_prefix = "node"
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
+cluster_address = 'gcomm://' + Array.new( pxc_nodes ){ |i| pxc_node_name_prefix + (i+1).to_s }.join(',')
 
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
 
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+Vagrant.configure("2") do |config|
+	config.vm.box = "perconajayj/centos-x86_64"
+	config.ssh.username = "root"
 
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
+  # Create the PXC nodes
+  (1..pxc_nodes).each do |i|
+    name = pxc_node_name_prefix + i.to_s
+    config.vm.define name do |node_config|
+      node_config.vm.hostname = name
+      node_config.vm.network :private_network, type: "dhcp"
+      node_config.vm.provision :hostmanager
+      
+      # Provisioners
+      provision_puppet( node_config, "pxc_server.pp" ) { |puppet| 
+        puppet.facter = {
+          # PXC setup
+          "percona_server_version"  => pxc_version,
+          'innodb_buffer_pool_size' => '128M',
+          'innodb_log_file_size' => '64M',
+          'innodb_flush_log_at_trx_commit' => '0',
+          'pxc_bootstrap_node' => (i == 1 ? true : false ),
+          'wsrep_cluster_address' => cluster_address,
+          'wsrep_provider_options' => 'gcache.size=128M; gcs.fc_limit=128',
+          
+          # Sysbench setup
+          'sysbench_load' => (i == 1 ? true : false ),
+          'tables' => 1,
+          'rows' => 100000,
+          'threads' => 8,
+          'tx_rate' => 10,
+          
+          # PCT setup
+          'percona_agent_api_key' => ENV['PERCONA_AGENT_API_KEY']
+        }
+      }
 
-  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
-  # such as FTP and Heroku are also available. See the documentation at
-  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
-  # config.push.define "atlas" do |push|
-  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
-  # end
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline <<-SHELL
-  #   sudo apt-get install apache2
-  # SHELL
+      provider_vmware( name, node_config, 256 ) { |vb, override|
+        provision_puppet( override, "pxc_server.pp" ) {|puppet|
+          puppet.facter = {
+            'default_interface' => 'eth1',
+            
+            # PXC Setup
+            'datadir_dev' => 'dm-2',
+          }
+        }
+      }
+    end
+  end
 end
