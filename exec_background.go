@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
-	"bytes"
-	"os/exec"
 	"bufio"
+	"bytes"
+	"log"
+	"os/exec"
 )
 
 func check_binary(exe string) {
@@ -18,13 +18,13 @@ func check_binary(exe string) {
 func main() {
 	var exe = "mysqladmin"
 	cmd := exec.Command(exe, "ext", "-i", "1")
-	
-	check_binary( exe )
-	
+
+	check_binary(exe)
+
 	// cmd.Stdin = strings.NewReader("some input")
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -32,21 +32,21 @@ func main() {
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	
+
 	scanner := bufio.NewScanner(stdout)
-    
-    // chan := make(chan string)
-    go func() {
-    	for scanner.Scan() {
-            log.Println(scanner.Text()) // Println will add back the final '\n'
-            // chan <- scanner.Text()
-    	}
-    	if err := scanner.Err(); err != nil {
-    		log.Print( "error scanning output: ", err)
-    	} 
-    }()
-    
-    cmd.Wait()
-    
+
+	// chan := make(chan string)
+	go func() {
+		for scanner.Scan() {
+			log.Println(scanner.Text()) // Println will add back the final '\n'
+			// chan <- scanner.Text()
+		}
+		if err := scanner.Err(); err != nil {
+			log.Print("error scanning output: ", err)
+		}
+	}()
+
+	cmd.Wait()
+
 	// fmt.Print(exe, " output: ", out.String())
 }

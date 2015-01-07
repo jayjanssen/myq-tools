@@ -8,9 +8,9 @@ import (
 // All Views must implement the following
 type View interface {
 	// outputs (write to the buffer)
-	Help(b *bytes.Buffer, short bool)   // help
-	Header1(b *bytes.Buffer) // header to print above data
-	Header2(b *bytes.Buffer) // header to print above data
+	Help(b *bytes.Buffer, short bool) // help
+	Header1(b *bytes.Buffer)          // header to print above data
+	Header2(b *bytes.Buffer)          // header to print above data
 
 	// A full line of output given the state
 	Data(b *bytes.Buffer, state MyqState)
@@ -21,20 +21,20 @@ type View interface {
 
 // NormalView
 type NormalView struct {
-	cols []Col   // slice of columns in this view
-  help string  // short description of the view
+	cols []Col  // slice of columns in this view
+	help string // short description of the view
 }
 
 func (v NormalView) Help(b *bytes.Buffer, short bool) {
 	b.WriteString(v.help)
 	b.WriteString("\n")
-  if !short {
-  	b.WriteString("\n")
-  	for _, col := range v.Cols() {
-      col.Help(b)
-  		b.WriteString("\n")
-    }
-  }
+	if !short {
+		b.WriteString("\n")
+		for _, col := range v.Cols() {
+			col.Help(b)
+			b.WriteString("\n")
+		}
+	}
 }
 
 func (v NormalView) Header1(b *bytes.Buffer) {

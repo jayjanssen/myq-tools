@@ -1,21 +1,21 @@
 package main
 
 import (
-  "encoding/json"
-  "fmt"
-  "./myqlib"
+	"./myqlib"
+	"encoding/json"
+	"fmt"
 )
 
 func main() {
-  views := myqlib.DefaultViews()
-	
+	views := myqlib.DefaultViews()
+
 	res, _ := json.MarshalIndent(views, "", "  ")
 	// res, _ := json.Marshal(metrics)
 	fmt.Println(string(res))
 
-  // var newmetrics map[string]MySQLMetricDef
-  // json.Unmarshal(res, &newmetrics)
+	// var newmetrics map[string]MySQLMetricDef
+	// json.Unmarshal(res, &newmetrics)
 
-  // nres, _ := json.MarshalIndent(newmetrics, "", "  ")
-  // fmt.Println(string(nres))
+	// nres, _ := json.MarshalIndent(newmetrics, "", "  ")
+	// fmt.Println(string(nres))
 }

@@ -23,7 +23,7 @@ func TestIntCol(t *testing.T) {
 func TestFloatCol(t *testing.T) {
 	var b bytes.Buffer
 	col := GaugeCol{DefaultCol{"oooe", "Galera OOO E", 5}, "wsrep_apply_oooe", 3, NumberUnits}
-  
+
 	state := MyqState{}
 	state.Cur = make(MyqSample)
 	state.Cur["wsrep_apply_oooe"] = float64(0.015600)

@@ -21,73 +21,84 @@ type Col interface {
 
 // 'Default' column -- "inherited" by others
 type DefaultCol struct {
-	name string // name/header of the group
-	help string // short description of the group
-	width uint8 // width of the column output (header and data)
+	name  string // name/header of the group
+	help  string // short description of the group
+	width uint8  // width of the column output (header and data)
 }
-func (c DefaultCol) Help(b *bytes.Buffer) { 
-  b.WriteString(fmt.Sprint( c.name, ": ", c.help))
+
+func (c DefaultCol) Help(b *bytes.Buffer) {
+	b.WriteString(fmt.Sprint(c.name, ": ", c.help))
 }
 func (c DefaultCol) Width() uint8 { return c.width }
 func (c DefaultCol) Header1(b *bytes.Buffer) {
-  b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), ""))
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), ""))
 }
 func (c DefaultCol) Header2(b *bytes.Buffer) {
-  str := c.name
-  if len(str) > int(c.Width()) {
-    str = c.name[0:c.Width()]
-  }
+	str := c.name
+	if len(str) > int(c.Width()) {
+		str = c.name[0:c.Width()]
+	}
 	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), str))
 }
 
 // Groups of columns
 type GroupCol struct {
-  DefaultCol
+	DefaultCol
 	cols []Col // slice of columns in this group
 }
 
-func (c GroupCol) Help(b *bytes.Buffer) { 
-  b.WriteString(c.help) 
-  b.WriteString("\n")
+func (c GroupCol) Help(b *bytes.Buffer) {
+	b.WriteString(c.help)
+	b.WriteString("\n")
 	for _, col := range c.cols {
-    b.WriteString("  ")
-    col.Help(b)
-    b.WriteString("\n")
+		b.WriteString("  ")
+		col.Help(b)
+		b.WriteString("\n")
 	}
 }
 func (c GroupCol) Width() (w uint8) {
-	for _, col := range c.cols { w += col.Width() + 1 }
+	for _, col := range c.cols {
+		w += col.Width() + 1
+	}
 	w -= 1
 	return
 }
 func (c GroupCol) Header1(b *bytes.Buffer) {
-  str := c.name
-  if len(str) > int(c.Width()) {
-    str = c.name[0:c.Width()]
-  }
-  b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), str))
+	str := c.name
+	if len(str) > int(c.Width()) {
+		str = c.name[0:c.Width()]
+	}
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%-`, c.Width(), `s`), str))
 }
 func (c GroupCol) Header2(b *bytes.Buffer) {
 	space := false
 	for _, col := range c.cols {
-		if space {b.WriteString(" ")} else {space = true}
+		if space {
+			b.WriteString(" ")
+		} else {
+			space = true
+		}
 		col.Header2(b)
 	}
 }
 func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
 	space := false
 	for _, col := range c.cols {
-		if space {b.WriteString(" ")} else {space = true}
+		if space {
+			b.WriteString(" ")
+		} else {
+			space = true
+		}
 		col.Data(b, state)
 	}
 }
 
 // Gauge Columns simply display SHOW STATUS variable
 type GaugeCol struct {
-  DefaultCol
+	DefaultCol
 	variable_name string // SHOW STATUS variable of this column
-	precision uint8 // # of decimals to show on floats (optional)
-  units UnitsDef
+	precision     uint8  // # of decimals to show on floats (optional)
+	units         UnitsDef
 }
 
 func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
@@ -96,16 +107,16 @@ func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
 	switch v := val.(type) {
 	case int64:
 		// format number here
-    cv := collapse_number( float64(v), int64(c.width), int64(c.precision), c.units )
+		cv := collapse_number(float64(v), int64(c.width), int64(c.precision), c.units)
 		b.WriteString(
 			fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	case float64:
 		// format number here
 		// precision subtracts from total width (+ the decimal point)
-    cv := collapse_number( v, int64(c.width), int64(c.precision), c.units )
+		cv := collapse_number(v, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	case string:
-		b.WriteString(v[0:c.width])  // first 'width' chars
+		b.WriteString(v[0:c.width]) // first 'width' chars
 	default:
 		filler(b, c)
 	}
@@ -113,20 +124,20 @@ func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
 
 // Rate Columns the rate of change of a SHOW STATUS variable
 type RateCol struct {
-  DefaultCol
+	DefaultCol
 	variable_name string // SHOW STATUS variable of this column
-	precision uint8 // # of decimals to show on floats (optional)
-  units UnitsDef
+	precision     uint8  // # of decimals to show on floats (optional)
+	units         UnitsDef
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
 	rate, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff)
 	if err != nil {
 		// Can't output, just put a filler
-    // fmt.Println( err )
+		// fmt.Println( err )
 		filler(b, c)
 	} else {
-    cv := collapse_number( rate, int64(c.width), int64(c.precision), c.units )    
+		cv := collapse_number(rate, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	}
 }
@@ -138,33 +149,34 @@ func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
 // 4. output type always a float, deal with output format later
 // 5. handle cur < prev (usually time would be <0 here, but in case), by just returing cur / time
 func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
-  diff, err := calculate_diff( cur, prev )
-  if err != nil { return 0.00, err }
-  
+	diff, err := calculate_diff(cur, prev)
+	if err != nil {
+		return 0.00, err
+	}
+
 	if time <= 0 {
 		return diff, nil
 	} else {
 		return diff / time, nil
-	}  
+	}
 }
-
 
 // Diff Columns the difference of a SHOW STATUS variable between samples
 type DiffCol struct {
-  DefaultCol
+	DefaultCol
 	variable_name string // SHOW STATUS variable of this column
-	precision uint8 // # of decimals to show on floats (optional)
-  units UnitsDef
+	precision     uint8  // # of decimals to show on floats (optional)
+	units         UnitsDef
 }
 
 func (c DiffCol) Data(b *bytes.Buffer, state MyqState) {
 	diff, err := calculate_diff(state.Cur[c.variable_name], state.Prev[c.variable_name])
 	if err != nil {
 		// Can't output, just put a filler
-    // fmt.Println( err )
+		// fmt.Println( err )
 		filler(b, c)
 	} else {
-    cv := collapse_number( diff, int64(c.width), int64(c.precision), c.units )    
+		cv := collapse_number(diff, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	}
 }
@@ -199,62 +211,62 @@ func calculate_diff(cur, prev interface{}) (float64, error) {
 
 	if prev == nil {
 		return c, nil
-	} else if c < p { 
-    // special case -- if c is < p, the number rolled over or was reset, so best effort answer here.
-		return c , nil
+	} else if c < p {
+		// special case -- if c is < p, the number rolled over or was reset, so best effort answer here.
+		return c, nil
 	} else {
 		return c - p, nil
 	}
 }
 
-
 func filler(b *bytes.Buffer, c Col) {
-	b.WriteString(fmt.Sprintf( fmt.Sprint(`%`, c.Width(), `s`), "-"))
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), "-"))
 }
 
 // Func Columns run a custom function to produce their output
 type FuncCol struct {
-  DefaultCol
+	DefaultCol
 	fn func(b *bytes.Buffer, state MyqState, c Col) // takes the state and returns the (unformatted) value
 }
+
 func (c FuncCol) Data(b *bytes.Buffer, state MyqState) {
 	c.fn(b, state, c)
 }
 
 // Percent Columns calculate a ratio between two metrics
 type PercentCol struct {
-  DefaultCol
-	numerator_name string // SHOW STATUS variable of this column
+	DefaultCol
+	numerator_name   string // SHOW STATUS variable of this column
 	denomenator_name string // SHOW STATUS variable of this column
-	precision uint8 // # of decimals to show on floats (optional)
+	precision        uint8  // # of decimals to show on floats (optional)
 }
 
 func (c PercentCol) Data(b *bytes.Buffer, state MyqState) {
-  var numerator, denomenator float64
-  
+	var numerator, denomenator float64
+
 	nval := state.Cur[c.numerator_name]
 	switch nv := nval.(type) {
 	case int64:
-    numerator = float64(nv)
-  case float64:
-    numerator = nv
+		numerator = float64(nv)
+	case float64:
+		numerator = nv
 	default:
 		filler(b, c)
-    return
+		return
 	}
-  
+
 	dval := state.Cur[c.denomenator_name]
 	switch dv := dval.(type) {
 	case int64:
-    denomenator = float64(dv)
-  case float64:
-    denomenator = dv
+		denomenator = float64(dv)
+	case float64:
+		denomenator = dv
 	default:
 		filler(b, c)
-    return
+		return
 	}
-  
-  cv := collapse_number( (numerator / denomenator)*100, int64(c.width), int64(c.precision), PercentUnits )
+
+	cv := collapse_number((numerator/denomenator)*100, int64(c.width), int64(c.precision), PercentUnits)
 
 	b.WriteString(
 		fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
@@ -263,7 +275,7 @@ func (c PercentCol) Data(b *bytes.Buffer, state MyqState) {
 
 // String Columns show a string (or substring up to width)
 type StringCol struct {
-  DefaultCol
+	DefaultCol
 	variable_name string // SHOW STATUS variable of this column
 }
 
@@ -272,7 +284,7 @@ func (c StringCol) Data(b *bytes.Buffer, state MyqState) {
 
 	switch v := val.(type) {
 	case string:
-		b.WriteString(v[0:c.width])  // first 'width' chars
+		b.WriteString(v[0:c.width]) // first 'width' chars
 	default:
 		filler(b, c)
 	}
