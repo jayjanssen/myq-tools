@@ -237,14 +237,14 @@ func DefaultViews() map[string]View {
         },
         GroupCol{ DefaultCol{"Outbound Repl", "Sent replication events", 0},
           []Col{
-    				RateCol{DefaultCol{"trxs", "Replicated transactions per second", 4}, "wsrep_replicated", 0, NumberUnits},
+    				RateCol{DefaultCol{"msgs", "Replicated messages (usually transactions) per second", 4}, "wsrep_replicated", 0, NumberUnits},
 						RateCol{DefaultCol{"data", "Replicated bytes per second", 4}, "wsrep_replicated_bytes", 0, MemoryUnits},            
 						GaugeCol{DefaultCol{"queue", "Outbound replication queue", 3}, "wsrep_local_send_queue", 0, NumberUnits},
           },
         },
         GroupCol{ DefaultCol{"Inbound Repl", "Received replication events", 0},
           []Col{
-    				RateCol{DefaultCol{"trxs", "Received transactions per second", 4}, "wsrep_received", 0, NumberUnits},
+    				RateCol{DefaultCol{"msgs", "Received messages (usually transactions) per second", 4}, "wsrep_received", 0, NumberUnits},
 						RateCol{DefaultCol{"data", "Received bytes per second", 4}, "wsrep_received_bytes", 0, MemoryUnits},            
 						GaugeCol{DefaultCol{"queue", "Received replication apply queue", 3}, "wsrep_local_recv_queue", 0, NumberUnits},
           },
@@ -267,6 +267,7 @@ func DefaultViews() map[string]View {
               func(b *bytes.Buffer, state MyqState, c Col) {
                 // my $ist_size = $status->{'wsrep_last_committed'} - $status->{'wsrep_local_cached_downto'};
                 diff := state.Cur[`wsrep_last_committed`].(int64) - state.Cur[`wsrep_local_cached_downto`].(int64)
+                if diff < 0 { diff = 0.0 }
                 cv := collapse_number( float64(diff), int64(c.Width()), 0, NumberUnits )
             		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))
               },
