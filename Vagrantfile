@@ -23,7 +23,6 @@ Vagrant.configure("2") do |config|
     name = pxc_node_name_prefix + i.to_s
     config.vm.define name do |node_config|
       node_config.vm.hostname = name
-      node_config.vm.network :private_network, type: "dhcp"
       node_config.vm.provision :hostmanager
       
       # Provisioners
@@ -53,8 +52,6 @@ Vagrant.configure("2") do |config|
       provider_vmware( name, node_config, 256 ) { |vb, override|
         provision_puppet( override, "pxc_server.pp" ) {|puppet|
           puppet.facter = {
-            'default_interface' => 'eth1',
-            
             # PXC Setup
             'datadir_dev' => 'dm-2',
           }
