@@ -20,8 +20,7 @@ var (
 		DefaultCol{"time", "Interval since data started", 8},
 		func(b *bytes.Buffer, state MyqState, c Col) {
 			runtime := time.Duration(state.Cur[`uptime`].(int64)-state.FirstUptime) * time.Second
-			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`),
-				runtime.String()))
+			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), runtime.String()))
 		},
 	}
 )
@@ -235,14 +234,14 @@ func DefaultViews() map[string]View {
 						}
 					},
 				},
-				GroupCol{DefaultCol{"Outbound Repl", "Sent replication events", 0},
+				GroupCol{DefaultCol{"Outbound", "Sent replication events", 0},
 					[]Col{
 						RateCol{DefaultCol{"msgs", "Replicated messages (usually transactions) per second", 4}, "wsrep_replicated", 0, NumberUnits},
 						RateCol{DefaultCol{"data", "Replicated bytes per second", 4}, "wsrep_replicated_bytes", 0, MemoryUnits},
 						GaugeCol{DefaultCol{"queue", "Outbound replication queue", 3}, "wsrep_local_send_queue", 0, NumberUnits},
 					},
 				},
-				GroupCol{DefaultCol{"Inbound Repl", "Received replication events", 0},
+				GroupCol{DefaultCol{"Inbound", "Received replication events", 0},
 					[]Col{
 						RateCol{DefaultCol{"msgs", "Received messages (usually transactions) per second", 4}, "wsrep_received", 0, NumberUnits},
 						RateCol{DefaultCol{"data", "Received bytes per second", 4}, "wsrep_received_bytes", 0, MemoryUnits},
@@ -279,8 +278,23 @@ func DefaultViews() map[string]View {
 				},
 				GroupCol{DefaultCol{"Apply", "Theoretical and actual apply efficiency", 0},
 					[]Col{
-						GaugeCol{DefaultCol{"dst", "Distance between forced-apply-order transactions in the replication stream", 4}, "wsrep_cert_deps_distance", 0, NumberUnits},
-						GaugeCol{DefaultCol{"apl", "Number of slave threads actually used", 3}, "wsrep_apply_window", 0, NumberUnits},
+						FuncCol{DefaultCol{"%ef", "Percent of threads being used", 3},
+							func(b *bytes.Buffer, state MyqState, c Col) {
+								// my $ist_size = $status->{'wsrep_last_committed'} - $status->{'wsrep_local_cached_downto'};
+								if state.Vars == nil {
+									filler(b, c)
+								} else {
+									val, ok := state.Vars[`wsrep_slave_threads`]
+									if !ok {
+										filler( b, c)
+									} else {
+										ratio := state.Cur[`wsrep_apply_window`].(float64) / float64(val.(int64))
+										cv := collapse_number(ratio *100, int64(c.Width()), 0, NumberUnits)
+										b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))	
+									}
+								}
+							},
+						},
 					},
 				},
 			},

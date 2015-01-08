@@ -32,8 +32,10 @@ func main() {
 	interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
 	flag.DurationVar(interval, "i", time.Second, "short for -interval")
 
-	file := flag.String("file", "", "parse mysqladmin ext output file instead of connecting to mysql")
-	flag.StringVar(file, "f", "", "short for -file")
+	statusfile := flag.String("file", "", "parse mysqladmin ext output file instead of connecting to mysql")
+	flag.StringVar(statusfile, "f", "", "short for -file")
+	varfile := flag.String("varfile", "", "parse mysqladmin variables file instead of connecting to mysql, for optional use with -file")
+	flag.StringVar(varfile, "vf", "", "short for -varfile")
 
 	flag.Parse()
 
@@ -75,24 +77,22 @@ func main() {
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(OK)
 	}
+	
+	// The Loader and Timecol we will use
+	var loader myqlib.Loader
+	var timecol myqlib.Col
+	
+	if *statusfile != "" {
+		// File given, load it (and the optional varfile)
+		loader = myqlib.NewFileLoader(*interval, *statusfile, *varfile)
+		timecol = myqlib.Timestamp_col
+	} else {
+		// No file given, this is a live collection and we use timestamps
+		loader = myqlib.NewLiveLoader(*interval, *mysql_args)
+		timecol = myqlib.Runtime_col
+	}
 
-	// Load SHOW GLOBAL STATUS data, either live or from the provided file
-	loader, timecol := func() (myqlib.Loader, myqlib.Col) {
-		if *file == "" {
-			// collect samples from myqladmin
-			load := new(myqlib.MySQLAdminStatusLoader)
-			load.Interval = *interval
-			load.Args = *mysql_args
-			return load, myqlib.Timestamp_col
-		} else {
-			// collect samples from the named file
-			load := new(myqlib.FileLoader)
-			load.Filename = *file
-			return load, myqlib.Runtime_col
-		}
-	}()
-
-	samples, err := loader.GetSamples()
+	states, err := myqlib.GetState( loader )
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(LOADER_ERROR)
@@ -100,26 +100,11 @@ func main() {
 
 	// Apply selected view to output each sample
 	lines := int64(0)
-	state := myqlib.MyqState{}
-	for sample := range samples {
+	for state := range states {
 		var buf bytes.Buffer
 
-		// Set the state for this sample
-		state.Cur = sample
-		if state.FirstUptime == 0 {
-			state.FirstUptime = state.Cur["uptime"].(int64)
-		}
-		if state.Prev != nil {
-			state.TimeDiff = float64(state.Cur["uptime"].(int64) - state.Prev["uptime"].(int64))
-
-			// Skip to the next sample if TimeDiff is < the interval
-			if state.TimeDiff < interval.Seconds() {
-				continue
-			}
-		}
-
 		// Output a header if necessary
-		if lines%*header == 0 {
+		if lines % *header == 0 {
 			var hd1 bytes.Buffer
 			timecol.Header1(&hd1)
 			hd1.WriteString(" ")
@@ -132,6 +117,9 @@ func main() {
 			timecol.Header2(&buf)
 			buf.WriteString(" ")
 			v.Header2(&buf)
+			
+			*header = myqlib.GetTermHeight() - 3
+			// fmt.Println( "New height = ", *header )
 		}
 		// Output data
 		timecol.Data(&buf, state)
@@ -139,9 +127,8 @@ func main() {
 		v.Data(&buf, state)
 		buf.WriteTo(os.Stdout)
 
-		// Set the state for the next round
-		state.Prev = sample
 		lines++
 	}
+	
 	os.Exit(OK)
 }
