@@ -9,7 +9,7 @@ import (
 )
 
 // Why can't I put these in a const?  no idea.  I'm using globals here just so I'm not recompiling these regexes very often
-var mysqlShowRE *regexp.Regexp = regexp.MustCompile(`(?m)^\|\s(\w+)\s+\|\s(\S+)\s+\|`)
+var mysqlShowRE *regexp.Regexp = regexp.MustCompile(`^\|\s(\w+)\s+\|\s(\S+)\s+\|$`)
 var mysqlUIntType *regexp.Regexp = regexp.MustCompile(`^\d+$`)
 var mysqlFloatType *regexp.Regexp = regexp.MustCompile(`^\d+\.\d+$`)
 var mysqlBoolType *regexp.Regexp = regexp.MustCompile(`^(ON|OFF)$`)

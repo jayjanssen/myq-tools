@@ -106,3 +106,16 @@ func BenchmarkSampleParse(b *testing.B) {
 		<-samples
 	}
 }
+
+func BenchmarkConvert(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		convert( "fooeybear")
+	}
+}
+
+func BenchmarkStatusParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		mysqlShowRE.FindStringSubmatch( "| var | val |")
+	}
+}
+
