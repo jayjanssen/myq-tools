@@ -9,7 +9,7 @@ import (
 )
 
 func TestSingleSample(t *testing.T) {
-	l := FileLoader{loaderInterval( 1* time.Second),"../testdata/mysqladmin.single",""}
+	l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.single", ""}
 	samples, err := l.getStatus()
 	if err != nil {
 		t.Error(err)
@@ -38,7 +38,7 @@ func TestSingleSample(t *testing.T) {
 }
 
 func TestTwoSamples(t *testing.T) {
-	l := FileLoader{loaderInterval( 1* time.Second),"../testdata/mysqladmin.two", ""}
+	l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.two", ""}
 	samples, err := l.getStatus()
 
 	if err != nil {
@@ -53,7 +53,7 @@ func TestManySamples(t *testing.T) {
 		return
 	}
 
-	l := FileLoader{loaderInterval( 1* time.Second),"../testdata/mysqladmin.lots", ""}
+	l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.lots", ""}
 	samples, err := l.getStatus()
 
 	if err != nil {
@@ -97,7 +97,7 @@ func checksamples(t *testing.T, samples chan MyqSample, expected int) {
 
 func BenchmarkSampleParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		l := FileLoader{loaderInterval( 1* time.Second), "../testdata/mysqladmin.single", ""}
+		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.single", ""}
 		samples, err := l.getStatus()
 
 		if err != nil {

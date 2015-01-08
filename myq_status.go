@@ -77,11 +77,11 @@ func main() {
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(OK)
 	}
-	
+
 	// The Loader and Timecol we will use
 	var loader myqlib.Loader
 	var timecol myqlib.Col
-	
+
 	if *statusfile != "" {
 		// File given, load it (and the optional varfile)
 		loader = myqlib.NewFileLoader(*interval, *statusfile, *varfile)
@@ -92,7 +92,7 @@ func main() {
 		timecol = myqlib.Runtime_col
 	}
 
-	states, err := myqlib.GetState( loader )
+	states, err := myqlib.GetState(loader)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(LOADER_ERROR)
@@ -104,7 +104,7 @@ func main() {
 		var buf bytes.Buffer
 
 		// Output a header if necessary
-		if lines % *header == 0 {
+		if lines%*header == 0 {
 			var hd1 bytes.Buffer
 			timecol.Header1(&hd1)
 			hd1.WriteString(" ")
@@ -117,7 +117,7 @@ func main() {
 			timecol.Header2(&buf)
 			buf.WriteString(" ")
 			v.Header2(&buf)
-			
+
 			*header = myqlib.GetTermHeight() - 3
 			// fmt.Println( "New height = ", *header )
 		}
@@ -129,6 +129,6 @@ func main() {
 
 		lines++
 	}
-	
+
 	os.Exit(OK)
 }

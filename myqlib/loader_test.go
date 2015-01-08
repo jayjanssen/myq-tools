@@ -6,7 +6,7 @@ import (
 )
 
 func TestBadFile(t *testing.T) {
-	l:= FileLoader{ loaderInterval( 1* time.Second), "/fooey/kablooie", ""}
+	l := FileLoader{loaderInterval(1 * time.Second), "/fooey/kablooie", ""}
 	_, err := GetState(l)
 
 	if err == nil {
@@ -15,7 +15,7 @@ func TestBadFile(t *testing.T) {
 }
 
 func TestEmpty(t *testing.T) {
-	l := FileLoader{loaderInterval( 1* time.Second), "/dev/null", ""}
+	l := FileLoader{loaderInterval(1 * time.Second), "/dev/null", ""}
 	ch, err := l.getStatus()
 	if err != nil {
 		t.Error("Got error opening /dev/null:", err)
@@ -25,7 +25,6 @@ func TestEmpty(t *testing.T) {
 		t.Error("How did we get a sample?") // Any result is a failure
 	}
 }
-
 
 func TestMetric(t *testing.T) {
 	sample := make(MyqSample)

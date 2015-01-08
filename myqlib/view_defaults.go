@@ -278,23 +278,7 @@ func DefaultViews() map[string]View {
 				},
 				GroupCol{DefaultCol{"Apply", "Theoretical and actual apply efficiency", 0},
 					[]Col{
-						FuncCol{DefaultCol{"%ef", "Percent of threads being used", 3},
-							func(b *bytes.Buffer, state MyqState, c Col) {
-								// my $ist_size = $status->{'wsrep_last_committed'} - $status->{'wsrep_local_cached_downto'};
-								if state.Vars == nil {
-									filler(b, c)
-								} else {
-									val, ok := state.Vars[`wsrep_slave_threads`]
-									if !ok {
-										filler( b, c)
-									} else {
-										ratio := state.Cur[`wsrep_apply_window`].(float64) / float64(val.(int64))
-										cv := collapse_number(ratio *100, int64(c.Width()), 0, NumberUnits)
-										b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))	
-									}
-								}
-							},
-						},
+						PercentCol{DefaultCol{`%ef`, `Percent of threads being used`, 4}, "wsrep_apply_window", "V_wsrep_slave_threads", 0},
 					},
 				},
 			},
