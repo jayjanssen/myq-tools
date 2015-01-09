@@ -3,6 +3,7 @@ package myqlib
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -50,17 +51,21 @@ func GetState(l Loader) (chan MyqState, error) {
 	}
 
 	varsch, varserr := l.getVars()
-	if varserr != nil {
+	// return the error if getVars fails, but not if it's just due to a missing file
+	if varserr != nil && varserr.Error() != "No file given" {
 		return nil, varserr
 	}
 
 	// Vars fetching loop
-	var latestvars MyqSample
-	go func() {
-		for vars := range varsch {
-			latestvars = vars
-		}
-	}()
+	var latestvars MyqSample // whatever the last vars sample is will be here (may be empty)
+	if varserr == nil { 
+		// Only start up the latestvars loop if there are no errors
+		go func() {
+			for vars := range varsch {
+				latestvars = vars
+			}
+		}()
+	}
 
 	// Main status loop
 	go func() {
@@ -147,14 +152,11 @@ func (l FileLoader) harvestFile(filename string) (chan MyqSample, error) {
 
 func (l FileLoader) getStatus() (chan MyqSample, error) { return l.harvestFile(l.statusFile) }
 
-func (l FileLoader) getVars() (chan MyqSample, error) { 
+func (l FileLoader) getVars() (chan MyqSample, error) {
 	if l.variablesFile != "" {
-		return l.harvestFile(l.variablesFile) 
+		return l.harvestFile(l.variablesFile)
 	} else {
-		// Make a channel and return it, but it will never get anything
-		var ch = make(chan MyqSample)
-		defer close(ch)
-		return ch, nil
+		return nil, errors.New("No file given")
 	}
 }
 
