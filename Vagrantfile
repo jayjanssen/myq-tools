@@ -1,8 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-ENV['VAGRANT_DEFAULT_PROVIDER'] = 'vmware_fusion'
-
 require File.dirname(__FILE__) + '/lib/vagrant-common.rb'
 
 pxc_version = "56"
@@ -46,6 +44,20 @@ Vagrant.configure("2") do |config|
           
           # PCT setup
           'percona_agent_api_key' => ENV['PERCONA_AGENT_API_KEY']
+        }
+      }
+      
+      # Providers
+      provider_virtualbox( name, node_config, 256 ) { |vb, override|
+        override.vm.network :private_network, type: "dhcp"
+        
+        provision_puppet( override, "pxc_server.pp" ) {|puppet|
+          puppet.facter = {
+            'default_interface' => 'eth1',
+            
+            # PXC Setup
+            'datadir_dev' => 'dm-2',
+          }
         }
       }
 
