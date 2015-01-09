@@ -85,11 +85,11 @@ func main() {
 	if *statusfile != "" {
 		// File given, load it (and the optional varfile)
 		loader = myqlib.NewFileLoader(*interval, *statusfile, *varfile)
-		timecol = myqlib.Timestamp_col
+		timecol = myqlib.Runtime_col
 	} else {
 		// No file given, this is a live collection and we use timestamps
 		loader = myqlib.NewLiveLoader(*interval, *mysql_args)
-		timecol = myqlib.Runtime_col
+		timecol = myqlib.Timestamp_col
 	}
 
 	states, err := myqlib.GetState(loader)
