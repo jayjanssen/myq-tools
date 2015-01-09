@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 	"time"
+	"runtime/pprof"
+	"os/signal"
+	"syscall"
 )
 
 // Exit codes
@@ -20,6 +23,7 @@ const (
 func main() {
 	// Parse arguments
 	help := flag.Bool("help", false, "this help text")
+	profile := flag.String("profile", "", "enable profiling and store the result in this file")
 	header := flag.Int64("header", 20, "repeat the header after this many data points")
 	// host := flag.String("host", "", "MySQL hostname")
 	// port := flag.Int64("port", 0, "MySQL port")
@@ -38,6 +42,25 @@ func main() {
 	flag.StringVar(varfile, "vf", "", "short for -varfile")
 
 	flag.Parse()
+	
+	// Enable profiling if set
+	if *profile != "" {
+		fmt.Println( "Starting profiling to:", *profile )
+		f, _ := os.Create( *profile )
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+		
+		// Need to trap interrupts in order for the profile to flush
+    sigs := make(chan os.Signal, 1)
+		signal.Notify( sigs, syscall.SIGINT, syscall.SIGTERM )
+		go func() {
+			<- sigs
+			pprof.StopCPUProfile()
+			os.Exit(OK)
+		}()
+		
+	}
+	
 
 	// Load default Views
 	views := myqlib.DefaultViews()
