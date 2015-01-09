@@ -30,9 +30,8 @@ func TestSingleSample(t *testing.T) {
 			t.Fatal("Could not find", varname, "in the sample")
 		}
 		foundtype := reflect.TypeOf(value).Name()
-		t.Log("Found:", foundtype, "expected:", expectedtype, "value:", value)
 		if foundtype != expectedtype {
-			t.Fatal(varname, "contains the wrong type")
+			t.Fatal("Found:", foundtype, "expected:", expectedtype, "for", varname, "value: `", value, "`")
 		}
 	}
 }
@@ -109,13 +108,12 @@ func BenchmarkSampleParse(b *testing.B) {
 
 func BenchmarkConvert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		convert( "fooeybear")
+		convert("fooeybear")
 	}
 }
 
 func BenchmarkStatusParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		mysqlShowRE.FindStringSubmatch( "| var | val |")
+		mysqlShowRE.MatcherString("| var | val |", 0).Matches()
 	}
 }
-
