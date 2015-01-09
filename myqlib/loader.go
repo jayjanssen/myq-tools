@@ -64,6 +64,8 @@ func GetState(l Loader) (chan MyqState, error) {
 
 	// Main status loop
 	go func() {
+		defer close(ch)
+		
 		var prev MyqSample
 		var firstUptime int64
 		for status := range statusch {
