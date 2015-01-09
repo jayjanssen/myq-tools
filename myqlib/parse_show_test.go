@@ -2,8 +2,6 @@ package myqlib
 
 import (
 	"testing"
-	// "os"
-	// "strings"
 	"reflect"
 	"time"
 )
@@ -94,9 +92,21 @@ func checksamples(t *testing.T, samples chan MyqSample, expected int) {
 	}
 }
 
-func BenchmarkSampleParse(b *testing.B) {
+func BenchmarkParseStatus(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.single", ""}
+		samples, err := l.getStatus()
+
+		if err != nil {
+			b.Error(err)
+		}
+		<-samples
+	}
+}
+
+func BenchmarkParseVariables(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/variables", ""}
 		samples, err := l.getStatus()
 
 		if err != nil {
@@ -109,11 +119,5 @@ func BenchmarkSampleParse(b *testing.B) {
 func BenchmarkConvert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		convert("fooeybear")
-	}
-}
-
-func BenchmarkStatusParse(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		mysqlShowRE.MatcherString("| var | val |", 0).Matches()
 	}
 }
