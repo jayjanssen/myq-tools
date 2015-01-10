@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"bytes"
 )
 
 type showoutputtype uint8
@@ -18,39 +19,41 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 	timesample := make(MyqSample)	
 	outputtype := BATCH // default to BATCH
 	typechecked := false
+	var divideridx int
 
 	for scanner.Scan() {
 		// The scanner sends complete lines
-		line := scanner.Text()
+		line := scanner.Bytes()
 		
 		// Check if this looks like a TABULAR file, but only once
 		if !typechecked {
-			if strings.HasPrefix( line, `+`) || strings.HasPrefix( line, `|` ){
+			if bytes.HasPrefix( line, []byte(`+`)) || bytes.HasPrefix( line, []byte(`|`) ){
 				outputtype = TABULAR
 			}
 			typechecked = true
 		}
 		
-		var key, value string
+		var key, value []byte
 		
 		switch outputtype {
 		case TABULAR:
 			// Line here looks like this: (value can contain spaces)
 			// | varname   | value    |
-			raw := strings.Split( line, ` | `)
-			if len(raw) != 2 { continue } 
+			if !bytes.HasPrefix( line, []byte(`|`)) { continue }
 			
-			key = strings.Trim( raw[0], `| `  )
-			value = strings.Trim( raw[1], `| ` )
+			if divideridx == 0 {
+				divideridx = bytes.Index( line, []byte(` | `))
+			}
+			
+			key = bytes.Trim( line[:divideridx], `| `)
+			value = bytes.Trim( line[divideridx:], `| `)
 		case BATCH:
-			raw := strings.Split( line, "\t")
-			if len(raw) != 2 { continue } 
-
-			key = raw[0]
-			value = raw[1]
+			raw := bytes.Split( line, []byte("\t"))
+			if len(raw) != 2 { continue }
+			key, value = raw[0], raw[1]
 		}
 
-		if key == "Variable_name" {
+		if bytes.Equal( key, []byte("Variable_name")) {
 			// Send the old sample (if any) and start a new one
 			if timesample.Length() > 0 {
 				ch <- timesample
@@ -58,7 +61,7 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 			}
 		} else {
 			// normalize keys to lowercase
-			timesample[strings.ToLower(key)] = convert(value)
+			timesample[strings.ToLower(string(key))] = convert(string(value))
 		}
 	}
 	// Send the last one
