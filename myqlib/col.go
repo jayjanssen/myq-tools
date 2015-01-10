@@ -41,7 +41,7 @@ func (c DefaultCol) Header2(b *bytes.Buffer) {
 	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), str))
 }
 
-// Groups of columns
+// Column that is a Group of columns
 type GroupCol struct {
 	DefaultCol
 	cols []Col // slice of columns in this group
@@ -93,7 +93,9 @@ func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
 	}
 }
 
-// Gauge Columns simply display SHOW STATUS variable
+// More conventional column types
+
+// Gauge Columns simply display a SHOW STATUS variable
 type GaugeCol struct {
 	DefaultCol
 	variable_name string // SHOW STATUS variable of this column
@@ -131,10 +133,8 @@ type RateCol struct {
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
-	rate, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.TimeDiff)
+	rate, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.SecondsDiff)
 	if err != nil {
-		// Can't output, just put a filler
-		// fmt.Println( err )
 		filler(b, c)
 	} else {
 		cv := collapse_number(rate, int64(c.width), int64(c.precision), c.units)
@@ -142,22 +142,16 @@ func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
 	}
 }
 
-// calculate the difference over the time to get the rate.  This is complex, and we need to verify several things:
-// 1. input intefaces are non-nil
-// 2. cur & prev are int or float64
-// 3. if prev is nil  and/or time is <0, we just return cur
-// 4. output type always a float, deal with output format later
-// 5. handle cur < prev (usually time would be <0 here, but in case), by just returing cur / time
-func calculate_rate(cur, prev interface{}, time float64) (float64, error) {
+func calculate_rate(cur, prev interface{}, seconds float64) (float64, error) {
 	diff, err := calculate_diff(cur, prev)
 	if err != nil {
 		return 0.00, err
 	}
 
-	if time <= 0 {
+	if seconds <= 0 {
 		return diff, nil
 	} else {
-		return diff / time, nil
+		return diff / seconds, nil
 	}
 }
 
@@ -180,6 +174,7 @@ func (c DiffCol) Data(b *bytes.Buffer, state MyqState) {
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	}
 }
+
 func calculate_diff(cur, prev interface{}) (float64, error) {
 	// cur and prev must not be nil
 	if cur == nil {

@@ -87,7 +87,7 @@ func TestRateCol(t *testing.T) {
 	state.Prev["connections"] = int64(20)
 	state.Prev["uptime"] = 5
 
-	state.TimeDiff = 5.0
+	state.SecondsDiff = 5.0
 
 	col.Data(&b, state)
 	if b.String() != "    2" {

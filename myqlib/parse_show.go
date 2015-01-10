@@ -2,12 +2,13 @@ package myqlib
 
 import (
 	"bufio"
+	"bytes"
 	"log"
 	"strconv"
 	"strings"
-	"bytes"
 )
 
+// Different types of files to parse
 type showoutputtype uint8
 const (
 	BATCH showoutputtype = iota
@@ -16,7 +17,7 @@ const (
 
 // Parse lines from mysql SHOW output.
 func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
-	timesample := make(MyqSample)	
+	timesample := make(MyqSample)
 	outputtype := BATCH // default to BATCH
 	typechecked := false
 	var divideridx int
@@ -24,36 +25,40 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 	for scanner.Scan() {
 		// The scanner sends complete lines
 		line := scanner.Bytes()
-		
+
 		// Check if this looks like a TABULAR file, but only once
 		if !typechecked {
-			if bytes.HasPrefix( line, []byte(`+`)) || bytes.HasPrefix( line, []byte(`|`) ){
+			if bytes.HasPrefix(line, []byte(`+`)) || bytes.HasPrefix(line, []byte(`|`)) {
 				outputtype = TABULAR
 			}
 			typechecked = true
 		}
-		
+
 		var key, value []byte
-		
+
 		switch outputtype {
 		case TABULAR:
 			// Line here looks like this: (value can contain spaces)
 			// | varname   | value    |
-			if !bytes.HasPrefix( line, []byte(`|`)) { continue }
-			
-			if divideridx == 0 {
-				divideridx = bytes.Index( line, []byte(` | `))
+			if !bytes.HasPrefix(line, []byte(`|`)) {
+				continue
 			}
-			
-			key = bytes.Trim( line[:divideridx], `| `)
-			value = bytes.Trim( line[divideridx:], `| `)
+
+			if divideridx == 0 {
+				divideridx = bytes.Index(line, []byte(` | `))
+			}
+
+			key = bytes.Trim(line[:divideridx], `| `)
+			value = bytes.Trim(line[divideridx:], `| `)
 		case BATCH:
-			raw := bytes.Split( line, []byte("\t"))
-			if len(raw) != 2 { continue }
+			raw := bytes.Split(line, []byte("\t"))
+			if len(raw) != 2 {
+				continue
+			}
 			key, value = raw[0], raw[1]
 		}
 
-		if bytes.Equal( key, []byte("Variable_name")) {
+		if bytes.Equal(key, []byte("Variable_name")) {
 			// Send the old sample (if any) and start a new one
 			if timesample.Length() > 0 {
 				ch <- timesample
@@ -84,7 +89,7 @@ func convert(s string) interface{} {
 	if ans, err := strconv.ParseFloat(s, 64); err == nil {
 		return ans
 	}
-	
+
 	switch s {
 	case `ON`:
 		return true
@@ -93,5 +98,5 @@ func convert(s string) interface{} {
 	default:
 		// Just leave it as a string
 		return s
-	} 
+	}
 }

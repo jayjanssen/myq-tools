@@ -1,8 +1,8 @@
 package myqlib
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 	"time"
 )
 

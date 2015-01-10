@@ -16,7 +16,8 @@ const (
 	MYSQLADMIN        string            = "mysqladmin"
 	STATUS_COMMAND    MySQLAdminCommand = "extended-status"
 	VARIABLES_COMMAND MySQLAdminCommand = "variables"
-	VAR_PREFIX                          = "V_" // prefix of SHOW VARIABLES keys
+	// prefix of SHOW VARIABLES keys, they are stored (if available) in the same map as the status variables
+	VAR_PREFIX = "V_"
 )
 
 type Loader interface {
@@ -34,31 +35,26 @@ func (s MyqSample) Length() int {
 }
 
 // MyqState contains the current and previous SHOW STATUS outputs.  Also SHOW VARIABLES.
-// Prev and Vars might be nil
+// Prev might be nil
 type MyqState struct {
 	Cur, Prev   MyqSample
-	TimeDiff    float64
-	FirstUptime int64
+	SecondsDiff float64 // Difference between Cur and Prev
+	FirstUptime int64   // Uptime of our first sample this run
 }
 
 // Given a loader, get a channel of myqstates being returned
 func GetState(l Loader) (chan MyqState, error) {
-	var ch = make(chan MyqState)
-
-	statusch, statuserr := l.getStatus()
-	if statuserr != nil {
-		return nil, statuserr
-	}
-
+	// First getVars, if possible
 	varsch, varserr := l.getVars()
 	// return the error if getVars fails, but not if it's just due to a missing file
 	if varserr != nil && varserr.Error() != "No file given" {
+		// Serious error
 		return nil, varserr
 	}
 
 	// Vars fetching loop
 	var latestvars MyqSample // whatever the last vars sample is will be here (may be empty)
-	if varserr == nil { 
+	if varserr == nil {
 		// Only start up the latestvars loop if there are no errors
 		go func() {
 			for vars := range varsch {
@@ -67,19 +63,20 @@ func GetState(l Loader) (chan MyqState, error) {
 		}()
 	}
 
+	// Now getStatus
+	var ch = make(chan MyqState)
+	statusch, statuserr := l.getStatus()
+	if statuserr != nil {
+		return nil, statuserr
+	}
+
 	// Main status loop
 	go func() {
 		defer close(ch)
-		
+
 		var prev MyqSample
 		var firstUptime int64
 		for status := range statusch {
-			// Add latest vars to status with prefix
-			for k, v := range latestvars {
-				newkey := fmt.Sprint(VAR_PREFIX, k)
-				status[newkey] = v
-			}
-
 			// Init new state
 			state := new(MyqState)
 			state.Cur = status
@@ -90,16 +87,21 @@ func GetState(l Loader) (chan MyqState, error) {
 			}
 			state.FirstUptime = firstUptime
 
+			// Add latest vars to status with prefix
+			for k, v := range latestvars {
+				newkey := fmt.Sprint(VAR_PREFIX, k)
+				state.Cur[newkey] = v
+			}
+
 			// Assign the prev
 			if prev != nil {
 				state.Prev = prev
 
 				// Calculate timediff if there is a prev.  Only file loader?
-				state.TimeDiff = float64(status["uptime"].(int64) - prev["uptime"].(int64))
+				state.SecondsDiff = float64(status["uptime"].(int64) - prev["uptime"].(int64))
 
-				// Skip to the next sample if TimeDiff is < the interval
-				if state.TimeDiff < l.getInterval().Seconds() {
-					fmt.Println(state.TimeDiff, "<?", l.getInterval().Seconds())
+				// Skip to the next sample if SecondsDiff is < the interval
+				if state.SecondsDiff < l.getInterval().Seconds() {
 					continue
 				}
 			}
@@ -150,7 +152,9 @@ func (l FileLoader) harvestFile(filename string) (chan MyqSample, error) {
 	return ch, nil
 }
 
-func (l FileLoader) getStatus() (chan MyqSample, error) { return l.harvestFile(l.statusFile) }
+func (l FileLoader) getStatus() (chan MyqSample, error) { 
+	return l.harvestFile(l.statusFile) 
+}
 
 func (l FileLoader) getVars() (chan MyqSample, error) {
 	if l.variablesFile != "" {

@@ -45,39 +45,49 @@ var (
 	}
 )
 
+// Fit the given value of units into width + at most precision decimals
 func collapse_number(value float64, width int64, precision int64, units UnitsDef) string {
-	// To store the keys in slice in sorted order
+	// Load the factors from the given unit and sort them
 	var factors []float64
 	for k := range units {
 		factors = append(factors, k)
 	}
 	sort.Float64s(factors)
 
+	// Starting from the smallest to the biggest factors
 	for _, factor := range factors {
 		unit := units[factor]
 		raw := value / factor
 		str := fmt.Sprintf(fmt.Sprint(`%.`, precision, `f%s`), raw, unit)
 
-		if raw != 0 && int64(len(str)) <= width+precision {
+		if raw > 0 && int64(len(str)) <= width + precision {
+			// Our number is > 0 and fits into width + precision
 			left := width - int64(len(str))
 			if left < 0 {
 				if precision > 0 {
+					// No space left, try to chop the precision
 					return collapse_number(value, width, precision-1, units)
 				} else {
+					// Nothing to chop, any bigger factors will be too wide, so return here.
 					return str
 				}
 			} else if left > 1 && factor != 1 {
-				dec := left - 1
-				return fmt.Sprintf(fmt.Sprint(`%.`, dec, `f%s`), raw, unit)
+				// If we have space for some extra precision, use it
+				return fmt.Sprintf(fmt.Sprint(`%.`, left - 1, `f%s`), raw, unit)
 			} else {
+				// Just return what we've got
 				return str
 			}
 		}
 	}
+	
+	// We're past the highest factor and nothing fits
 	str := fmt.Sprintf(fmt.Sprint(`%.`, precision, `f`), value)
-	if int64(len(str)) <= width && precision > 0 {
+	if int64(len(str)) > width && precision > 0 {
+		// We can try chopping precision here for a fit
 		return collapse_number(value, width, precision-1, units)
 	} else {
+		// Just print it (too wide)
 		return str
 	}
 }

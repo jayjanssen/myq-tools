@@ -19,6 +19,7 @@ func GetTermHeight() int64 {
 	return height
 }
 
+// Set OS-specific SysProcAttrs if they exist
 func cleanupSubcmd(c *exec.Cmd) {
 	// Send the subprocess a SIGTERM when we exit
 	attr := new(syscall.SysProcAttr)
