@@ -29,7 +29,7 @@ func TestSingleSample(t *testing.T) {
 		}
 		foundtype := reflect.TypeOf(value).Name()
 		if foundtype != expectedtype {
-			t.Fatal("Found:", foundtype, "expected:", expectedtype, "for", varname, "value: `", value, "`")
+			t.Fatal("Found", foundtype, "expected", expectedtype, "for", varname, "value: `", value, "`")
 		}
 	}
 }
