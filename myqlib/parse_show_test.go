@@ -17,7 +17,7 @@ func TestSingleSample(t *testing.T) {
 	sample := <-samples
 	typeTests := map[string]string{
 		"connections":                "int64",
-		"compression":                "bool",
+		"compression":                "string",
 		"wsrep_local_send_queue_avg": "float64",
 		"binlog_snapshot_file":       "string",
 	}

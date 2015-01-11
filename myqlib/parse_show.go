@@ -90,13 +90,6 @@ func convert(s string) interface{} {
 		return ans
 	}
 
-	switch s {
-	case `ON`:
-		return true
-	case `OFF`:
-		return false
-	default:
-		// Just leave it as a string
-		return s
-	}
+	// Just leave it as a string
+	return s
 }
