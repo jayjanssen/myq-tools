@@ -197,6 +197,11 @@ func DefaultViews() map[string]View {
 		},
 		"wsrep": NormalView{
 			help: "Galera Wsrep statistics",
+			extra_header: func(b *bytes.Buffer, state MyqState) {
+				b.WriteString( fmt.Sprintf( "%s / %s (idx: %d) / %s %s", state.Cur[`V_wsrep_cluster_name`],
+					state.Cur[`V_wsrep_node_name`], state.Cur[`wsrep_local_index`], state.Cur[`wsrep_provider_name`],
+					state.Cur[`wsrep_provider_version`] ))
+			},
 			cols: []Col{
 				GroupCol{DefaultCol{"Cluster", "Cluster-wide stats (at least according to this node)", 0},
 					[]Col{

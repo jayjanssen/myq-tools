@@ -128,6 +128,8 @@ func main() {
 
 		// Output a header if necessary
 		if lines%*header == 0 {
+			v.ExtraHeader(&buf, state)
+			
 			var hd1 bytes.Buffer
 			timecol.Header1(&hd1)
 			hd1.WriteString(" ")
