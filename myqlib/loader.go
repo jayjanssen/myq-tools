@@ -54,13 +54,19 @@ func GetState(l Loader) (chan MyqState, error) {
 
 	// Vars fetching loop
 	var latestvars MyqSample // whatever the last vars sample is will be here (may be empty)
+	gotvars := make(chan bool, 1)
+	
 	if varserr == nil {
 		// Only start up the latestvars loop if there are no errors
 		go func() {
 			for vars := range varsch {
 				latestvars = vars
+				gotvars <- true
 			}
+			gotvars <- true
 		}()
+	} else {
+		gotvars <- true
 	}
 
 	// Now getStatus
@@ -87,12 +93,6 @@ func GetState(l Loader) (chan MyqState, error) {
 			}
 			state.FirstUptime = firstUptime
 
-			// Add latest vars to status with prefix
-			for k, v := range latestvars {
-				newkey := fmt.Sprint(VAR_PREFIX, k)
-				state.Cur[newkey] = v
-			}
-
 			// Assign the prev
 			if prev != nil {
 				state.Prev = prev
@@ -104,6 +104,16 @@ func GetState(l Loader) (chan MyqState, error) {
 				if state.SecondsDiff < l.getInterval().Seconds() {
 					continue
 				}
+			}
+			
+			// In the first loop iteration, wait for some vars to be loaded 
+			if prev == nil {
+				<- gotvars
+			}
+			// Add latest vars to status with prefix
+			for k, v := range latestvars {
+				newkey := fmt.Sprint(VAR_PREFIX, k)
+				state.Cur[newkey] = v
 			}
 
 			// Send the state
