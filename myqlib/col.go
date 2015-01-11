@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 // All Columns must implement the following
@@ -14,7 +15,7 @@ type Col interface {
 	Header2(b *bytes.Buffer) // header to print above data
 
 	// A full line of output given the state
-	Data(b *bytes.Buffer, state MyqState)
+	Data(b *bytes.Buffer, state *MyqState)
 
 	Width() uint8 // width of the column
 }
@@ -81,7 +82,7 @@ func (c GroupCol) Header2(b *bytes.Buffer) {
 		col.Header2(b)
 	}
 }
-func (c GroupCol) Data(b *bytes.Buffer, state MyqState) {
+func (c GroupCol) Data(b *bytes.Buffer, state *MyqState) {
 	space := false
 	for _, col := range c.cols {
 		if space {
@@ -103,7 +104,7 @@ type GaugeCol struct {
 	units         UnitsDef
 }
 
-func (c GaugeCol) Data(b *bytes.Buffer, state MyqState) {
+func (c GaugeCol) Data(b *bytes.Buffer, state *MyqState) {
 	val := state.Cur[c.variable_name]
 
 	switch v := val.(type) {
@@ -132,7 +133,7 @@ type RateCol struct {
 	units         UnitsDef
 }
 
-func (c RateCol) Data(b *bytes.Buffer, state MyqState) {
+func (c RateCol) Data(b *bytes.Buffer, state *MyqState) {
 	rate, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.SecondsDiff)
 	if err != nil {
 		filler(b, c)
@@ -163,7 +164,7 @@ type DiffCol struct {
 	units         UnitsDef
 }
 
-func (c DiffCol) Data(b *bytes.Buffer, state MyqState) {
+func (c DiffCol) Data(b *bytes.Buffer, state *MyqState) {
 	diff, err := calculate_diff(state.Cur[c.variable_name], state.Prev[c.variable_name])
 	if err != nil {
 		// Can't output, just put a filler
@@ -221,10 +222,10 @@ func filler(b *bytes.Buffer, c Col) {
 // Func Columns run a custom function to produce their output
 type FuncCol struct {
 	DefaultCol
-	fn func(b *bytes.Buffer, state MyqState, c Col) // takes the state and returns the (unformatted) value
+	fn func(b *bytes.Buffer, state *MyqState, c Col) // takes the state and returns the (unformatted) value
 }
 
-func (c FuncCol) Data(b *bytes.Buffer, state MyqState) {
+func (c FuncCol) Data(b *bytes.Buffer, state *MyqState) {
 	c.fn(b, state, c)
 }
 
@@ -236,7 +237,7 @@ type PercentCol struct {
 	precision        uint8  // # of decimals to show on floats (optional)
 }
 
-func (c PercentCol) Data(b *bytes.Buffer, state MyqState) {
+func (c PercentCol) Data(b *bytes.Buffer, state *MyqState) {
 	var numerator, denomenator float64
 
 	nval := state.Cur[c.numerator_name]
@@ -274,13 +275,84 @@ type StringCol struct {
 	variable_name string // SHOW STATUS variable of this column
 }
 
-func (c StringCol) Data(b *bytes.Buffer, state MyqState) {
+func (c StringCol) Data(b *bytes.Buffer, state *MyqState) {
 	val := state.Cur[c.variable_name]
 
 	switch v := val.(type) {
 	case string:
-		b.WriteString(v[0:c.width]) // first 'width' chars
+		if len(v) > int(c.Width()) {
+			b.WriteString(v[0:c.Width()]) // first 'width' chars
+		} else {
+			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), v))
+		}
 	default:
 		filler(b, c)
+	}
+}
+
+// RightmostCol shows width rightmost chars of the variable_name
+type RightmostCol struct {
+	DefaultCol
+	variable_name string
+}
+
+func (c RightmostCol) Data(b *bytes.Buffer, state *MyqState) {
+	// We show the least-significant width digits of the value
+	id := strconv.Itoa(int(state.Cur[c.variable_name].(int64)))
+	if len(id) > int(c.Width()) {
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), id[len(id)-int(c.Width()):]))
+	} else {
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), id))
+	}
+}
+
+// CurDiff Columns the difference between two variables in the same sample (different from DiffCol)
+type CurDiffCol struct {
+	DefaultCol
+	bigger,smaller string  // The two variables to subtract
+	precision     uint8  // # of decimals to show on floats (optional)
+	units         UnitsDef
+}
+
+func (c CurDiffCol) Data(b *bytes.Buffer, state *MyqState) {
+	diff, err := calculate_diff(state.Cur[c.bigger], state.Cur[c.smaller])
+	if err != nil {
+		filler(b, c)
+	} else {
+		cv := collapse_number(diff, int64(c.width), int64(c.precision), c.units)
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
+	}
+}
+
+// RateSum Columns the rate of change of a sum of variables
+type RateSumCol struct {
+	DefaultCol
+	variable_names []string
+	precision     uint8  // # of decimals to show on floats (optional)
+	units         UnitsDef
+}
+
+func (c RateSumCol) Data(b *bytes.Buffer, state *MyqState) {
+	sumfunc := func( sample MyqSample ) (sum float64){
+		for _, v := range c.variable_names {
+			v := sample[v]
+			switch v := v.(type) {
+			case int64:
+				sum += float64(v)
+			case float64:
+				sum += v
+			}
+		}
+		return sum
+	}
+	cursum := sumfunc(state.Cur)
+	prevsum := sumfunc(state.Prev)
+	
+	rate, err := calculate_rate(cursum, prevsum, state.SecondsDiff)
+	if err != nil {
+		filler(b, c)
+	} else {
+		cv := collapse_number(rate, int64(c.width), int64(c.precision), c.units)
+		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
 	}
 }

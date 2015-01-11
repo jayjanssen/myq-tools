@@ -13,7 +13,7 @@ func TestIntCol(t *testing.T) {
 	state.Cur = make(MyqSample)
 	state.Cur["threads_running"] = int64(10)
 
-	col.Data(&b, state)
+	col.Data(&b, &state)
 	if b.String() != "   10" {
 		t.Fatal("Bad output", b.String())
 	}
@@ -28,7 +28,7 @@ func TestFloatCol(t *testing.T) {
 	state.Cur = make(MyqSample)
 	state.Cur["wsrep_apply_oooe"] = float64(0.015600)
 
-	col.Data(&b, state)
+	col.Data(&b, &state)
 	if b.String() != "0.016" {
 		t.Fatal("Bad output", b.String())
 	}
@@ -89,7 +89,7 @@ func TestRateCol(t *testing.T) {
 
 	state.SecondsDiff = 5.0
 
-	col.Data(&b, state)
+	col.Data(&b, &state)
 	if b.String() != "    2" {
 		t.Fatal("Bad output", b.String(), `.`)
 	}

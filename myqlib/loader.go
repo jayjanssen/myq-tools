@@ -43,7 +43,7 @@ type MyqState struct {
 }
 
 // Given a loader, get a channel of myqstates being returned
-func GetState(l Loader) (chan MyqState, error) {
+func GetState(l Loader) (chan *MyqState, error) {
 	// First getVars, if possible
 	varsch, varserr := l.getVars()
 	// return the error if getVars fails, but not if it's just due to a missing file
@@ -70,7 +70,7 @@ func GetState(l Loader) (chan MyqState, error) {
 	}
 
 	// Now getStatus
-	var ch = make(chan MyqState)
+	var ch = make(chan *MyqState)
 	statusch, statuserr := l.getStatus()
 	if statuserr != nil {
 		return nil, statuserr
@@ -117,7 +117,7 @@ func GetState(l Loader) (chan MyqState, error) {
 			}
 
 			// Send the state
-			ch <- *state
+			ch <- state
 
 			// Set the state for the next round
 			prev = status

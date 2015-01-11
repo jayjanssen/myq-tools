@@ -12,13 +12,13 @@ import (
 var (
 	Timestamp_col FuncCol = FuncCol{
 		DefaultCol{"time", "Time data was printed", 8},
-		func(b *bytes.Buffer, state MyqState, c Col) {
+		func(b *bytes.Buffer, state *MyqState, c Col) {
 			b.WriteString(time.Now().Format("15:04:05"))
 		},
 	}
 	Runtime_col FuncCol = FuncCol{
 		DefaultCol{"time", "Interval since data started", 8},
-		func(b *bytes.Buffer, state MyqState, c Col) {
+		func(b *bytes.Buffer, state *MyqState, c Col) {
 			runtime := time.Duration(state.Cur[`uptime`].(int64)-state.FirstUptime) * time.Second
 			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), runtime.String()))
 		},
@@ -45,6 +45,7 @@ func DefaultViews() map[string]View {
 						GaugeCol{DefaultCol{"run", "Threads running", 4}, "threads_running", 0, NumberUnits},
 						GaugeCol{DefaultCol{"cach", "Threads Cached", 4}, "threads_cached", 0, NumberUnits},
 						RateCol{DefaultCol{"crtd", "Threads Created per second", 4}, "threads_created", 0, NumberUnits},
+						RateCol{DefaultCol{"slow", "Threads that were slow to launch per second", 4}, "slow_launch_threads", 0, NumberUnits},
 					},
 				},
 				GroupCol{
@@ -197,7 +198,7 @@ func DefaultViews() map[string]View {
 		},
 		"wsrep": NormalView{
 			help: "Galera Wsrep statistics",
-			extra_header: func(b *bytes.Buffer, state MyqState) {
+			extra_header: func(b *bytes.Buffer, state *MyqState) {
 				b.WriteString( fmt.Sprintf( "%s / %s (idx: %d) / %s %s", state.Cur[`V_wsrep_cluster_name`],
 					state.Cur[`V_wsrep_node_name`], state.Cur[`wsrep_local_index`], state.Cur[`wsrep_provider_name`],
 					state.Cur[`wsrep_provider_version`] ))
@@ -207,17 +208,7 @@ func DefaultViews() map[string]View {
 					[]Col{
 						StringCol{DefaultCol{"P", "Primary (P) or Non-primary (N)", 1}, "wsrep_cluster_status"},
 						// GaugeCol{ DefaultCol{"cnf", , 3}, "wsrep_cluster_conf_id", 0, NumberUnits},
-						FuncCol{DefaultCol{"cnf", "Cluster configuration id (increments every time a node joins/leaves the cluster)", 3},
-							func(b *bytes.Buffer, state MyqState, c Col) {
-								// We show the least-significant width digits of the value
-								id := strconv.Itoa(int(state.Cur[`wsrep_cluster_conf_id`].(int64)))
-								if len(id) > int(c.Width()) {
-									b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), id[len(id)-int(c.Width()):]))
-								} else {
-									b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), id))
-								}
-							},
-						},
+						RightmostCol{DefaultCol{"cnf", "Cluster configuration id (increments every time a node joins/leaves the cluster)", 3}, `wsrep_cluster_conf_id`},
 						GaugeCol{DefaultCol{"#", "Cluster size", 2}, "wsrep_cluster_size", 0, NumberUnits},
 					},
 				},
@@ -227,7 +218,7 @@ func DefaultViews() map[string]View {
 					},
 				},
 				FuncCol{DefaultCol{"laten", "Average replication latency", 5},
-					func(b *bytes.Buffer, state MyqState, c Col) {
+					func(b *bytes.Buffer, state *MyqState, c Col) {
 						vals := strings.Split(state.Cur[`wsrep_evs_repl_latency`].(string), `/`)
 						// Expecting 5 vals here, filler if not
 						if len(vals) != 5 {
@@ -267,17 +258,7 @@ func DefaultViews() map[string]View {
 				},
 				GroupCol{DefaultCol{"Gcache", "Galera cache (gcache) information", 0},
 					[]Col{
-						FuncCol{DefaultCol{"ist", "Gcached transactions", 5},
-							func(b *bytes.Buffer, state MyqState, c Col) {
-								// my $ist_size = $status->{'wsrep_last_committed'} - $status->{'wsrep_local_cached_downto'};
-								diff := state.Cur[`wsrep_last_committed`].(int64) - state.Cur[`wsrep_local_cached_downto`].(int64)
-								if diff < 0 {
-									diff = 0.0
-								}
-								cv := collapse_number(float64(diff), int64(c.Width()), 0, NumberUnits)
-								b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))
-							},
-						},
+						CurDiffCol{DefaultCol{"ist", "Gcached transactions", 5}, `wsrep_last_committed`, `wsrep_local_cached_downto`, 0, NumberUnits},
 						GaugeCol{DefaultCol{"idx", "Certification index size (keys)", 4}, "wsrep_cert_index_size", 0, NumberUnits},
 					},
 				},
@@ -286,6 +267,19 @@ func DefaultViews() map[string]View {
 						PercentCol{DefaultCol{`%ef`, `Percent of threads being used`, 4}, "wsrep_apply_window", "V_wsrep_slave_threads", 0},
 					},
 				},
+			},
+		},
+		"qcache": NormalView{
+			help: "Query cache stats",
+			cols: []Col{
+				StringCol{DefaultCol{"type", "Query cache type", 6}, "V_query_cache_type"},
+				RateSumCol{DefaultCol{"sel", "Total Selects + Qcache Hits per second", 4}, []string{"com_select", "qcache_hits"}, 0, NumberUnits},
+				RateCol{DefaultCol{"hits", "Query cache hits per second", 4}, "qcache_hits", 0, NumberUnits},
+				RateCol{DefaultCol{"ins", "Query inserts per second (new entries to the cache)", 4}, "qcache_inserts", 0, NumberUnits},
+				RateCol{DefaultCol{"notc", "Queries not cached per second (either can't be cached, or SELECT SQL_NO_CACHE)", 4}, "qcache_not_cached", 0, NumberUnits},
+				GaugeCol{DefaultCol{"tot", "Total queries in the cache", 4}, "qcache_queries_in_cache", 0, NumberUnits},
+				RateCol{DefaultCol{"lowm", "Low memory prunes (cache entries removed due to memory limit)", 4}, "qcache_lowmem_prunes", 0, NumberUnits},
+				PercentCol{DefaultCol{`%free`, "Percent of cache memory free", 5}, "qcache_free_blocks", "qcache_total_blocks", 0},
 			},
 		},
 	}
