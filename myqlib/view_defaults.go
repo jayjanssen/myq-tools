@@ -60,6 +60,8 @@ func DefaultViews() map[string]View {
 					[]Col{
 						GaugeCol{DefaultCol{"open", "Open Tables", 4}, "open_tables", 0, NumberUnits},
 						GaugeCol{DefaultCol{"opns", "Opened Tables per Second", 4}, "opened_tables", 0, NumberUnits},
+						RateCol{DefaultCol{"immd", "Immediate Table locks", 4}, "table_locks_immediate", 0, NumberUnits},
+						RateCol{DefaultCol{"wait", "Immediate Table locks", 4}, "table_locks_waited", 0, NumberUnits},
 					},
 				},
 				GroupCol{
@@ -280,6 +282,25 @@ func DefaultViews() map[string]View {
 				GaugeCol{DefaultCol{"tot", "Total queries in the cache", 4}, "qcache_queries_in_cache", 0, NumberUnits},
 				RateCol{DefaultCol{"lowm", "Low memory prunes (cache entries removed due to memory limit)", 4}, "qcache_lowmem_prunes", 0, NumberUnits},
 				PercentCol{DefaultCol{`%free`, "Percent of cache memory free", 5}, "qcache_free_blocks", "qcache_total_blocks", 0},
+			},
+		},
+		"myisam": NormalView{
+			help: "MyISAM stats",
+			cols: []Col{
+				GroupCol{DefaultCol{"Key Buffer", "Key Buffer Stats", 0},
+					[]Col{
+						GaugeCol{DefaultCol{"used", "Current Key Buffer blocks unused", 6}, "key_blocks_unused", 0, NumberUnits},
+						GaugeCol{DefaultCol{"maxu", "Maxiumum Key Buffer blocks used", 6}, "key_blocks_used", 0, NumberUnits},
+					},
+				},
+				GroupCol{DefaultCol{"I/O", "MyISAM Key Buffer IO Stats (not data)", 0},
+					[]Col{
+						RateCol{DefaultCol{"logr", "Logical read requests", 5}, "key_read_requests", 0, NumberUnits},
+						RateCol{DefaultCol{"phyr", "Physical reads (cache misses)", 5}, "key_reads", 0, NumberUnits},
+						RateCol{DefaultCol{"logw", "Logical write requests", 5}, "key_write_requests", 0, NumberUnits},
+						RateCol{DefaultCol{"phyw", "Physical writes", 5}, "key_writes", 0, NumberUnits},
+					},
+				},
 			},
 		},
 	}
