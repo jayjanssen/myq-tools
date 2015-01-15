@@ -16,6 +16,9 @@ type Col interface {
 
 	// A full line of output given the state
 	Data(b *bytes.Buffer, state *MyqState)
+	
+	// put a filler for the column into the buffer (usually because we can't put something useful)
+	Filler(b *bytes.Buffer)
 
 	Width() uint8 // width of the column
 }
@@ -40,6 +43,10 @@ func (c DefaultCol) Header2(b *bytes.Buffer) {
 		str = c.name[0:c.Width()]
 	}
 	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), str))
+}
+
+func (c DefaultCol) Filler(b *bytes.Buffer) {
+	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), "-"))
 }
 
 // Column that is a Group of columns
@@ -121,7 +128,7 @@ func (c GaugeCol) Data(b *bytes.Buffer, state *MyqState) {
 	case string:
 		b.WriteString(v[0:c.width]) // first 'width' chars
 	default:
-		filler(b, c)
+		c.Filler(b)
 	}
 }
 
@@ -136,7 +143,7 @@ type RateCol struct {
 func (c RateCol) Data(b *bytes.Buffer, state *MyqState) {
 	rate, err := calculate_rate(state.Cur[c.variable_name], state.Prev[c.variable_name], state.SecondsDiff)
 	if err != nil {
-		filler(b, c)
+		c.Filler(b)
 	} else {
 		cv := collapse_number(rate, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
@@ -169,7 +176,7 @@ func (c DiffCol) Data(b *bytes.Buffer, state *MyqState) {
 	if err != nil {
 		// Can't output, just put a filler
 		// fmt.Println( err )
-		filler(b, c)
+		c.Filler(b)
 	} else {
 		cv := collapse_number(diff, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
@@ -215,10 +222,6 @@ func calculate_diff(cur, prev interface{}) (float64, error) {
 	}
 }
 
-func filler(b *bytes.Buffer, c Col) {
-	b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), "-"))
-}
-
 // Func Columns run a custom function to produce their output
 type FuncCol struct {
 	DefaultCol
@@ -247,7 +250,7 @@ func (c PercentCol) Data(b *bytes.Buffer, state *MyqState) {
 	case float64:
 		numerator = nv
 	default:
-		filler(b, c)
+		c.Filler(b)
 		return
 	}
 
@@ -258,7 +261,7 @@ func (c PercentCol) Data(b *bytes.Buffer, state *MyqState) {
 	case float64:
 		denomenator = dv
 	default:
-		filler(b, c)
+		c.Filler(b)
 		return
 	}
 
@@ -286,7 +289,7 @@ func (c StringCol) Data(b *bytes.Buffer, state *MyqState) {
 			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), v))
 		}
 	default:
-		filler(b, c)
+		c.Filler(b)
 	}
 }
 
@@ -317,7 +320,7 @@ type CurDiffCol struct {
 func (c CurDiffCol) Data(b *bytes.Buffer, state *MyqState) {
 	diff, err := calculate_diff(state.Cur[c.bigger], state.Cur[c.smaller])
 	if err != nil {
-		filler(b, c)
+		c.Filler(b)
 	} else {
 		cv := collapse_number(diff, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))
@@ -350,7 +353,7 @@ func (c RateSumCol) Data(b *bytes.Buffer, state *MyqState) {
 	
 	rate, err := calculate_rate(cursum, prevsum, state.SecondsDiff)
 	if err != nil {
-		filler(b, c)
+		c.Filler(b)
 	} else {
 		cv := collapse_number(rate, int64(c.width), int64(c.precision), c.units)
 		b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.width, `s`), cv))

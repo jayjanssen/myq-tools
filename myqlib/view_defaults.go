@@ -224,7 +224,7 @@ func DefaultViews() map[string]View {
 						vals := strings.Split(state.Cur[`wsrep_evs_repl_latency`].(string), `/`)
 						// Expecting 5 vals here, filler if not
 						if len(vals) != 5 {
-							filler(b, c)
+							c.Filler(b)
 						} else {
 							avg, _ := strconv.ParseFloat(vals[1], 64)
 							cv := collapse_number(avg, int64(c.Width()), 2, SecondUnits)
