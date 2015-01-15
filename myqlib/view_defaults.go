@@ -59,7 +59,7 @@ func DefaultViews() map[string]View {
 					DefaultCol{"Tables", "Table metrics", 0},
 					[]Col{
 						GaugeCol{DefaultCol{"open", "Open Tables", 4}, "open_tables", 0, NumberUnits},
-						GaugeCol{DefaultCol{"opns", "Opened Tables per Second", 4}, "opened_tables", 0, NumberUnits},
+						RateCol{DefaultCol{"opns", "Opened Tables per Second", 4}, "opened_tables", 0, NumberUnits},
 						RateCol{DefaultCol{"immd", "Immediate Table locks", 4}, "table_locks_immediate", 0, NumberUnits},
 						RateCol{DefaultCol{"wait", "Immediate Table locks", 4}, "table_locks_waited", 0, NumberUnits},
 					},
