@@ -221,7 +221,14 @@ func DefaultViews() map[string]View {
 				},
 				FuncCol{DefaultCol{"laten", "Average replication latency", 5},
 					func(b *bytes.Buffer, state *MyqState, c Col) {
-						vals := strings.Split(state.Cur[`wsrep_evs_repl_latency`].(string), `/`)
+						latency, ok := state.Cur[`wsrep_evs_repl_latency`]
+						if !ok {
+							c.Filler(b)
+							return
+						}
+						
+						vals := strings.Split(latency.(string), `/`)
+						
 						// Expecting 5 vals here, filler if not
 						if len(vals) != 5 {
 							c.Filler(b)
