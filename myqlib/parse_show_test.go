@@ -1,7 +1,6 @@
 package myqlib
 
 import (
-	"reflect"
 	"testing"
 	"time"
 )
@@ -23,13 +22,31 @@ func TestSingleSample(t *testing.T) {
 	}
 
 	for varname, expectedtype := range typeTests {
-		value, ok := sample[varname]
-		if !ok {
-			t.Fatal("Could not find", varname, "in the sample")
+		i, ierr := sample.getInt(varname)
+		if ierr == nil {
+			if expectedtype != "int64" {
+				t.Fatal("Found integer, expected", expectedtype, "for", varname, "value: `", i, "`")
+			} else {
+				continue
+			}
 		}
-		foundtype := reflect.TypeOf(value).Name()
-		if foundtype != expectedtype {
-			t.Fatal("Found", foundtype, "expected", expectedtype, "for", varname, "value: `", value, "`")
+		
+		f, ferr := sample.getFloat(varname)
+		if ferr == nil {
+			if expectedtype != "float64" {
+				t.Fatal("Found float, expected", expectedtype, "for", varname, "value: `", f, "`")
+			} else {
+				continue
+			}
+		}
+		
+		s, serr := sample.getString(varname)
+		if serr == nil {
+			if expectedtype != "string" {
+				t.Fatal("Found string, expected", expectedtype, "for", varname, "value: `", s, "`")
+			} else {
+				continue
+			}
 		}
 	}
 }
@@ -113,11 +130,5 @@ func BenchmarkParseVariables(b *testing.B) {
 			b.Error(err)
 		}
 		<-samples
-	}
-}
-
-func BenchmarkConvert(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		convert("fooeybear")
 	}
 }

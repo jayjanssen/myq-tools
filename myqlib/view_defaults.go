@@ -19,7 +19,8 @@ var (
 	Runtime_col FuncCol = FuncCol{
 		DefaultCol{"time", "Interval since data started", 8},
 		func(b *bytes.Buffer, state *MyqState, c Col) {
-			runtime := time.Duration(state.Cur[`uptime`].(int64)-state.FirstUptime) * time.Second
+			curup, _ := state.Cur.getInt(`uptime`)
+			runtime := time.Duration( curup - state.FirstUptime) * time.Second
 			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), runtime.String()))
 		},
 	}
@@ -201,9 +202,9 @@ func DefaultViews() map[string]View {
 		"wsrep": NormalView{
 			help: "Galera Wsrep statistics",
 			extra_header: func(b *bytes.Buffer, state *MyqState) {
-				b.WriteString( fmt.Sprintf( "%s / %s (idx: %d) / %s %s", state.Cur[`V_wsrep_cluster_name`],
-					state.Cur[`V_wsrep_node_name`], state.Cur[`wsrep_local_index`], state.Cur[`wsrep_provider_name`],
-					state.Cur[`wsrep_provider_version`] ))
+				b.WriteString( fmt.Sprintf( "%s / %s (idx: %d) / %s %s", state.Cur.getStr(`V_wsrep_cluster_name`),
+					state.Cur.getStr(`V_wsrep_node_name`), state.Cur.getI(`wsrep_local_index`),
+					state.Cur.getStr(`wsrep_provider_name`), state.Cur.getStr(`wsrep_provider_version`)))
 			},
 			cols: []Col{
 				GroupCol{DefaultCol{"Cluster", "Cluster-wide stats (at least according to this node)", 0},
@@ -221,13 +222,13 @@ func DefaultViews() map[string]View {
 				},
 				FuncCol{DefaultCol{"laten", "Average replication latency", 5},
 					func(b *bytes.Buffer, state *MyqState, c Col) {
-						latency, ok := state.Cur[`wsrep_evs_repl_latency`]
-						if !ok {
+						latencystr, err := state.Cur.getString(`wsrep_evs_repl_latency`)
+						if err != nil {
 							c.Filler(b)
 							return
 						}
 						
-						vals := strings.Split(latency.(string), `/`)
+						vals := strings.Split(latencystr, `/`)
 						
 						// Expecting 5 vals here, filler if not
 						if len(vals) != 5 {

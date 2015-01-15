@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"strconv"
 )
 
 type MySQLAdminCommand string
@@ -27,11 +28,61 @@ type Loader interface {
 }
 
 // MyqSamples are K->V maps
-type MyqSample map[string]interface{}
+type MyqSample map[string]string
 
 // Number of keys in the sample
 func (s MyqSample) Length() int {
 	return len(s)
+}
+
+// Get methods for the given key. Returns a value of the appropriate type (error is nil) or default value and an error if it can't parse
+func (s MyqSample) getInt( key string ) (int64, error) {
+	val, ok := s[key]
+	if !ok { return 0, errors.New( "Key not found") }
+	
+	conv, err := strconv.ParseInt(val, 0, 64)
+	if err != nil {
+		return 0, err
+	} else {
+		return conv, nil
+	}
+}
+func (s MyqSample) getFloat( key string ) (float64, error) {
+	val, ok := s[key]
+	if !ok { return 0.0, errors.New( "Key not found") }
+	
+	conv, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return 0.0, err
+	} else {
+		return conv, nil
+	}
+}
+func (s MyqSample) getString( key string ) (string, error) {
+	val, ok := s[key]
+	if !ok { return "", errors.New( "Key not found") }
+	return val, nil // no errors possible here
+}
+
+// Same as above, just ignore the error
+func (s MyqSample) getI( key string ) (int64) { 
+	i, _ := s.getInt( key )
+	return i
+}
+func (s MyqSample) getStr( key string ) (string) { 
+	str, _ := s.getString( key )
+	return str
+}
+
+// Gets either a float or an int (check type of result), or an error
+func (s MyqSample) getNumeric( key string ) (interface{}, error) {
+	if val, err := s.getInt( key ); err != nil {
+		return val, nil
+	} else if val, err := s.getFloat( key ); err != nil {
+		return val, nil
+	} else {
+		return nil, errors.New("Value is not numeric")
+	}
 }
 
 // MyqState contains the current and previous SHOW STATUS outputs.  Also SHOW VARIABLES.
@@ -89,7 +140,7 @@ func GetState(l Loader) (chan *MyqState, error) {
 
 			// Only needed for File loaders really
 			if firstUptime == 0 {
-				firstUptime = status["uptime"].(int64)
+				firstUptime, _ = status.getInt(`uptime`)
 			}
 			state.FirstUptime = firstUptime
 
@@ -98,7 +149,9 @@ func GetState(l Loader) (chan *MyqState, error) {
 				state.Prev = prev
 
 				// Calculate timediff if there is a prev.  Only file loader?
-				state.SecondsDiff = float64(status["uptime"].(int64) - prev["uptime"].(int64))
+				curup, _ := status.getFloat(`uptime`)
+				preup, _ := prev.getFloat(`uptime`)
+				state.SecondsDiff = curup - preup
 
 				// Skip to the next sample if SecondsDiff is < the interval
 				if state.SecondsDiff < l.getInterval().Seconds() {

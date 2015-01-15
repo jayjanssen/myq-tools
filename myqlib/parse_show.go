@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"log"
-	"strconv"
 	"strings"
 )
 
@@ -66,7 +65,7 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 			}
 		} else {
 			// normalize keys to lowercase
-			timesample[strings.ToLower(string(key))] = convert(string(value))
+			timesample[strings.ToLower(string(key))] = string(value)
 		}
 	}
 	// Send the last one
@@ -78,18 +77,4 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-// Detect the type of the input string based on regexes
-func convert(s string) interface{} {
-	// Check for numeric types first (Int should be most common anyway)
-	if ans, err := strconv.ParseInt(s, 0, 64); err == nil {
-		return ans
-	}
-	if ans, err := strconv.ParseFloat(s, 64); err == nil {
-		return ans
-	}
-
-	// Just leave it as a string
-	return s
 }
