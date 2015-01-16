@@ -3,3 +3,7 @@ language: go
 git:
     submodules: false
 
+notifications:
+  email: jay.janssen@percona.com
+  on_success: change
+  on_failure: change
