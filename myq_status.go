@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./myqlib"
+	"github.com/jayjanssen/myq-tools/myqlib"
 	"bytes"
 	"flag"
 	"fmt"
