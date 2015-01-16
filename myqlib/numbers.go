@@ -60,7 +60,7 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 		raw := value / factor
 		str := fmt.Sprintf(fmt.Sprint(`%.`, precision, `f%s`), raw, unit)
 
-		if raw > 0 && int64(len(str)) <= width+precision {
+		if raw >= 0 && int64(len(str)) <= width+precision {
 			// Our number is > 0 and fits into width + precision
 			left := width - int64(len(str))
 			if left < 0 {

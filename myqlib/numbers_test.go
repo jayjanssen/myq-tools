@@ -49,5 +49,9 @@ func TestOne(t *testing.T) {
 
 	assert(`twelve em`, `12M`, MemoryUnits, 12300000, 0, 4)
 	assert(`eleven point seven em`, `11.7M`, MemoryUnits, 12300000, 0, 5)
+	
+	
+	
+	assert(`zero en ess`, `0.0ns`, SecondUnits, 0, 0, 5)
 
 }
