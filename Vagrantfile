@@ -15,6 +15,11 @@ cluster_address = 'gcomm://' + Array.new( pxc_nodes ){ |i| pxc_node_name_prefix 
 Vagrant.configure("2") do |config|
 	config.vm.box = "perconajayj/centos-x86_64"
 	config.ssh.username = "root"
+  
+  if ENV['GOPATH'] && ENV['GOPATH'] != ""
+    gopath = File.expand_path(ENV['GOPATH'].split(/:/).last)
+    config.vm.synced_folder gopath, "/go"
+  end
 
   # Create the PXC nodes
   (1..pxc_nodes).each do |i|
