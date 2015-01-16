@@ -36,7 +36,7 @@ func TestFloatCol(t *testing.T) {
 }
 
 func TestDiff(t *testing.T) {
-	d2  := calculate_rate(1.750, 1.500, 5)
+	d2 := calculate_rate(1.750, 1.500, 5)
 	if d2 != 0.05 {
 		t.Error("d2 is ", d2)
 	}

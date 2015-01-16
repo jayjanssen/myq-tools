@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 	"strconv"
+	"time"
 )
 
 type MySQLAdminCommand string
@@ -36,10 +36,12 @@ func (s MyqSample) Length() int {
 }
 
 // Get methods for the given key. Returns a value of the appropriate type (error is nil) or default value and an error if it can't parse
-func (s MyqSample) getInt( key string ) (int64, error) {
+func (s MyqSample) getInt(key string) (int64, error) {
 	val, ok := s[key]
-	if !ok { return 0, errors.New( "Key not found") }
-	
+	if !ok {
+		return 0, errors.New("Key not found")
+	}
+
 	conv, err := strconv.ParseInt(val, 0, 64)
 	if err != nil {
 		return 0, err
@@ -47,10 +49,12 @@ func (s MyqSample) getInt( key string ) (int64, error) {
 		return conv, nil
 	}
 }
-func (s MyqSample) getFloat( key string ) (float64, error) {
+func (s MyqSample) getFloat(key string) (float64, error) {
 	val, ok := s[key]
-	if !ok { return 0.0, errors.New( "Key not found") }
-	
+	if !ok {
+		return 0.0, errors.New("Key not found")
+	}
+
 	conv, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return 0.0, err
@@ -58,27 +62,29 @@ func (s MyqSample) getFloat( key string ) (float64, error) {
 		return conv, nil
 	}
 }
-func (s MyqSample) getString( key string ) (string, error) {
+func (s MyqSample) getString(key string) (string, error) {
 	val, ok := s[key]
-	if !ok { return "", errors.New( "Key not found") }
+	if !ok {
+		return "", errors.New("Key not found")
+	}
 	return val, nil // no errors possible here
 }
 
 // Same as above, just ignore the error
-func (s MyqSample) getI( key string ) (int64) { 
-	i, _ := s.getInt( key )
+func (s MyqSample) getI(key string) int64 {
+	i, _ := s.getInt(key)
 	return i
 }
-func (s MyqSample) getStr( key string ) (string) { 
-	str, _ := s.getString( key )
+func (s MyqSample) getStr(key string) string {
+	str, _ := s.getString(key)
 	return str
 }
 
 // Gets either a float or an int (check type of result), or an error
-func (s MyqSample) getNumeric( key string ) (interface{}, error) {
-	if val, err := s.getInt( key ); err != nil {
+func (s MyqSample) getNumeric(key string) (interface{}, error) {
+	if val, err := s.getInt(key); err != nil {
 		return val, nil
-	} else if val, err := s.getFloat( key ); err != nil {
+	} else if val, err := s.getFloat(key); err != nil {
 		return val, nil
 	} else {
 		return nil, errors.New("Value is not numeric")
@@ -106,7 +112,7 @@ func GetState(l Loader) (chan *MyqState, error) {
 	// Vars fetching loop
 	var latestvars MyqSample // whatever the last vars sample is will be here (may be empty)
 	gotvars := make(chan bool, 1)
-	
+
 	if varserr == nil {
 		// Only start up the latestvars loop if there are no errors
 		go func() {
@@ -158,10 +164,10 @@ func GetState(l Loader) (chan *MyqState, error) {
 					continue
 				}
 			}
-			
-			// In the first loop iteration, wait for some vars to be loaded 
+
+			// In the first loop iteration, wait for some vars to be loaded
 			if prev == nil {
-				<- gotvars
+				<-gotvars
 			}
 			// Add latest vars to status with prefix
 			for k, v := range latestvars {
@@ -215,8 +221,8 @@ func (l FileLoader) harvestFile(filename string) (chan MyqSample, error) {
 	return ch, nil
 }
 
-func (l FileLoader) getStatus() (chan MyqSample, error) { 
-	return l.harvestFile(l.statusFile) 
+func (l FileLoader) getStatus() (chan MyqSample, error) {
+	return l.harvestFile(l.statusFile)
 }
 
 func (l FileLoader) getVars() (chan MyqSample, error) {

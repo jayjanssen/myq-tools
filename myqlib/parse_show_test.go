@@ -30,7 +30,7 @@ func TestSingleSample(t *testing.T) {
 				continue
 			}
 		}
-		
+
 		f, ferr := sample.getFloat(varname)
 		if ferr == nil {
 			if expectedtype != "float64" {
@@ -39,7 +39,7 @@ func TestSingleSample(t *testing.T) {
 				continue
 			}
 		}
-		
+
 		s, serr := sample.getString(varname)
 		if serr == nil {
 			if expectedtype != "string" {

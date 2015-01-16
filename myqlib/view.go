@@ -9,11 +9,11 @@ import (
 type View interface {
 	// outputs (write to the buffer)
 	Help(b *bytes.Buffer, short bool) // help
-	
-	ExtraHeader(b *bytes.Buffer, state *MyqState)          // header to print above data
-	
-	Header1(b *bytes.Buffer)          // header to print above data
-	Header2(b *bytes.Buffer)          // header to print above data
+
+	ExtraHeader(b *bytes.Buffer, state *MyqState) // header to print above data
+
+	Header1(b *bytes.Buffer) // header to print above data
+	Header2(b *bytes.Buffer) // header to print above data
 
 	// A full line of output given the state
 	Data(b *bytes.Buffer, state *MyqState)
@@ -24,8 +24,8 @@ type View interface {
 
 // NormalView
 type NormalView struct {
-	cols []Col  // slice of columns in this view
-	help string // short description of the view
+	cols         []Col  // slice of columns in this view
+	help         string // short description of the view
 	extra_header func(b *bytes.Buffer, state *MyqState)
 }
 
@@ -43,7 +43,7 @@ func (v NormalView) Help(b *bytes.Buffer, short bool) {
 
 func (v NormalView) ExtraHeader(b *bytes.Buffer, state *MyqState) {
 	if v.extra_header != nil {
-		v.extra_header( b, state )
+		v.extra_header(b, state)
 		b.WriteString("\n")
 	}
 }

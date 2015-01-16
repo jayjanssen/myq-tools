@@ -9,6 +9,7 @@ import (
 
 // Different types of files to parse
 type showoutputtype uint8
+
 const (
 	BATCH showoutputtype = iota
 	TABULAR

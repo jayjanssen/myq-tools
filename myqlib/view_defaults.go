@@ -13,15 +13,14 @@ var (
 	Timestamp_col FuncCol = FuncCol{
 		DefaultCol{"time", "Time data was printed", 8},
 		func(b *bytes.Buffer, state *MyqState, c Col) {
-			b.WriteString(time.Now().Format("15:04:05"))
+			c.WriteString(b, time.Now().Format("15:04:05"))
 		},
 	}
 	Runtime_col FuncCol = FuncCol{
 		DefaultCol{"time", "Interval since data started", 8},
 		func(b *bytes.Buffer, state *MyqState, c Col) {
-			curup, _ := state.Cur.getInt(`uptime`)
-			runtime := time.Duration( curup - state.FirstUptime) * time.Second
-			b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), runtime.String()))
+			runtime := time.Duration(state.Cur.getI(`uptime`)-state.FirstUptime) * time.Second
+			c.WriteString(b, runtime.String())
 		},
 	}
 )
@@ -202,7 +201,7 @@ func DefaultViews() map[string]View {
 		"wsrep": NormalView{
 			help: "Galera Wsrep statistics",
 			extra_header: func(b *bytes.Buffer, state *MyqState) {
-				b.WriteString( fmt.Sprintf( "%s / %s (idx: %d) / %s %s", state.Cur.getStr(`V_wsrep_cluster_name`),
+				b.WriteString(fmt.Sprintf("%s / %s (idx: %d) / %s %s", state.Cur.getStr(`V_wsrep_cluster_name`),
 					state.Cur.getStr(`V_wsrep_node_name`), state.Cur.getI(`wsrep_local_index`),
 					state.Cur.getStr(`wsrep_provider_name`), state.Cur.getStr(`wsrep_provider_version`)))
 			},
@@ -227,9 +226,9 @@ func DefaultViews() map[string]View {
 							c.Filler(b)
 							return
 						}
-						
+
 						vals := strings.Split(latencystr, `/`)
-						
+
 						// Expecting 5 vals here, filler if not
 						if len(vals) != 5 {
 							c.Filler(b)

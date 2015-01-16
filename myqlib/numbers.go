@@ -60,7 +60,7 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 		raw := value / factor
 		str := fmt.Sprintf(fmt.Sprint(`%.`, precision, `f%s`), raw, unit)
 
-		if raw > 0 && int64(len(str)) <= width + precision {
+		if raw > 0 && int64(len(str)) <= width+precision {
 			// Our number is > 0 and fits into width + precision
 			left := width - int64(len(str))
 			if left < 0 {
@@ -73,14 +73,14 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 				}
 			} else if left > 1 && factor != 1 {
 				// If we have space for some extra precision, use it
-				return fmt.Sprintf(fmt.Sprint(`%.`, left - 1, `f%s`), raw, unit)
+				return fmt.Sprintf(fmt.Sprint(`%.`, left-1, `f%s`), raw, unit)
 			} else {
 				// Just return what we've got
 				return str
 			}
 		}
 	}
-	
+
 	// We're past the highest factor and nothing fits
 	str := fmt.Sprintf(fmt.Sprint(`%.`, precision, `f`), value)
 	if int64(len(str)) > width && precision > 0 {
@@ -90,4 +90,34 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 		// Just print it (too wide)
 		return str
 	}
+}
+
+// Calculate diff between two numbers, if negative, just return bigger
+func calculate_diff(bigger, smaller float64) float64 {
+	if bigger < smaller {
+		// special case -- if c is < p, the number rolled over or was reset, so best effort answer here.
+		return bigger
+	} else {
+		return bigger - smaller
+	}
+}
+
+// Calculate the rate of change between two values, given the time difference between them
+func calculate_rate(bigger, smaller, seconds float64) float64 {
+	diff := calculate_diff(bigger, smaller)
+
+	if seconds <= 0 { // negative seconds is weird
+		return diff
+	} else {
+		return diff / seconds
+	}
+}
+
+// Return the sum of all variables in the given sample
+func calculate_sum(sample MyqSample, variable_names []string) (sum float64) {
+	for _, v := range variable_names {
+		v, _ := sample.getFloat(v)
+		sum += v
+	}
+	return sum
 }

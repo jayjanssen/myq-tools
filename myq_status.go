@@ -6,11 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
-	"time"
-	"runtime/pprof"
 	"os/signal"
+	"runtime/pprof"
+	"strings"
 	"syscall"
+	"time"
 )
 
 // Exit codes
@@ -42,25 +42,24 @@ func main() {
 	flag.StringVar(varfile, "vf", "", "short for -varfile")
 
 	flag.Parse()
-	
+
 	// Enable profiling if set
 	if *profile != "" {
-		fmt.Println( "Starting profiling to:", *profile )
-		f, _ := os.Create( *profile )
+		fmt.Println("Starting profiling to:", *profile)
+		f, _ := os.Create(*profile)
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
-		
+
 		// Need to trap interrupts in order for the profile to flush
-    sigs := make(chan os.Signal, 1)
-		signal.Notify( sigs, syscall.SIGINT, syscall.SIGTERM )
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 		go func() {
-			<- sigs
+			<-sigs
 			pprof.StopCPUProfile()
 			os.Exit(OK)
 		}()
-		
+
 	}
-	
 
 	// Load default Views
 	views := myqlib.DefaultViews()
@@ -129,7 +128,7 @@ func main() {
 		// Output a header if necessary
 		if lines%*header == 0 {
 			v.ExtraHeader(&buf, state)
-			
+
 			var hd1 bytes.Buffer
 			timecol.Header1(&hd1)
 			hd1.WriteString(" ")
