@@ -7,7 +7,7 @@ import (
 
 func TestIntCol(t *testing.T) {
 	var b bytes.Buffer
-	col := GaugeCol{DefaultCol{"run", "Threads running", 5}, "threads_running", 0, NumberUnits}
+	col := NewGaugeCol("run", "Threads running", 5, "threads_running", 0, NumberUnits)
 
 	state := MyqState{}
 	state.Cur = make(MyqSample)
@@ -22,7 +22,7 @@ func TestIntCol(t *testing.T) {
 
 func TestFloatCol(t *testing.T) {
 	var b bytes.Buffer
-	col := GaugeCol{DefaultCol{"oooe", "Galera OOO E", 5}, "wsrep_apply_oooe", 3, NumberUnits}
+	col := NewGaugeCol("oooe", "Galera OOO E", 5, "wsrep_apply_oooe", 3, NumberUnits)
 
 	state := MyqState{}
 	state.Cur = make(MyqSample)
@@ -56,7 +56,7 @@ func TestDiff(t *testing.T) {
 
 func TestRateCol(t *testing.T) {
 	var b bytes.Buffer
-	col := RateCol{DefaultCol{"cons", "Connections per second", 5}, "connections", 0, NumberUnits}
+	col := NewRateCol("cons", "Connections per second", 5, "connections", 0, NumberUnits)
 
 	state := MyqState{}
 	state.Cur = make(MyqSample)

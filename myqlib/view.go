@@ -24,9 +24,12 @@ type View interface {
 
 // NormalView
 type NormalView struct {
-	cols         []Col  // slice of columns in this view
 	help         string // short description of the view
-	extra_header func(b *bytes.Buffer, state *MyqState)
+	cols         []Col  // slice of columns in this view
+}
+
+func NewNormalView( help string, cols ...Col) (NormalView) {
+	return NormalView{ help, cols }
 }
 
 func (v NormalView) Help(b *bytes.Buffer, short bool) {
@@ -42,10 +45,6 @@ func (v NormalView) Help(b *bytes.Buffer, short bool) {
 }
 
 func (v NormalView) ExtraHeader(b *bytes.Buffer, state *MyqState) {
-	if v.extra_header != nil {
-		v.extra_header(b, state)
-		b.WriteString("\n")
-	}
 }
 
 func (v NormalView) Header1(b *bytes.Buffer) {
@@ -85,3 +84,19 @@ func (v NormalView) Data(b *bytes.Buffer, state *MyqState) {
 func (v NormalView) Cols() []Col {
 	return v.cols
 }
+
+
+// ExtraHeaderView
+type ExtraHeaderView struct {
+	NormalView
+	extra_header func(b *bytes.Buffer, state *MyqState)
+}
+func NewExtraHeaderView( help string, extra_header func(b *bytes.Buffer, state *MyqState), cols ...Col) (ExtraHeaderView) {
+	return ExtraHeaderView{ NormalView{help, cols}, extra_header }
+}
+
+func (v ExtraHeaderView) ExtraHeader(b *bytes.Buffer, state *MyqState) {
+	v.extra_header(b, state)
+	b.WriteString("\n")
+}
+

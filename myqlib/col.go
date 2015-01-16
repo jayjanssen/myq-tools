@@ -57,6 +57,10 @@ type GroupCol struct {
 	cols []Col // slice of columns in this group
 }
 
+func NewGroupCol(name, help string, width int64, cols ...Col) GroupCol {
+	return GroupCol{DefaultCol{name, help, width}, cols}
+}
+
 func (c GroupCol) Help(b *bytes.Buffer) {
 	b.WriteString(c.help)
 	b.WriteString("\n")
@@ -103,12 +107,21 @@ func (c GroupCol) Data(b *bytes.Buffer, state *MyqState) {
 	}
 }
 
+// Meta-type, displays some kind of number
+type NumCol struct {
+	precision     int64  // # of decimals to show on floats (optional)
+	units         UnitsDef
+}
+
 // Gauge Columns simply display a SHOW STATUS variable
 type GaugeCol struct {
 	DefaultCol
+	NumCol
 	variable_name string // SHOW STATUS variable of this column
-	precision     int64  // # of decimals to show on floats (optional)
-	units         UnitsDef
+}
+
+func NewGaugeCol(name, help string, width int64, variable_name string, precision int64, units UnitsDef) GaugeCol {
+	return GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}
 }
 
 func (c GaugeCol) Data(b *bytes.Buffer, state *MyqState) {
@@ -128,10 +141,10 @@ func (c GaugeCol) Data(b *bytes.Buffer, state *MyqState) {
 
 // Rate Columns the rate of change of a SHOW STATUS variable
 type RateCol struct {
-	DefaultCol
-	variable_name string // SHOW STATUS variable of this column
-	precision     int64  // # of decimals to show on floats (optional)
-	units         UnitsDef
+	GaugeCol
+}
+func NewRateCol(name, help string, width int64, variable_name string, precision int64, units UnitsDef) RateCol {
+	return RateCol{GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}}
 }
 
 func (c RateCol) Data(b *bytes.Buffer, state *MyqState) {
@@ -149,10 +162,11 @@ func (c RateCol) Data(b *bytes.Buffer, state *MyqState) {
 
 // Diff Columns the difference of a SHOW STATUS variable between samples
 type DiffCol struct {
-	DefaultCol
-	variable_name string // SHOW STATUS variable of this column
-	precision     int64  // # of decimals to show on floats (optional)
-	units         UnitsDef
+	GaugeCol
+}
+
+func NewDiffCol(name, help string, width int64, variable_name string, precision int64, units UnitsDef) DiffCol {
+	return DiffCol{GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}}
 }
 
 func (c DiffCol) Data(b *bytes.Buffer, state *MyqState) {
@@ -177,24 +191,30 @@ type FuncCol struct {
 func (c FuncCol) Data(b *bytes.Buffer, state *MyqState) {
 	c.fn(b, state, c)
 }
+func NewFuncCol(name, help string, width int64, fn func(*bytes.Buffer, *MyqState, Col)) FuncCol {
+	return FuncCol{DefaultCol{name, help, width}, fn}
+}
 
 // Percent Columns calculate a ratio between two metrics
 type PercentCol struct {
 	DefaultCol
-	numerator_name   string // SHOW STATUS variable of this column
-	denomenator_name string // SHOW STATUS variable of this column
-	precision        int64  // # of decimals to show on floats (optional)
+	NumCol
+	numerator, denomenator string // SHOW STATUS variable of this column
+}
+
+func NewPercentCol(name, help string, w int64, numerator, denomenator string, p int64 ) PercentCol {
+	return PercentCol{DefaultCol{name, help, w}, NumCol{p, PercentUnits}, numerator, denomenator}
 }
 
 func (c PercentCol) Data(b *bytes.Buffer, state *MyqState) {
-	numerator, nerr := state.Cur.getFloat(c.numerator_name)
-	denomenator, derr := state.Cur.getFloat(c.numerator_name)
+	numerator, nerr := state.Cur.getFloat(c.numerator)
+	denomenator, derr := state.Cur.getFloat(c.denomenator)
 
 	// Must have both
 	if nerr != nil || derr != nil || denomenator == 0 {
 		c.Filler(b)
 	} else {
-		cv := collapse_number((numerator/denomenator)*100, c.Width(), c.precision, PercentUnits)
+		cv := collapse_number((numerator/denomenator)*100, c.Width(), c.precision, c.units)
 		c.WriteString(b, cv)
 	}
 
@@ -204,6 +224,10 @@ func (c PercentCol) Data(b *bytes.Buffer, state *MyqState) {
 type StringCol struct {
 	DefaultCol
 	variable_name string // SHOW STATUS variable of this column
+}
+
+func NewStringCol(name, help string, w int64, variable_name string ) StringCol {
+	return StringCol{DefaultCol{name, help, w}, variable_name}
 }
 
 func (c StringCol) Data(b *bytes.Buffer, state *MyqState) {
@@ -218,13 +242,16 @@ func (c StringCol) Data(b *bytes.Buffer, state *MyqState) {
 
 // RightmostCol shows width rightmost chars of the variable_name
 type RightmostCol struct {
-	DefaultCol
-	variable_name string
+	StringCol
+}
+
+func NewRightmostCol(name, help string, w int64, variable_name string ) RightmostCol {
+	return RightmostCol{StringCol{DefaultCol{name, help, w}, variable_name}}
 }
 
 func (c RightmostCol) Data(b *bytes.Buffer, state *MyqState) {
 	// We show the least-significant width digits of the value
-	id, _ := state.Cur.getString(c.variable_name)
+	id := state.Cur.getStr(c.variable_name)
 	if len(id) > int(c.Width()) {
 		c.WriteString(b, id[len(id)-int(c.Width()):])
 	} else {
@@ -235,26 +262,31 @@ func (c RightmostCol) Data(b *bytes.Buffer, state *MyqState) {
 // CurDiff Columns the difference between two variables in the same sample (different from DiffCol)
 type CurDiffCol struct {
 	DefaultCol
+	NumCol
 	bigger, smaller string // The two variables to subtract
-	precision       int64  // # of decimals to show on floats (optional)
-	units           UnitsDef
+}
+
+func NewCurDiffCol(name, help string, width int64, bigger, smaller string, precision int64, units UnitsDef ) CurDiffCol {
+	return CurDiffCol{DefaultCol{name, help, width}, NumCol{precision, units}, bigger, smaller}	
 }
 
 func (c CurDiffCol) Data(b *bytes.Buffer, state *MyqState) {
 	bnum, _ := state.Cur.getFloat(c.bigger)
 	snum, _ := state.Cur.getFloat(c.smaller)
 
-	diff := calculate_diff(bnum, snum)
-	cv := collapse_number(diff, c.Width(), c.precision, c.units)
+	cv := collapse_number(calculate_diff(bnum, snum), c.Width(), c.precision, c.units)
 	c.WriteString(b, cv)
 }
 
 // RateSum Columns the rate of change of a sum of variables
 type RateSumCol struct {
 	DefaultCol
+	NumCol
 	variable_names []string
-	precision      int64 // # of decimals to show on floats (optional)
-	units          UnitsDef
+}
+
+func NewRateSumCol(name, help string, width int64, precision int64, units UnitsDef, variables ...string) RateSumCol {
+	return RateSumCol{DefaultCol{name, help, width}, NumCol{precision, units}, variables}
 }
 
 func (c RateSumCol) Data(b *bytes.Buffer, state *MyqState) {
