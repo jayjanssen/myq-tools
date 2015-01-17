@@ -15,5 +15,6 @@ deploy:
   api_key:
     secure: Zpb1YS6oYPf+KJPWp/ye8bW+pULxmZkhoBBkFIgyM30FbiCmPuZJLqm7Kkw4gUAYisj90lrsGedpvK4aHlE4BZXYt5yBuXHapjImACzX2rm1ssPbtAoyx/68SARSTB3Bm2/MCfI8Py5IRlJCzyTmK1quopWYyUGd/uSbmbsmJzQ=
   file: myq_tools.tgz
+  skip_cleanup: true 
   on:
     repo: jayjanssen/myq-tools
