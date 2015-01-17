@@ -109,8 +109,8 @@ func (c GroupCol) Data(b *bytes.Buffer, state *MyqState) {
 
 // Meta-type, displays some kind of number
 type NumCol struct {
-	precision     int64  // # of decimals to show on floats (optional)
-	units         UnitsDef
+	precision int64 // # of decimals to show on floats (optional)
+	units     UnitsDef
 }
 
 // Gauge Columns simply display a SHOW STATUS variable
@@ -143,6 +143,7 @@ func (c GaugeCol) Data(b *bytes.Buffer, state *MyqState) {
 type RateCol struct {
 	GaugeCol
 }
+
 func NewRateCol(name, help string, width int64, variable_name string, precision int64, units UnitsDef) RateCol {
 	return RateCol{GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}}
 }
@@ -202,7 +203,7 @@ type PercentCol struct {
 	numerator, denomenator string // SHOW STATUS variable of this column
 }
 
-func NewPercentCol(name, help string, w int64, numerator, denomenator string, p int64 ) PercentCol {
+func NewPercentCol(name, help string, w int64, numerator, denomenator string, p int64) PercentCol {
 	return PercentCol{DefaultCol{name, help, w}, NumCol{p, PercentUnits}, numerator, denomenator}
 }
 
@@ -226,7 +227,7 @@ type StringCol struct {
 	variable_name string // SHOW STATUS variable of this column
 }
 
-func NewStringCol(name, help string, w int64, variable_name string ) StringCol {
+func NewStringCol(name, help string, w int64, variable_name string) StringCol {
 	return StringCol{DefaultCol{name, help, w}, variable_name}
 }
 
@@ -245,7 +246,7 @@ type RightmostCol struct {
 	StringCol
 }
 
-func NewRightmostCol(name, help string, w int64, variable_name string ) RightmostCol {
+func NewRightmostCol(name, help string, w int64, variable_name string) RightmostCol {
 	return RightmostCol{StringCol{DefaultCol{name, help, w}, variable_name}}
 }
 
@@ -266,8 +267,8 @@ type CurDiffCol struct {
 	bigger, smaller string // The two variables to subtract
 }
 
-func NewCurDiffCol(name, help string, width int64, bigger, smaller string, precision int64, units UnitsDef ) CurDiffCol {
-	return CurDiffCol{DefaultCol{name, help, width}, NumCol{precision, units}, bigger, smaller}	
+func NewCurDiffCol(name, help string, width int64, bigger, smaller string, precision int64, units UnitsDef) CurDiffCol {
+	return CurDiffCol{DefaultCol{name, help, width}, NumCol{precision, units}, bigger, smaller}
 }
 
 func (c CurDiffCol) Data(b *bytes.Buffer, state *MyqState) {

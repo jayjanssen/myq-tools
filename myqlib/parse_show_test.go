@@ -92,13 +92,13 @@ func checksamples(t *testing.T, samples chan MyqSample, expected int) {
 
 		if len(prev) > 0 && len(prev) > len(sample) {
 			t.Log(prev["uptime"], "(previous) had", len(prev), "keys.  Current current has", len(sample))
-			for pkey, _ := range prev {
+			for pkey := range prev {
 				_, ok := (sample)[pkey]
 				if !ok {
 					t.Log("Missing", pkey, "from current sample")
 				}
 			}
-			t.Fatal()
+			t.Fatal("")
 		}
 		prev = sample
 		i++
