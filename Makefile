@@ -31,7 +31,7 @@ TESTABLE	:= $(foreach pkg, $(PACKAGES), $(wildcard $(pkg)/*.go))
 GOFILES		:= $(TESTABLE) $(RUNNABLE)
 COV_FILES	:= $(foreach pkg, $(PACKAGES), $(pkg).$(COV_EXT))
 
-default:	fmt test install build
+default:	fmt test build
 
 $(notdir $(basename $(RUNNABLES))): .fmt .vet .test install
 		@GOOS=$(GOOS) GOARCH=$(GOARCH) $(GORUN) $(CMD_DIR)/$@.go
