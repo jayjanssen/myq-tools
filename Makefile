@@ -23,7 +23,6 @@ BIN_DIR		:= bin
 GOOS		:= $(shell go env GOOS)
 GOARCH		:= $(shell go env GOARCH)
 GOBUILD		:= GOOS=$(GOOS) GOARCH=$(GOARCH) go build
-GOINSTALL	:= GOOS=$(GOOS) GOARCH=$(GOARCH) go install -v
 RUNNABLES	:= $(wildcard $(CMD_DIR)/*.go)
 PKG_ROOT	:= $(GOPATH)/pkg/$(GOOS)_$(GOARCH)/$(REPOSITORY)
 A_FILES		:= $(foreach pkg, $(PACKAGES), $(PKG_ROOT)/$(pkg).a)
@@ -33,7 +32,7 @@ COV_FILES	:= $(foreach pkg, $(PACKAGES), $(pkg).$(COV_EXT))
 
 default:	fmt test build
 
-$(notdir $(basename $(RUNNABLES))): .fmt .vet .test install
+$(notdir $(basename $(RUNNABLES))): .fmt .vet .test
 		@GOOS=$(GOOS) GOARCH=$(GOARCH) $(GORUN) $(CMD_DIR)/$@.go
 
 bench:	$(TESTABLE)
@@ -90,8 +89,4 @@ clean:
 		$(RM) .test
 		$(RM) .vet
 
-install: $(A_FILES)
-$(PKG_ROOT)/%.a:	%/*.go
-		@cd $* && $(GOINSTALL)
-
-.PHONY: default test vet fmt install godoc clean cov cov-html build bench
+.PHONY: default test vet fmt godoc clean cov cov-html build bench
