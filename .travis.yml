@@ -1,16 +1,19 @@
 language: go
-
 install:
-  - go get github.com/mitchellh/gox
-
-script: ./build.sh
-
+- go get github.com/mitchellh/gox
+script: "./build.sh"
 git:
-    submodules: false
-
+  submodules: false
 notifications:
   email:
     recipients:
-      - jay.janssen@gmail.com
+    - jay.janssen@gmail.com
     on_success: change
     on_failure: change
+deploy:
+  provider: releases
+  api_key:
+    secure: Zpb1YS6oYPf+KJPWp/ye8bW+pULxmZkhoBBkFIgyM30FbiCmPuZJLqm7Kkw4gUAYisj90lrsGedpvK4aHlE4BZXYt5yBuXHapjImACzX2rm1ssPbtAoyx/68SARSTB3Bm2/MCfI8Py5IRlJCzyTmK1quopWYyUGd/uSbmbsmJzQ=
+  file: myq_tools.tgz
+  on:
+    repo: jayjanssen/myq-tools
