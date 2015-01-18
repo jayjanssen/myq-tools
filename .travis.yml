@@ -19,4 +19,4 @@ deploy:
   on:
     repo: jayjanssen/myq-tools
     all_branches: true
-	tags: true
+    tags: true
