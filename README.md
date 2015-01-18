@@ -15,7 +15,7 @@ Currently there is a single tool, 'myq_status'.  More tools may be added in the 
 
 Binaries
 --------
-I will attempt to keep up to date binaries available for download.  Alternatively, you can download and compile the tool(s) yourself.
+Binaries are available in the Releases tab here in Github. 
 
 Running development/latest version
 ----------------------------------
