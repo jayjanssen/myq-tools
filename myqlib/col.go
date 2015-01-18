@@ -57,8 +57,8 @@ type GroupCol struct {
 	cols []Col // slice of columns in this group
 }
 
-func NewGroupCol(name, help string, width int64, cols ...Col) GroupCol {
-	return GroupCol{DefaultCol{name, help, width}, cols}
+func NewGroupCol(name, help string, cols ...Col) GroupCol {
+	return GroupCol{DefaultCol{name, help, 0}, cols}
 }
 
 func (c GroupCol) Help(b *bytes.Buffer) {
