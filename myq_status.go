@@ -25,12 +25,6 @@ func main() {
 	help := flag.Bool("help", false, "this help text")
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
 	header := flag.Int64("header", 20, "repeat the header after this many data points")
-	// host := flag.String("host", "", "MySQL hostname")
-	// port := flag.Int64("port", 0, "MySQL port")
-	//
-	// user := flag.String("user", "", "MySQL username")
-	// pass := flag.String("pass", "", "MySQL password (askpass recommended instead)")
-	// ask_pass := flag.Bool("askpass", false, "Prompt for MySQL password")
 	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to mysqladmin (used for connection options)")
 	flag.StringVar(mysql_args, "a", "", "Short for -mysqlargs")
 	interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
