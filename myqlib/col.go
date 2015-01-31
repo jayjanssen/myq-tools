@@ -284,17 +284,27 @@ type RateSumCol struct {
 	DefaultCol
 	NumCol
 	variable_names []string
+	expanded_variable_names []string
 }
 
 func NewRateSumCol(name, help string, width int64, precision int64, units UnitsDef, variables ...string) RateSumCol {
-	return RateSumCol{DefaultCol{name, help, width}, NumCol{precision, units}, variables}
+	return RateSumCol{DefaultCol{name, help, width}, NumCol{precision, units}, variables, []string{}}
 }
 
 func (c RateSumCol) Data(b *bytes.Buffer, state *MyqState) {
-	cursum := calculate_sum(state.Cur, c.variable_names)
-	prevsum := calculate_sum(state.Prev, c.variable_names)
+	c.expand_variables( state.Cur )
+	
+	cursum := calculate_sum(state.Cur, c.expanded_variable_names)
+	prevsum := calculate_sum(state.Prev, c.expanded_variable_names)
 
 	rate := calculate_rate(cursum, prevsum, state.SecondsDiff)
 	cv := collapse_number(rate, c.Width(), c.precision, c.units)
 	c.WriteString(b, cv)
 }
+
+func (c *RateSumCol) expand_variables( sample MyqSample ) {
+	if len( c.expanded_variable_names ) == 0 {
+		c.expanded_variable_names = expand_variables( c.variable_names, sample )
+	}
+}
+
