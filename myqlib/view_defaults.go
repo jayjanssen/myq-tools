@@ -3,6 +3,7 @@ package myqlib
 import (
 	`bytes`
 	`fmt`
+	`sort`
 	`strconv`
 	`strings`
 	`time`
@@ -266,8 +267,43 @@ func DefaultViews() map[string]View {
 			),
 		),
 		`commands`: NewNormalView(`Sorted list of all commands run in a given interval`,
-			NewFuncCol(`Commands`, `All commands tracked by the Com_* counters`, 5, func(b *bytes.Buffer, state *MyqState, c Col) {
-				// Need to write this
+			NewFuncCol(`Cnts`, `All commands tracked by the Com_* counters`, 4, func(b *bytes.Buffer, state *MyqState, c Col) {
+				var all_diffs []float64
+				diff_variables := map[float64][]string{}
+
+				// Get the rate for every ^com* variable
+				for _, variable := range expand_variables([]string{`^com.*`}, state.Cur) {
+					diff := calculate_diff(state.Cur.getF(variable), state.Prev.getF(variable))
+
+					// Skip those without activity
+					if diff <= 0 {
+						continue
+					}
+
+					// Create the [] slice for a rate we haven't seen yet
+					if _, ok := diff_variables[diff]; ok == false {
+						diff_variables[diff] = make([]string, 0)
+						all_diffs = append(all_diffs, diff) // record the diff the first time
+					}
+
+					// Push the variable name onto the rate slice
+					diff_variables[diff] = append(diff_variables[diff], variable)
+				}
+
+				// Sort all the rates so we can iterate through them from big to small
+				sort.Sort(sort.Reverse(sort.Float64Slice(all_diffs)))
+
+				// Each rate
+				first := true
+				for _, diff := range all_diffs {
+					if first {
+						first = false
+					} else {
+						b.WriteString("         ")
+					}
+					c.WriteString(b, collapse_number(diff, c.Width(), 0, NumberUnits))
+					b.WriteString(fmt.Sprintf(" %v\n", diff_variables[diff]))
+				}
 			}),
 		),
 	}
