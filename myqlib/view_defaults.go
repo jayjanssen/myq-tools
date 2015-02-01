@@ -67,7 +67,6 @@ func DefaultViews() map[string]View {
 			NewRateSumCol(`trx`, `Transactional commands / Second`, 5, 0, NumberUnits, `com_begin`, `com_commit`, `com_rollback.*`, `com_savepoint`),
 			NewRateSumCol(`xa`, `XA commands / Second`, 5, 0, NumberUnits, `com_xa.*`),
 			NewRateSumCol(`prep`, `Prepared Statement commands / Second`, 5, 0, NumberUnits, `Com_stmt.*`, `Com_.*_sql`),
-			
 		),
 		`throughput`: NewNormalView(`MySQL Server Throughput`,
 			NewGroupCol(`Throughput`, `Bytes in/out of the server`,
@@ -174,7 +173,6 @@ func DefaultViews() map[string]View {
 				NewPercentCol(`dirt`, `Buffer pool %dirty`, 4, `innodb_buffer_pool_pages_dirty`, `innodb_buffer_pool_pages_total`, 0),
 				NewRateCol(`flush`, `All pages flushed`, 5, `innodb_buffer_pool_pages_flushed`, 0, NumberUnits),
 				NewRateCol(`lruf`, `LRU flushes`, 5, `innodb_buffer_pool_pages_lru_flushed`, 0, NumberUnits),
-				
 			),
 			NewGroupCol(`Checkpoint`, `Checkpoint info`,
 				NewGaugeCol(`age`, `Checkpoint Age`, 5, `innodb_checkpoint_age`, 0, MemoryUnits),
@@ -184,7 +182,6 @@ func DefaultViews() map[string]View {
 				NewRateCol(`pages`, `Pages written`, 5, `innodb_pages_written`, 0, NumberUnits),
 				NewRateCol(`wops`, `Write operations`, 5, `innodb_data_writes`, 0, NumberUnits),
 				NewRateCol(`bytes`, `Write data`, 5, `innodb_data_written`, 0, MemoryUnits),
-				
 			),
 			NewGroupCol(`Log`, `Log Sequence Number stats`,
 				NewRateCol(`lsn`, `Log growth (LSN)`, 5, `innodb_lsn_current`, 0, MemoryUnits),
