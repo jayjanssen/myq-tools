@@ -75,6 +75,10 @@ func (s MyqSample) getI(key string) int64 {
 	i, _ := s.getInt(key)
 	return i
 }
+func (s MyqSample) getF(key string) float64 {
+	f, _ := s.getFloat(key)
+	return f
+}
 func (s MyqSample) getStr(key string) string {
 	str, _ := s.getString(key)
 	return str
