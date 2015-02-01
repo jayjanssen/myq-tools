@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"runtime/pprof"
 	"sort"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -77,7 +76,7 @@ func main() {
 		for _, name := range sorted_views {
 			view := views[name]
 			view_usage.WriteString(fmt.Sprint("  ", name, ": "))
-			view.Help(&view_usage, true)
+			view.ShortHelp(&view_usage)
 		}
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(BAD_ARGS)
@@ -97,7 +96,7 @@ func main() {
 	if *help {
 		var view_usage bytes.Buffer
 		view_usage.WriteString(fmt.Sprint("'", view, "' Help: "))
-		v.Help(&view_usage, false)
+		v.Help(&view_usage)
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(OK)
 	}
@@ -127,23 +126,20 @@ func main() {
 		var buf bytes.Buffer
 
 		// Output a header if necessary
-		if lines%*header == 0 {
-			v.ExtraHeader(&buf, state)
-
-			var hd1 bytes.Buffer
-			v.Header1(&hd1)
-			hdr1 := strings.TrimSpace(hd1.String())
-			if hdr1 != "" {
-				buf.WriteString(hd1.String())
+		if lines % *header == 0 {
+			for headerln := range v.Header(state) {
+				buf.WriteString( fmt.Sprint( headerln, "\n"))
+				lines += 1
 			}
 
-			v.Header2(&buf)
-
+			// Recalculate the height of the next header
 			*header = myqlib.GetTermHeight() - 3
-			// fmt.Println( "New height = ", *header )
 		}
 		// Output data
-		lines += v.Data(&buf, state)
+		for dataln := range v.Data(state) {
+			buf.WriteString( fmt.Sprint( dataln, "\n"))
+			lines += 1
+		}
 		buf.WriteTo(os.Stdout)
 	}
 

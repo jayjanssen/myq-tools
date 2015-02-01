@@ -12,21 +12,25 @@ import (
 // Time Columns
 var (
 	Timestamp_col Col = NewFuncCol(`time`, `Time data was printed`, 8,
-		func(b *bytes.Buffer, state *MyqState, c Col) {
-			c.WriteString(b, time.Now().Format(`15:04:05`))
+		func(state *MyqState, c Col) (chan string){
+			ch := make( chan string, 1 ); defer close( ch )
+			ch <- c.WriteString(time.Now().Format(`15:04:05`))
+			return ch
 		})
 
 	Runtime_col Col = NewFuncCol(`time`, `Interval since data started`, 8,
-		func(b *bytes.Buffer, state *MyqState, c Col) {
+		func(state *MyqState, c Col) (chan string) {
+			ch := make( chan string, 1 ); defer close( ch )
 			runtime := time.Duration(state.Cur.getI(`uptime`)-state.FirstUptime) * time.Second
-			c.WriteString(b, runtime.String())
+			ch <- c.WriteString(runtime.String())
+			return ch
 		})
 )
 
 func DefaultViews() map[string]View {
 	return map[string]View{
 		`cttf`: NewNormalView(`Connections, Threads, Tables, and Files`,
-			NewGroupCol(`Connects`, `Connection related metrics`,
+			NewGroupCol(`Connects`, `Collection related metrics`,
 				NewRateCol(`cons`, `Connections per second`, 4, `connections`, 0, NumberUnits),
 				NewRateCol(`acns`, `Aborted connections per second`, 4, `aborted_connects`, 0, NumberUnits),
 				NewRateCol(`acls`, `Aborted Clients (those with existing connections) per second`, 4, `aborted_clients`, 0, NumberUnits),
@@ -190,10 +194,16 @@ func DefaultViews() map[string]View {
 			),
 		),
 		`wsrep`: NewExtraHeaderView(`Galera Wsrep statistics`,
-			func(b *bytes.Buffer, state *MyqState) {
-				b.WriteString(fmt.Sprintf(`%s / %s (idx: %d) / %s %s`, state.Cur.getStr(`V_wsrep_cluster_name`),
-					state.Cur.getStr(`V_wsrep_node_name`), state.Cur.getI(`wsrep_local_index`),
-					state.Cur.getStr(`wsrep_provider_name`), state.Cur.getStr(`wsrep_provider_version`)))
+			func(state *MyqState) (chan string){
+				ch := make( chan string, 1 )
+				defer close(ch)
+				ch <- fmt.Sprintf("%s / %s (idx: %d) / %s %s", 
+					state.Cur.getStr(`V_wsrep_cluster_name`),
+					state.Cur.getStr(`V_wsrep_node_name`), 
+					state.Cur.getI(`wsrep_local_index`),
+					state.Cur.getStr(`wsrep_provider_name`), 
+					state.Cur.getStr(`wsrep_provider_version`))
+				return ch
 			},
 			NewGroupCol(`Cluster`, `Cluster-wide stats (at least according to this node)`,
 				NewStringCol(`P`, `Primary (P) or Non-primary (N)`, 1, `wsrep_cluster_status`),
@@ -203,20 +213,22 @@ func DefaultViews() map[string]View {
 			NewGroupCol(`Node`, `Node's specific state`,
 				NewStringCol(`state`, `State of this node`, 4, `wsrep_local_state_comment`),
 			),
-			NewFuncCol(`laten`, `Average replication latency`, 5, func(b *bytes.Buffer, state *MyqState, c Col) {
+			NewFuncCol(`laten`, `Average replication latency`, 5, func( state *MyqState, c Col) (chan string) {
+				ch := make( chan string, 1 ); defer close( ch )
 				vals := strings.Split(state.Cur.getStr(`wsrep_evs_repl_latency`), `/`)
 
 				// Expecting 5 vals here, filler if not
 				if len(vals) != 5 {
-					c.Filler(b)
+					ch <- c.Filler()
 				} else {
 					if avg, err := strconv.ParseFloat(vals[1], 64); err == nil {
 						cv := collapse_number(avg, c.Width(), 2, SecondUnits)
-						b.WriteString(fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv))
+						ch <- fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv)
 					} else {
-						c.Filler(b)
+						ch <- c.Filler()
 					}
 				}
+				return ch
 			}),
 			NewGroupCol(`Outbound`, `Sent replication events`,
 				NewRateCol(`msgs`, `Replicated messages (usually transactions) per second`, 4, `wsrep_replicated`, 0, NumberUnits),
@@ -267,7 +279,7 @@ func DefaultViews() map[string]View {
 			),
 		),
 		`commands`: NewNormalView(`Sorted list of all commands run in a given interval`,
-			NewFuncCol(`Cnts`, `All commands tracked by the Com_* counters`, 4, func(b *bytes.Buffer, state *MyqState, c Col) {
+			NewFuncCol(`Cnts`, `All commands tracked by the Com_* counters`, 4, func(state *MyqState, c Col) (chan string) {
 				var all_diffs []float64
 				diff_variables := map[float64][]string{}
 
@@ -294,16 +306,17 @@ func DefaultViews() map[string]View {
 				sort.Sort(sort.Reverse(sort.Float64Slice(all_diffs)))
 
 				// Each rate
-				first := true
-				for _, diff := range all_diffs {
-					if first {
-						first = false
-					} else {
-						b.WriteString("         ")
+				ch := make( chan string )
+				go func() {
+					defer close(ch)
+					for _, diff := range all_diffs {
+						var out bytes.Buffer
+						out.WriteString( c.WriteString(collapse_number(diff, c.Width(), 0, NumberUnits)))
+						out.WriteString(fmt.Sprintf(" %v", diff_variables[diff]))
+						ch <- out.String()
 					}
-					c.WriteString(b, collapse_number(diff, c.Width(), 0, NumberUnits))
-					b.WriteString(fmt.Sprintf(" %v\n", diff_variables[diff]))
-				}
+				}()
+				return ch
 			}),
 		),
 	}
