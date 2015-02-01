@@ -104,16 +104,15 @@ func main() {
 
 	// The Loader and Timecol we will use
 	var loader myqlib.Loader
-	var timecol myqlib.Col
 
 	if *statusfile != "" {
 		// File given, load it (and the optional varfile)
 		loader = myqlib.NewFileLoader(*interval, *statusfile, *varfile)
-		timecol = myqlib.Runtime_col
+		v.SetTimeCol( &myqlib.Runtime_col )
 	} else {
 		// No file given, this is a live collection and we use timestamps
 		loader = myqlib.NewLiveLoader(*interval, *mysql_args)
-		timecol = myqlib.Timestamp_col
+		v.SetTimeCol( &myqlib.Timestamp_col )
 	}
 
 	states, err := myqlib.GetState(loader)
@@ -132,28 +131,20 @@ func main() {
 			v.ExtraHeader(&buf, state)
 
 			var hd1 bytes.Buffer
-			timecol.Header1(&hd1)
-			hd1.WriteString(" ")
 			v.Header1(&hd1)
 			hdr1 := strings.TrimSpace(hd1.String())
 			if hdr1 != "" {
 				buf.WriteString(hd1.String())
 			}
 
-			timecol.Header2(&buf)
-			buf.WriteString(" ")
 			v.Header2(&buf)
 
 			*header = myqlib.GetTermHeight() - 3
 			// fmt.Println( "New height = ", *header )
 		}
 		// Output data
-		timecol.Data(&buf, state)
-		buf.WriteString(" ")
-		v.Data(&buf, state)
+		lines += v.Data(&buf, state)
 		buf.WriteTo(os.Stdout)
-
-		lines++
 	}
 
 	os.Exit(OK)
