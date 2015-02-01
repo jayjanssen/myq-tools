@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/jayjanssen/myq-tools/myqlib"
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/jayjanssen/myq-tools/myqlib"
 	"os"
 	"os/signal"
 	"runtime/pprof"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -67,7 +68,14 @@ func main() {
 		fmt.Fprintln(os.Stderr, "\nViews:")
 
 		var view_usage bytes.Buffer
-		for name, view := range views {
+
+		var sorted_views []string
+		for name, _ := range views {
+			sorted_views = append(sorted_views, name)
+		}
+		sort.Strings(sorted_views)
+		for _, name := range sorted_views {
+			view := views[name]
 			view_usage.WriteString(fmt.Sprint("  ", name, ": "))
 			view.Help(&view_usage, true)
 		}
