@@ -132,13 +132,17 @@ func main() {
 		// Output a header if necessary
 		if lines % *header == 0 {
 			lines = 0
+			headers := []string{}
 			for headerln := range v.Header(state) {
-				buf.WriteString( fmt.Sprint( headerln, "\n"))
+				headers = append( headers, headerln )
+			} // headers come out in reverse order
+			for i := len(headers)-1; i >= 0; i-- {
+				buf.WriteString( fmt.Sprint( headers[i], "\n"))
 				lines += 1
 			}
 
 			// Recalculate the height of the next header
-			*header = myqlib.GetTermHeight() - 3
+			*header = myqlib.GetTermHeight()
 		}
 		// Output data
 		for dataln := range v.Data(state) {

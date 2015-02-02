@@ -176,16 +176,18 @@ func (v *GroupCol) Header(state *MyqState) (chan string) {
 	go func() {
 		defer close(ch)
 		
+		// Output the columns first
+		viewch := v.NormalView.Header(state)
+		for viewstr := range viewch {
+			ch <- viewstr
+		}
+		
+		// Then our title (reverse order)
 		str := v.title
 		if len(str) > int(v.Width()) {
 			str = v.title[0:v.Width()]
 		}
 		ch <- fmt.Sprintf(fmt.Sprint(`%-`, v.Width(), `s`), str)
-		
-		viewch := v.NormalView.Header(state)
-		for viewstr := range viewch {
-			ch <- viewstr
-		}
 	}()
 	
 	return ch
