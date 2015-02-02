@@ -1,14 +1,13 @@
 package myqlib
 
 import (
-	"bytes"
 	"fmt"
 )
 
 // All Columns must implement the following
 type Col interface {
-	// outputs (write to the buffer)
-	Help(b *bytes.Buffer)    // short help
+	// Column help
+	Help() chan string 
 	
 	// Write a line (or lines) of header to the returned channel
 	Header(state *MyqState) chan string
@@ -16,13 +15,8 @@ type Col interface {
 	// A full line of output given the state
 	Data(state *MyqState) chan string
 
-	// put a filler for the column into the buffer (usually because we can't put something useful)
-	Filler() (string)
-	Blank() (string) // line blank, but only spaces
-	
-	WriteString(val string) (string) // output the given val to fit the width of the column
-
-	Width() int64 // width of the column
+ // width of the column
+	Width() int64
 }
 
 // 'Default' column -- "inherited" by others
@@ -32,8 +26,10 @@ type DefaultCol struct {
 	width int64  // width of the column output (header and data)
 }
 
-func (c DefaultCol) Help(b *bytes.Buffer) {
-	b.WriteString(fmt.Sprint(c.name, ": ", c.help))
+func (c DefaultCol) Help() (chan string) {
+	ch := make( chan string, 1 ); defer close( ch )
+	ch <- fmt.Sprint(c.name, ": ", c.help)
+	return ch
 }
 func (c DefaultCol) Width() int64 { return c.width }
 
@@ -49,15 +45,6 @@ func (c DefaultCol) Header(state *MyqState) chan string {
 	return ch
 }
 
-func (c DefaultCol) Filler() (string) {
-	return c.WriteString("-")
-}
-func (c DefaultCol) Blank() (string) {
-	return c.WriteString(" ")
-}
-func (c DefaultCol) WriteString(val string) (string) {
-	return fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), val)
-}
 
 
 // Meta-type, displays some kind of number
@@ -81,16 +68,12 @@ func (c GaugeCol) Data(state *MyqState) (chan string){
 	ch := make( chan string, 1 ); defer close( ch )
 	
 	if val, err := state.Cur.getFloat(c.variable_name); err == nil {
-		ch <- c.WriteString(collapse_number(val, c.Width(), c.precision, c.units))
+		ch <- fit_string(collapse_number(val, c.Width(), c.precision, c.units), c.Width())
 	} else if val, err := state.Cur.getString(c.variable_name); err == nil {
-		if len(val) > int(c.Width()) {
-			ch <- c.WriteString(val[0:c.Width()]) // first 'width' chars
-		} else {
-			ch <- c.WriteString(val)
-		}
+		ch <- fit_string( val, c.Width())
 	} else {
 		// must be missing, just filler
-		ch <- c.Filler()
+		ch <- column_filler(c)
 	}
 	
 	return ch
@@ -112,11 +95,11 @@ func (c RateCol) Data(state *MyqState) (chan string) {
 	pnum, _ := state.Prev.getFloat(c.variable_name)
 
 	if cerr != nil { // we only care about cerr, if perr is set, it should be a 0.0
-		ch <- c.Filler()
+		ch <- column_filler(c)
 	} else {
-		rate := calculate_rate(cnum, pnum, state.SecondsDiff)
-		cv := collapse_number(rate, c.Width(), c.precision, c.units)
-		ch <- c.WriteString(cv)
+		cv := collapse_number(calculate_rate(cnum, pnum, state.SecondsDiff), 
+			c.Width(), c.precision, c.units)
+		ch <- fit_string(cv, c.Width())
 	}
 	return ch
 }
@@ -137,11 +120,11 @@ func (c DiffCol) Data(state *MyqState) (chan string) {
 	pnum, _ := state.Prev.getFloat(c.variable_name)
 
 	if cerr != nil { // we only care about cerr, if perr is set, it should be a 0.0
-		ch <- c.Filler()
+		ch <- column_filler(c)
 	} else {
-		diff := calculate_diff(cnum, pnum)
-		cv := collapse_number(diff, c.Width(), c.precision, c.units)
-		ch <- c.WriteString(cv)
+		cv := collapse_number(
+			calculate_diff(cnum, pnum), c.Width(), c.precision, c.units)
+		ch <- fit_string(cv, c.Width())
 	}
 	return ch
 }
@@ -178,10 +161,10 @@ func (c PercentCol) Data(state *MyqState) (chan string) {
 
 	// Must have both
 	if nerr != nil || derr != nil || denomenator == 0 {
-		ch <- c.Filler()
+		ch <- column_filler(c)
 	} else {
 		cv := collapse_number((numerator/denomenator)*100, c.Width(), c.precision, c.units)
-		ch <- c.WriteString(cv)
+		ch <- fit_string( cv, c.Width())
 	}
 	return ch
 }
@@ -199,13 +182,7 @@ func NewStringCol(name, help string, w int64, variable_name string) StringCol {
 func (c StringCol) Data(state *MyqState) (chan string){
 	ch := make( chan string, 1 ); defer close( ch )
 	val := state.Cur.getStr(c.variable_name)
-
-	if len(val) > int(c.Width()) {
-		ch <- c.WriteString(val[0:c.Width()]) // first 'width' chars
-	} else {
-		ch <- c.WriteString(val)
-	}
-	
+	ch <- fit_string( val, c.Width())
 	return ch
 }
 
@@ -220,14 +197,7 @@ func NewRightmostCol(name, help string, w int64, variable_name string) Rightmost
 
 func (c RightmostCol) Data(state *MyqState) (chan string){
 	ch := make( chan string, 1 ); defer close( ch )
-	
-	// We show the least-significant width digits of the value
-	id := state.Cur.getStr(c.variable_name)
-	if len(id) > int(c.Width()) {
-		ch <- c.WriteString(id[len(id)-int(c.Width()):])
-	} else {
-		ch <- c.WriteString(id)
-	}
+	ch <- right_fit_string( state.Cur.getStr(c.variable_name), c.Width())
 	return ch
 }
 
@@ -249,7 +219,7 @@ func (c CurDiffCol) Data(state *MyqState) (chan string){
 	snum, _ := state.Cur.getFloat(c.smaller)
 
 	cv := collapse_number(calculate_diff(bnum, snum), c.Width(), c.precision, c.units)
-	ch <- c.WriteString(cv)
+	ch <- fit_string(cv, c.Width())
 	return ch
 }
 
@@ -275,7 +245,7 @@ func (c RateSumCol) Data(state *MyqState) (chan string){
 
 	rate := calculate_rate(cursum, prevsum, state.SecondsDiff)
 	cv := collapse_number(rate, c.Width(), c.precision, c.units)
-	ch <- c.WriteString(cv)
+	ch <- fit_string(cv, c.Width())
 	
 	return ch
 }

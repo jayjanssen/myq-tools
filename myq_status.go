@@ -76,7 +76,9 @@ func main() {
 		for _, name := range sorted_views {
 			view := views[name]
 			view_usage.WriteString(fmt.Sprint("  ", name, ": "))
-			view.ShortHelp(&view_usage)
+			for shortst := range view.ShortHelp() {
+				view_usage.WriteString(fmt.Sprint(shortst, "\n"))
+			}
 		}
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(BAD_ARGS)
@@ -95,8 +97,10 @@ func main() {
 
 	if *help {
 		var view_usage bytes.Buffer
-		view_usage.WriteString(fmt.Sprint("'", view, "' Help: "))
-		v.Help(&view_usage)
+		view_usage.WriteString(fmt.Sprint(`'`, view, `': `))
+		for helpst := range v.Help() {
+			view_usage.WriteString( fmt.Sprint( helpst, "\n"))
+		}
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(OK)
 	}
@@ -127,6 +131,7 @@ func main() {
 
 		// Output a header if necessary
 		if lines % *header == 0 {
+			lines = 0
 			for headerln := range v.Header(state) {
 				buf.WriteString( fmt.Sprint( headerln, "\n"))
 				lines += 1

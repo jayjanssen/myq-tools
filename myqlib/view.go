@@ -6,32 +6,20 @@ import (
 )
 
 // All Views must implement the following
-type View interface {
-	// outputs (write to the buffer)
-	Help(b *bytes.Buffer) // help
-	
-	ShortHelp(b *bytes.Buffer) // Brief help
-	
-	 // Use this timecol in the output
-	SetTimeCol( timecol *Col )
-	
-	// header to print above data
+type View interface {	
+	// Column help
+	Help() chan string 
+	ShortHelp() chan string
+		
+	// Header/Data functions return a channel of strings
 	Header(state *MyqState) chan string
-	
-	// A full line of output given the state
 	Data(state *MyqState) chan string
 
+	// Use this timecol in the output
+	SetTimeCol( timecol *Col )
+	
 	// All the cols (including time col)
-	Cols() []Col
-	
-	// put a filler for the column into the buffer (usually because we can't put something useful)
-	Filler() (string)
-	Blank() (string) // line blank, but only spaces
-	
-	WriteString(val string) (string) // output the given val to fit the width of the column
-	
-	Width() int64 // width of the view
-	
+	all_cols() []Col
 }
 
 // NormalView
@@ -45,18 +33,29 @@ func NewNormalView(help string, cols ...Col) *NormalView {
 	return &NormalView{DefaultCol:DefaultCol{help: help}, cols: cols}
 }
 
-func (v *NormalView) Help(b *bytes.Buffer) {
-	v.ShortHelp(b)
-	b.WriteString("\n")
-	for _, col := range v.cols {
-		col.Help(b)
-		b.WriteString("\n")
-	}
+func (v *NormalView) Help() (chan string) {
+	ch := make( chan string )
+
+	go func() {
+		defer close( ch )
+		for shortst := range v.ShortHelp() {
+			ch <- shortst
+		}
+		
+		for _, col := range v.cols {
+			for colst := range col.Help() {
+				ch <- fmt.Sprint( "\t", colst)
+			}
+		}
+	}()
+	
+	return ch
 }
 
-func (v *NormalView) ShortHelp(b *bytes.Buffer) {
-	b.WriteString(v.help)
-	b.WriteString("\n")
+func (v *NormalView) ShortHelp() (chan string) {
+	ch := make( chan string, 1); defer close(ch)
+	ch <- fmt.Sprint( v.help )
+	return ch
 }
 
 func (v *NormalView) SetTimeCol( timecol *Col ) {
@@ -64,58 +63,55 @@ func (v *NormalView) SetTimeCol( timecol *Col ) {
 }
 
 func (v *NormalView) Header(state *MyqState) (chan string) {
+	return v.ordered_col_output( func(c Col) (chan string) {
+		 return c.Header(state)
+	})
+}
+
+func (v *NormalView) Data(state *MyqState) (chan string) {	
+	return v.ordered_col_output( func(c Col) (chan string) {
+		 return c.Data(state)
+	})
+}
+
+func (v *NormalView) ordered_col_output(get_col_chan func(c Col)(chan string)) (chan string) {
 	var column_channels []chan string
-	for _, col := range v.Cols() {
-		column_channels = append( column_channels, col.Header(state))
+	for _, col := range v.all_cols() {
+		column_channels = append( column_channels, get_col_chan(col))
 	}
 	
 	ch := make( chan string )
-	go v.ordered_col_output( ch, column_channels )
-	
-	return ch
-}
-
-func (v *NormalView) Data(state *MyqState) (chan string) {
-	var column_channels []chan string
-	for _, col := range v.Cols() {
-		column_channels = append( column_channels, col.Data(state))
-	}
-	
-	ch := make( chan string )
-	go v.ordered_col_output( ch, column_channels )
-	
-	return ch
-}
-
-func (v *NormalView) ordered_col_output( ch chan string, column_channels []chan string ) {
-	defer close( ch )
-	for {
-		var hdrline bytes.Buffer
-		got_something := false
-		space := false
-		for i, col := range v.Cols() {
-			if space {
-				hdrline.WriteString(" ")
-			} else {
-				space = true
+	go func() {		
+		defer close( ch )
+		for {
+			var hdrline bytes.Buffer
+			got_something := false
+			space := false
+			for i, col := range v.all_cols() {
+				if space {
+					hdrline.WriteString(" ")
+				} else {
+					space = true
+				}
+				if str, more := <- column_channels[i]; more {
+					hdrline.WriteString( str )
+					got_something = true
+				} else {
+					hdrline.WriteString(column_blank( col))
+				}
 			}
-			if str, more := <- column_channels[i]; more {
-				hdrline.WriteString( str )
-				got_something = true
+			if got_something {
+				ch <- hdrline.String()
 			} else {
-				hdrline.WriteString( col.Blank())
+				break
 			}
 		}
-		if got_something {
-			ch <- hdrline.String()
-		} else {
-			break
-		}
-	}
+	}()
+	return ch
 }
 
 // All columns preceeded by the time column
-func (v *NormalView) Cols() []Col {
+func (v *NormalView) all_cols() []Col {
 	if v.timecol == nil {
 		return v.cols
 	} else {
@@ -124,7 +120,7 @@ func (v *NormalView) Cols() []Col {
 }
 
 func (v *NormalView) Width() (w int64) {
-	for _, col := range v.Cols() {
+	for _, col := range v.all_cols() {
 		w += col.Width() + 1
 	}
 	w -= 1
@@ -170,7 +166,7 @@ func NewGroupCol(title, help string, cols ...Col) *GroupCol {
 }
 
 // All columns preceeded by the time column
-func (v *GroupCol) Cols() []Col {
+func (v *GroupCol) all_cols() []Col {
 	return v.cols
 }
 

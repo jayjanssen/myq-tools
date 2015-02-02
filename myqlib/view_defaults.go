@@ -14,7 +14,7 @@ var (
 	Timestamp_col Col = NewFuncCol(`time`, `Time data was printed`, 8,
 		func(state *MyqState, c Col) (chan string){
 			ch := make( chan string, 1 ); defer close( ch )
-			ch <- c.WriteString(time.Now().Format(`15:04:05`))
+			ch <- fit_string(time.Now().Format(`15:04:05`), c.Width())
 			return ch
 		})
 
@@ -22,7 +22,7 @@ var (
 		func(state *MyqState, c Col) (chan string) {
 			ch := make( chan string, 1 ); defer close( ch )
 			runtime := time.Duration(state.Cur.getI(`uptime`)-state.FirstUptime) * time.Second
-			ch <- c.WriteString(runtime.String())
+			ch <- fit_string(runtime.String(), c.Width())
 			return ch
 		})
 )
@@ -219,13 +219,13 @@ func DefaultViews() map[string]View {
 
 				// Expecting 5 vals here, filler if not
 				if len(vals) != 5 {
-					ch <- c.Filler()
+					ch <- column_filler(c)
 				} else {
 					if avg, err := strconv.ParseFloat(vals[1], 64); err == nil {
 						cv := collapse_number(avg, c.Width(), 2, SecondUnits)
 						ch <- fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), cv)
 					} else {
-						ch <- c.Filler()
+						ch <- column_filler(c)
 					}
 				}
 				return ch
@@ -279,7 +279,7 @@ func DefaultViews() map[string]View {
 			),
 		),
 		`commands`: NewNormalView(`Sorted list of all commands run in a given interval`,
-			NewFuncCol(`Cnts`, `All commands tracked by the Com_* counters`, 4, func(state *MyqState, c Col) (chan string) {
+			NewFuncCol(`Counts`, `All commands tracked by the Com_* counters`, 4, func(state *MyqState, c Col) (chan string) {
 				var all_diffs []float64
 				diff_variables := map[float64][]string{}
 
@@ -311,7 +311,7 @@ func DefaultViews() map[string]View {
 					defer close(ch)
 					for _, diff := range all_diffs {
 						var out bytes.Buffer
-						out.WriteString( c.WriteString(collapse_number(diff, c.Width(), 0, NumberUnits)))
+						out.WriteString( fit_string(collapse_number(diff, c.Width(), 0, NumberUnits), c.Width()))
 						out.WriteString(fmt.Sprintf(" %v", diff_variables[diff]))
 						ch <- out.String()
 					}
