@@ -24,7 +24,7 @@ func main() {
 	// Parse arguments
 	help := flag.Bool("help", false, "this help text")
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
-	header := flag.Int64("header", 20, "repeat the header after this many data points")
+	header := flag.Int64("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to mysqladmin (used for connection options)")
 	flag.StringVar(mysql_args, "a", "", "Short for -mysqlargs")
 	interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
@@ -104,6 +104,14 @@ func main() {
 		view_usage.WriteTo(os.Stderr)
 		os.Exit(OK)
 	}
+	
+	// How many lines before printing a new header
+	var headernum int64
+	if *header != 0 {
+		headernum = *header // Use the specified header count
+	} else {
+		headernum = myqlib.GetTermHeight()
+	}
 
 	// The Loader and Timecol we will use
 	var loader myqlib.Loader
@@ -128,10 +136,9 @@ func main() {
 	lines := int64(0)
 	for state := range states {
 		var buf bytes.Buffer
-
-		// Output a header if necessary
-		if lines % *header == 0 {
-			lines = 0
+		
+		// Reprint a header whenever lines == 0
+		if lines == 0 {
 			headers := []string{}
 			for headerln := range v.Header(state) {
 				headers = append( headers, headerln )
@@ -140,16 +147,23 @@ func main() {
 				buf.WriteString( fmt.Sprint( headers[i], "\n"))
 				lines += 1
 			}
-
-			// Recalculate the height of the next header
-			*header = myqlib.GetTermHeight()
 		}
+
 		// Output data
 		for dataln := range v.Data(state) {
 			buf.WriteString( fmt.Sprint( dataln, "\n"))
 			lines += 1
 		}
 		buf.WriteTo(os.Stdout)
+		
+		// Determine if we need to reset lines to 0 (and trigger a header)
+		if lines / headernum >= 1 {
+			lines = 0
+			if *header == 0 {
+				// Recalculate the height of the next header
+				headernum = myqlib.GetTermHeight()
+			}
+		}
 	}
 
 	os.Exit(OK)
