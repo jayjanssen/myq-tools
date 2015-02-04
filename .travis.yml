@@ -1,9 +1,22 @@
 language: go
-go:
-  - tip
-install:
-  - go get github.com/mitchellh/gox
-script: "./build.sh"
+go: tip
+env:
+  # "gvm update" resets GOOS and GOARCH environment variable, workaround it by setting
+  # BUILD_GOOS and BUILD_GOARCH and overriding GOARCH and GOOS in the build script
+  global:
+    - BUILD_GOARCH=amd64
+    - BUILD_GOARCH=386
+    - BUILD_GOARCH=arm
+  matrix:
+    - BUILD_GOOS=linux
+    - BUILD_GOOS=darwin
+    - BUILD_GOOS=windows
+script:
+  - gvm cross $BUILD_GOOS $BUILD_GOARCH
+  - GOARCH=$BUILD_GOARCH GOOS=$BUILD_GOOS go build
+
+  # only test on linux
+  - if [ $BUILD_GOOS == "linux" ]; then GOARCH=$BUILD_GOARCH GOOS=$BUILD_GOOS go test -bench=. ./...; fi
 git:
   submodules: false
 notifications:
