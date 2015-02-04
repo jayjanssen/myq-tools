@@ -7,16 +7,19 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"bytes"
 )
 
 // this needs some error handling and testing love
-func GetTermHeight() int64 {
+func GetTermSize() (height, width int64) {
 	cmd := exec.Command("stty", "size")
 	cmd.Stdin = os.Stdin
 	out, _ := cmd.Output()
-	str := strings.Split(strings.TrimSpace(string(out)), " ")[0]
-	height, _ := strconv.ParseInt(str, 10, 64)
-	return height
+	vals := strings.Split(strings.TrimSpace(string(out)), " ")
+	
+	height, _ = strconv.ParseInt(vals[0], 10, 64)
+	width, _ = strconv.ParseInt(vals[1], 10, 64)
+	return 
 }
 
 // Set OS-specific SysProcAttrs if they exist
@@ -32,3 +35,22 @@ func cleanupSubcmd(c *exec.Cmd) {
 		c.SysProcAttr = attr
 	}
 }
+
+
+// 
+type FixedWidthBuffer struct {
+	bytes.Buffer
+	maxwidth int64
+}
+func (b *FixedWidthBuffer) SetWidth(w int64) {
+	b.maxwidth = w
+}
+func (b *FixedWidthBuffer) WriteString(s string) (n int, err error) {
+	runes := bytes.Runes([]byte(s))
+	if b.maxwidth != 0 && len(runes) > int( b.maxwidth ) {
+		return b.Buffer.WriteString( string(runes[:b.maxwidth]))
+	} else {
+		return b.Buffer.WriteString( s )
+	}
+}
+

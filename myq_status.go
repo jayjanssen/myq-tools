@@ -25,6 +25,8 @@ func main() {
 	help := flag.Bool("help", false, "this help text")
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
 	header := flag.Int64("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
+	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
+	
 	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to mysqladmin (used for connection options)")
 	flag.StringVar(mysql_args, "a", "", "Short for -mysqlargs")
 	interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
@@ -105,12 +107,14 @@ func main() {
 		os.Exit(OK)
 	}
 	
+	termheight, termwidth := myqlib.GetTermSize()
+	
 	// How many lines before printing a new header
 	var headernum int64
 	if *header != 0 {
 		headernum = *header // Use the specified header count
 	} else {
-		headernum = myqlib.GetTermHeight()
+		headernum = termheight
 	}
 
 	// The Loader and Timecol we will use
@@ -134,9 +138,12 @@ func main() {
 
 	// Apply selected view to output each sample
 	lines := int64(0)
+	var buf myqlib.FixedWidthBuffer
+	if *width == true {
+		buf.SetWidth( termwidth )
+	}
+	
 	for state := range states {
-		var buf bytes.Buffer
-		
 		// Reprint a header whenever lines == 0
 		if lines == 0 {
 			headers := []string{}
@@ -148,6 +155,10 @@ func main() {
 				lines += 1
 			}
 		}
+		
+		if termwidth > 0 {
+			
+		}
 
 		// Output data
 		for dataln := range v.Data(state) {
@@ -155,13 +166,18 @@ func main() {
 			lines += 1
 		}
 		buf.WriteTo(os.Stdout)
+		buf.Reset()
 		
 		// Determine if we need to reset lines to 0 (and trigger a header)
 		if lines / headernum >= 1 {
 			lines = 0
+			// Recalculate the size of the terminal now too
+			termheight, termwidth = myqlib.GetTermSize()
+			if *width == true {
+				buf.SetWidth( termwidth )
+			}			
 			if *header == 0 {
-				// Recalculate the height of the next header
-				headernum = myqlib.GetTermHeight()
+				headernum = termheight
 			}
 		}
 	}
