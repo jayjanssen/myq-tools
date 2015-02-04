@@ -7,15 +7,15 @@ import (
 // All Columns must implement the following
 type Col interface {
 	// Column help
-	Help() chan string 
-	
+	Help() chan string
+
 	// Write a line (or lines) of header to the returned channel
 	Header(state *MyqState) chan string
 
 	// A full line of output given the state
 	Data(state *MyqState) chan string
 
- // width of the column
+	// width of the column
 	Width() int64
 }
 
@@ -26,26 +26,26 @@ type DefaultCol struct {
 	width int64  // width of the column output (header and data)
 }
 
-func (c DefaultCol) Help() (chan string) {
-	ch := make( chan string, 1 ); defer close( ch )
+func (c DefaultCol) Help() chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
 	ch <- fmt.Sprint(c.name, ": ", c.help)
 	return ch
 }
 func (c DefaultCol) Width() int64 { return c.width }
 
 func (c DefaultCol) Header(state *MyqState) chan string {
-	ch := make( chan string, 1 ); defer close( ch )
-		
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	str := c.name
 	if len(str) > int(c.Width()) {
 		str = c.name[0:c.Width()]
 	}
 	ch <- fmt.Sprintf(fmt.Sprint(`%`, c.Width(), `s`), str)
-	
+
 	return ch
 }
-
-
 
 // Meta-type, displays some kind of number
 type NumCol struct {
@@ -64,18 +64,19 @@ func NewGaugeCol(name, help string, width int64, variable_name string, precision
 	return GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}
 }
 
-func (c GaugeCol) Data(state *MyqState) (chan string){
-	ch := make( chan string, 1 ); defer close( ch )
-	
+func (c GaugeCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	if val, err := state.Cur.getFloat(c.variable_name); err == nil {
 		ch <- fit_string(collapse_number(val, c.Width(), c.precision, c.units), c.Width())
 	} else if val, err := state.Cur.getString(c.variable_name); err == nil {
-		ch <- fit_string( val, c.Width())
+		ch <- fit_string(val, c.Width())
 	} else {
 		// must be missing, just filler
 		ch <- column_filler(c)
 	}
-	
+
 	return ch
 }
 
@@ -88,16 +89,17 @@ func NewRateCol(name, help string, width int64, variable_name string, precision 
 	return RateCol{GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}}
 }
 
-func (c RateCol) Data(state *MyqState) (chan string) {
-	ch := make( chan string, 1 ); defer close( ch )
-	
+func (c RateCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	cnum, cerr := state.Cur.getFloat(c.variable_name)
 	pnum, _ := state.Prev.getFloat(c.variable_name)
 
 	if cerr != nil { // we only care about cerr, if perr is set, it should be a 0.0
 		ch <- column_filler(c)
 	} else {
-		cv := collapse_number(calculate_rate(cnum, pnum, state.SecondsDiff), 
+		cv := collapse_number(calculate_rate(cnum, pnum, state.SecondsDiff),
 			c.Width(), c.precision, c.units)
 		ch <- fit_string(cv, c.Width())
 	}
@@ -113,9 +115,10 @@ func NewDiffCol(name, help string, width int64, variable_name string, precision 
 	return DiffCol{GaugeCol{DefaultCol{name, help, width}, NumCol{precision, units}, variable_name}}
 }
 
-func (c DiffCol) Data(state *MyqState) (chan string) {
-	ch := make( chan string, 1 ); defer close( ch )
-	
+func (c DiffCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	cnum, cerr := state.Cur.getFloat(c.variable_name)
 	pnum, _ := state.Prev.getFloat(c.variable_name)
 
@@ -132,13 +135,13 @@ func (c DiffCol) Data(state *MyqState) (chan string) {
 // Func Columns run a custom function to produce their output
 type FuncCol struct {
 	DefaultCol
-	fn func(state *MyqState, c Col) (chan string)// takes the state and returns the (unformatted) value
+	fn func(state *MyqState, c Col) chan string // takes the state and returns the (unformatted) value
 }
 
-func (c FuncCol) Data(state *MyqState) (chan string) {
+func (c FuncCol) Data(state *MyqState) chan string {
 	return c.fn(state, c)
 }
-func NewFuncCol(name, help string, width int64, fn func(*MyqState, Col)(chan string)) FuncCol {
+func NewFuncCol(name, help string, width int64, fn func(*MyqState, Col) chan string) FuncCol {
 	return FuncCol{DefaultCol{name, help, width}, fn}
 }
 
@@ -153,9 +156,10 @@ func NewPercentCol(name, help string, w int64, numerator, denomenator string, p 
 	return PercentCol{DefaultCol{name, help, w}, NumCol{p, PercentUnits}, numerator, denomenator}
 }
 
-func (c PercentCol) Data(state *MyqState) (chan string) {
-	ch := make( chan string, 1 ); defer close( ch )
-	
+func (c PercentCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	numerator, nerr := state.Cur.getFloat(c.numerator)
 	denomenator, derr := state.Cur.getFloat(c.denomenator)
 
@@ -164,7 +168,7 @@ func (c PercentCol) Data(state *MyqState) (chan string) {
 		ch <- column_filler(c)
 	} else {
 		cv := collapse_number((numerator/denomenator)*100, c.Width(), c.precision, c.units)
-		ch <- fit_string( cv, c.Width())
+		ch <- fit_string(cv, c.Width())
 	}
 	return ch
 }
@@ -179,10 +183,11 @@ func NewStringCol(name, help string, w int64, variable_name string) StringCol {
 	return StringCol{DefaultCol{name, help, w}, variable_name}
 }
 
-func (c StringCol) Data(state *MyqState) (chan string){
-	ch := make( chan string, 1 ); defer close( ch )
+func (c StringCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
 	val := state.Cur.getStr(c.variable_name)
-	ch <- fit_string( val, c.Width())
+	ch <- fit_string(val, c.Width())
 	return ch
 }
 
@@ -195,9 +200,10 @@ func NewRightmostCol(name, help string, w int64, variable_name string) Rightmost
 	return RightmostCol{StringCol{DefaultCol{name, help, w}, variable_name}}
 }
 
-func (c RightmostCol) Data(state *MyqState) (chan string){
-	ch := make( chan string, 1 ); defer close( ch )
-	ch <- right_fit_string( state.Cur.getStr(c.variable_name), c.Width())
+func (c RightmostCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+	ch <- right_fit_string(state.Cur.getStr(c.variable_name), c.Width())
 	return ch
 }
 
@@ -212,9 +218,10 @@ func NewCurDiffCol(name, help string, width int64, bigger, smaller string, preci
 	return CurDiffCol{DefaultCol{name, help, width}, NumCol{precision, units}, bigger, smaller}
 }
 
-func (c CurDiffCol) Data(state *MyqState) (chan string){
-	ch := make( chan string, 1 ); defer close( ch )
-	
+func (c CurDiffCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	bnum, _ := state.Cur.getFloat(c.bigger)
 	snum, _ := state.Cur.getFloat(c.smaller)
 
@@ -235,9 +242,10 @@ func NewRateSumCol(name, help string, width int64, precision int64, units UnitsD
 	return RateSumCol{DefaultCol{name, help, width}, NumCol{precision, units}, variables, []string{}}
 }
 
-func (c RateSumCol) Data(state *MyqState) (chan string){
-	ch := make( chan string, 1 ); defer close( ch )
-	
+func (c RateSumCol) Data(state *MyqState) chan string {
+	ch := make(chan string, 1)
+	defer close(ch)
+
 	c.expand_variables(state.Cur)
 
 	cursum := calculate_sum(state.Cur, c.expanded_variable_names)
@@ -246,7 +254,7 @@ func (c RateSumCol) Data(state *MyqState) (chan string){
 	rate := calculate_rate(cursum, prevsum, state.SecondsDiff)
 	cv := collapse_number(rate, c.Width(), c.precision, c.units)
 	ch <- fit_string(cv, c.Width())
-	
+
 	return ch
 }
 

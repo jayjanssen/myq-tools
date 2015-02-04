@@ -12,15 +12,17 @@ import (
 // Time Columns
 var (
 	Timestamp_col Col = NewFuncCol(`time`, `Time data was printed`, 8,
-		func(state *MyqState, c Col) (chan string){
-			ch := make( chan string, 1 ); defer close( ch )
+		func(state *MyqState, c Col) chan string {
+			ch := make(chan string, 1)
+			defer close(ch)
 			ch <- fit_string(time.Now().Format(`15:04:05`), c.Width())
 			return ch
 		})
 
 	Runtime_col Col = NewFuncCol(`time`, `Interval since data started`, 8,
-		func(state *MyqState, c Col) (chan string) {
-			ch := make( chan string, 1 ); defer close( ch )
+		func(state *MyqState, c Col) chan string {
+			ch := make(chan string, 1)
+			defer close(ch)
 			runtime := time.Duration(state.Cur.getI(`uptime`)-state.FirstUptime) * time.Second
 			ch <- fit_string(runtime.String(), c.Width())
 			return ch
@@ -194,14 +196,14 @@ func DefaultViews() map[string]View {
 			),
 		),
 		`wsrep`: NewExtraHeaderView(`Galera Wsrep statistics`,
-			func(state *MyqState) (chan string){
-				ch := make( chan string, 1 )
+			func(state *MyqState) chan string {
+				ch := make(chan string, 1)
 				defer close(ch)
-				ch <- fmt.Sprintf("%s / %s (idx: %d) / %s %s", 
+				ch <- fmt.Sprintf("%s / %s (idx: %d) / %s %s",
 					state.Cur.getStr(`V_wsrep_cluster_name`),
-					state.Cur.getStr(`V_wsrep_node_name`), 
+					state.Cur.getStr(`V_wsrep_node_name`),
 					state.Cur.getI(`wsrep_local_index`),
-					state.Cur.getStr(`wsrep_provider_name`), 
+					state.Cur.getStr(`wsrep_provider_name`),
 					state.Cur.getStr(`wsrep_provider_version`))
 				return ch
 			},
@@ -213,8 +215,9 @@ func DefaultViews() map[string]View {
 			NewGroupCol(`Node`, `Node's specific state`,
 				NewStringCol(`state`, `State of this node`, 4, `wsrep_local_state_comment`),
 			),
-			NewFuncCol(`laten`, `Average replication latency`, 5, func( state *MyqState, c Col) (chan string) {
-				ch := make( chan string, 1 ); defer close( ch )
+			NewFuncCol(`laten`, `Average replication latency`, 5, func(state *MyqState, c Col) chan string {
+				ch := make(chan string, 1)
+				defer close(ch)
 				vals := strings.Split(state.Cur.getStr(`wsrep_evs_repl_latency`), `/`)
 
 				// Expecting 5 vals here, filler if not
@@ -279,7 +282,7 @@ func DefaultViews() map[string]View {
 			),
 		),
 		`commands`: NewNormalView(`Sorted list of all commands run in a given interval`,
-			NewFuncCol(`Counts`, `All commands tracked by the Com_* counters`, 4, func(state *MyqState, c Col) (chan string) {
+			NewFuncCol(`Counts`, `All commands tracked by the Com_* counters`, 4, func(state *MyqState, c Col) chan string {
 				var all_diffs []float64
 				diff_variables := map[float64][]string{}
 
@@ -306,12 +309,12 @@ func DefaultViews() map[string]View {
 				sort.Sort(sort.Reverse(sort.Float64Slice(all_diffs)))
 
 				// Each rate
-				ch := make( chan string )
+				ch := make(chan string)
 				go func() {
 					defer close(ch)
 					for _, diff := range all_diffs {
 						var out bytes.Buffer
-						out.WriteString( fit_string(collapse_number(diff, c.Width(), 0, NumberUnits), c.Width()))
+						out.WriteString(fit_string(collapse_number(diff, c.Width(), 0, NumberUnits), c.Width()))
 						out.WriteString(fmt.Sprintf(" %v", diff_variables[diff]))
 						ch <- out.String()
 					}

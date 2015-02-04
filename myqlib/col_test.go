@@ -13,7 +13,7 @@ func TestIntCol(t *testing.T) {
 	state.Cur = make(MyqSample)
 	state.Cur["threads_running"] = "10"
 
-	str := <- col.Data(&state)
+	str := <-col.Data(&state)
 	if str != "   10" {
 		t.Fatal("Bad output", str)
 	}
@@ -28,7 +28,7 @@ func TestFloatCol(t *testing.T) {
 	state.Cur = make(MyqSample)
 	state.Cur["wsrep_apply_oooe"] = "0.015600"
 
-	str := <- col.Data(&state)
+	str := <-col.Data(&state)
 	if str != "0.016" {
 		t.Fatal("Bad output", str)
 	}

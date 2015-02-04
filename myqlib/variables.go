@@ -1,8 +1,8 @@
 package myqlib
 
 import (
-	"regexp"
 	"fmt"
+	"regexp"
 )
 
 // Given a variable list (potentially with regexes) and a sample, expand the variables to all possible matches
@@ -29,7 +29,7 @@ func expand_variables(variables []string, sample MyqSample) (expanded []string) 
 }
 
 // Fit a given string into a width
-func fit_string(val string, width int64) (string) {
+func fit_string(val string, width int64) string {
 	if len(val) > int(width) {
 		return val[0:width] // First width characters
 	} else {
@@ -38,7 +38,7 @@ func fit_string(val string, width int64) (string) {
 }
 
 // Fit a given string into a width
-func right_fit_string(val string, width int64) (string) {
+func right_fit_string(val string, width int64) string {
 	if len(val) > int(width) {
 		return val[len(val)-int(width):]
 	} else {
@@ -46,9 +46,9 @@ func right_fit_string(val string, width int64) (string) {
 	}
 }
 
-func column_filler(c Col) (string) {
+func column_filler(c Col) string {
 	return fit_string("-", c.Width())
 }
-func column_blank(c Col) (string) {
+func column_blank(c Col) string {
 	return fit_string(" ", c.Width())
 }
