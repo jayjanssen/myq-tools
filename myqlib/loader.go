@@ -106,28 +106,12 @@ type MyqState struct {
 // Given a loader, get a channel of myqstates being returned
 func GetState(l Loader) (chan *MyqState, error) {
 	// First getVars, if possible
+	var latestvars MyqSample // whatever the last vars sample is will be here (may be empty)
 	varsch, varserr := l.getVars()
 	// return the error if getVars fails, but not if it's just due to a missing file
 	if varserr != nil && varserr.Error() != "No file given" {
 		// Serious error
 		return nil, varserr
-	}
-
-	// Vars fetching loop
-	var latestvars MyqSample // whatever the last vars sample is will be here (may be empty)
-	gotvars := make(chan bool, 1)
-
-	if varserr == nil {
-		// Only start up the latestvars loop if there are no errors
-		go func() {
-			for vars := range varsch {
-				latestvars = vars
-				gotvars <- true
-			}
-			gotvars <- true
-		}()
-	} else {
-		gotvars <- true
 	}
 
 	// Now getStatus
@@ -158,7 +142,7 @@ func GetState(l Loader) (chan *MyqState, error) {
 			if prev != nil {
 				state.Prev = prev
 
-				// Calculate timediff if there is a prev.  Only file loader?
+				// Calcuate timediff if there is a prev.  Only file loader?
 				curup, _ := status.getFloat(`uptime`)
 				preup, _ := prev.getFloat(`uptime`)
 				state.SecondsDiff = curup - preup
@@ -169,10 +153,15 @@ func GetState(l Loader) (chan *MyqState, error) {
 				}
 			}
 
-			// In the first loop iteration, wait for some vars to be loaded
-			if prev == nil {
-				<-gotvars
-			}
+      // If varserr is clear at this point, we're expecting some vars
+      if varserr == nil {
+  			// get some new vars, or skip if the varsch is closed
+  			newvars, ok :=	<- varsch
+        if ok { 
+          latestvars = newvars
+        }
+      }
+
 			// Add latest vars to status with prefix
 			for k, v := range latestvars {
 				newkey := fmt.Sprint(VAR_PREFIX, k)
