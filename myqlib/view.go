@@ -143,13 +143,14 @@ func (v *ExtraHeaderView) Header(state *MyqState) chan string {
 
 	go func() {
 		defer close(ch)
-		extrach := v.extra_header(state)
-		for extrastr := range extrach {
-			ch <- extrastr
-		}
 		normalch := v.NormalView.Header(state)
 		for normalstr := range normalch {
 			ch <- normalstr
+		}
+    // Extra headers come out above normal headers, which means we send them later
+		extrach := v.extra_header(state)
+		for extrastr := range extrach {
+			ch <- extrastr
 		}
 	}()
 
