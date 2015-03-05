@@ -153,14 +153,14 @@ func GetState(l Loader) (chan *MyqState, error) {
 				}
 			}
 
-      // If varserr is clear at this point, we're expecting some vars
-      if varserr == nil {
-  			// get some new vars, or skip if the varsch is closed
-  			newvars, ok :=	<- varsch
-        if ok { 
-          latestvars = newvars
-        }
-      }
+			// If varserr is clear at this point, we're expecting some vars
+			if varserr == nil {
+				// get some new vars, or skip if the varsch is closed
+				newvars, ok := <-varsch
+				if ok {
+					latestvars = newvars
+				}
+			}
 
 			// Add latest vars to status with prefix
 			for k, v := range latestvars {

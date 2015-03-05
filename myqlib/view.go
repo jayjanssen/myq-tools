@@ -147,7 +147,7 @@ func (v *ExtraHeaderView) Header(state *MyqState) chan string {
 		for normalstr := range normalch {
 			ch <- normalstr
 		}
-    // Extra headers come out above normal headers, which means we send them later
+		// Extra headers come out above normal headers, which means we send them later
 		extrach := v.extra_header(state)
 		for extrastr := range extrach {
 			ch <- extrastr

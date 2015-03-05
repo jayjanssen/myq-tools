@@ -53,7 +53,7 @@ Vagrant.configure("2") do |config|
       }
       
       # Providers
-      provider_virtualbox( name, node_config, 256 ) { |vb, override|
+      provider_virtualbox( name, node_config, 1024 ) { |vb, override|
         override.vm.network :private_network, type: "dhcp"
         
         provision_puppet( override, "pxc_server.pp" ) {|puppet|
@@ -66,7 +66,7 @@ Vagrant.configure("2") do |config|
         }
       }
 
-      provider_vmware( name, node_config, 256 ) { |vb, override|
+      provider_vmware( name, node_config, 1024 ) { |vb, override|
         provision_puppet( override, "pxc_server.pp" ) {|puppet|
           puppet.facter = {
             # PXC Setup
