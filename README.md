@@ -21,4 +21,5 @@ Running development/latest version
 ----------------------------------
 1. Download and install golang.
 1. Clone this repo to your GO home
+1. Execute 'go get github.com/jayjanssen/myq-tools/myqlib'
 1. Execute 'go run myq_status.go'
