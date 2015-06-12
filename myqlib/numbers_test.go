@@ -28,6 +28,8 @@ func TestOne(t *testing.T) {
 	assert(`twelve m`, `12m`, NumberUnits, 12300000, 0, 4)
 	assert(`twelve point three m`, `12.3m`, NumberUnits, 12300000, 0, 5)
 
+	assert(`three hundred kay`, `300k`, NumberUnits, 300000, 0, 4)
+
 	assert(`one bee`, `1b`, MemoryUnits, 1, 0, 3)
 	assert(`one point nil`, `1b`, MemoryUnits, 1, 1, 3)
 	assert(`one point oh`, `1.0b`, MemoryUnits, 1, 1, 4)
