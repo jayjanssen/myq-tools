@@ -56,7 +56,7 @@ func DefaultViews() map[string]View {
 			),
 			NewGroupCol(`Defs`, `Table Definition Metrics`,
 				NewGaugeCol(`open`, `Open Table Definitions`, 4, `open_table_definitions`, 0, NumberUnits),
-				NewGaugeCol(`opns`, `Opened Table Definitions per Second`, 4, `opened_table_definitions`, 0, NumberUnits),
+				NewRateCol(`opns`, `Opened Table Definitions per Second`, 4, `opened_table_definitions`, 0, NumberUnits),
 			),
 			NewGroupCol(`Files`, `File Metrics`,
 				NewGaugeCol(`open`, `Open Files`, 4, `open_files`, 0, NumberUnits),
