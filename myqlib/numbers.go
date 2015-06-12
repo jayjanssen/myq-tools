@@ -3,6 +3,8 @@ package myqlib
 import (
 	"fmt"
 	"sort"
+	"strings"
+	"unicode/utf8"
 )
 
 type UnitsDef map[float64]string
@@ -59,10 +61,12 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 		unit := units[factor]
 		raw := value / factor
 		str := fmt.Sprintf(fmt.Sprint(`%.`, precision, `f%s`), raw, unit)
+		left := width - int64(utf8.RuneCountInString(str))
 
-		if raw >= 0 && int64(len(str)) <= width+precision {
+		// fmt.Printf( "%f, %d, %d, %s, %f, %s, %d\n", value, width, precision, unit, raw, str, left )
+
+		if raw >= 0 && (width+precision)-int64(utf8.RuneCountInString(str)) >= 0 {
 			// Our number is > 0 and fits into width + precision
-			left := width - int64(len(str))
 			if left < 0 {
 				if precision > 0 {
 					// No space left, try to chop the precision
@@ -75,8 +79,18 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 				// If we have space for some extra precision, use it
 				return fmt.Sprintf(fmt.Sprint(`%.`, left-1, `f%s`), raw, unit)
 			} else {
-				// Just return what we've got
-				return str
+				if factor != 1 && str == fmt.Sprintf("0%s", unit) {
+					if left > 0 {
+						// There's still some space left to print something intelligent
+						return fmt.Sprintf(fmt.Sprint(`%.`, precision+1, `f%s`), raw, unit)[1:]
+					}
+
+					// if we are returning 0m, 0k, etc, then we can't fit this number into the size given
+					return strings.Repeat(`#`, int(width))
+				} else {
+					// Just return what we've got
+					return str
+				}
 			}
 		}
 	}
@@ -88,7 +102,8 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 		return collapse_number(value, width, precision-1, units)
 	} else {
 		// Just print it (too wide)
-		return str
+		// return str
+		return strings.Repeat(`#`, int(width))
 	}
 }
 

@@ -19,9 +19,11 @@ func TestOne(t *testing.T) {
 	assert(`one zero zero zero`, `1000`, NumberUnits, 1000, 0, 4)
 
 	assert(`round up to 1k`, `1k`, NumberUnits, 501, 0, 2)
-	assert(`round down to 0k`, `0k`, NumberUnits, 500, 0, 2)
+	assert(`cant fit 500 into two`, `##`, NumberUnits, 500, 0, 2)
 	assert(`twelve k`, `12k`, NumberUnits, 12300, 0, 4)
 	assert(`one twenty three k`, `123k`, NumberUnits, 123000, 0, 4)
+
+	assert(`point one em`, `.1m`, NumberUnits, 123000, 0, 3)
 
 	assert(`twelve m`, `12m`, NumberUnits, 12300000, 0, 4)
 	assert(`twelve point three m`, `12.3m`, NumberUnits, 12300000, 0, 5)
@@ -30,7 +32,7 @@ func TestOne(t *testing.T) {
 	assert(`one point nil`, `1b`, MemoryUnits, 1, 1, 3)
 	assert(`one point oh`, `1.0b`, MemoryUnits, 1, 1, 4)
 
-	assert(`five oh oh rounded down`, `0K`, MemoryUnits, 500, 0, 3)
+	assert(`five oh oh rounded down`, `.5K`, MemoryUnits, 500, 0, 3)
 	assert(`five fifty rounded up`, `1K`, MemoryUnits, 550, 0, 3)
 	assert(`five fifty bee`, `550b`, MemoryUnits, 550, 0, 4)
 
@@ -42,7 +44,7 @@ func TestOne(t *testing.T) {
 	assert(`one poing oh kay`, `1.0K`, MemoryUnits, 1001, 0, 4)
 
 	assert(`round up to one kay`, `1K`, MemoryUnits, 550, 0, 2)
-	assert(`round down to 0K`, `0K`, MemoryUnits, 500, 0, 2)
+	assert(`cant fit 500b into two`, `##`, MemoryUnits, 500, 0, 2)
 
 	assert(`twelve kay`, `12K`, MemoryUnits, 12300, 0, 4)
 	assert(`one twenty three kay`, `120K`, MemoryUnits, 123000, 0, 4)
@@ -51,5 +53,8 @@ func TestOne(t *testing.T) {
 	assert(`eleven point seven em`, `11.7M`, MemoryUnits, 12300000, 0, 5)
 
 	assert(`zero en ess`, `0.0ns`, SecondUnits, 0, 0, 5)
+	assert(`four seven five mu ess`, `476µs`, SecondUnits, 0.000476, 0, 5)
+
+	assert(`zero en ess`, `0ns`, NanoSecondUnits, 0.000000, 0, 5)
 
 }
