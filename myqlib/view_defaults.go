@@ -24,7 +24,7 @@ var (
 			ch := make(chan string, 1)
 			defer close(ch)
 			runtime := time.Duration(state.Cur.getI(`uptime`)-state.FirstUptime) * time.Second
-			ch <- fit_string(fmt.Sprintf( "%.0fs", runtime.Seconds()), c.Width())
+			ch <- fit_string(fmt.Sprintf("%.0fs", runtime.Seconds()), c.Width())
 			return ch
 		})
 )
