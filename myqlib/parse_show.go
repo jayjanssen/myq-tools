@@ -46,6 +46,8 @@ func scanMySQLShowLines(scanner *bufio.Scanner, ch chan MyqSample) {
 
 			if divideridx == 0 {
 				divideridx = bytes.Index(line, []byte(` | `))
+			} else if len( line ) < divideridx {
+				continue // line truncated, probably EOF
 			}
 
 			key = bytes.Trim(line[:divideridx], `| `)
