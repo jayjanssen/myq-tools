@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -250,7 +251,7 @@ func (l LiveLoader) harvestMySQLAdmin(command MySQLAdminCommand) (chan MyqSample
 		fmt.Sprintf("%.0f", l.getInterval().Seconds()),
 	}
 	if l.args != "" {
-		args = append(args, l.args)
+		args = append(args, strings.Split(l.args, ` `)...)
 	}
 	// fmt.Println( args )
 
