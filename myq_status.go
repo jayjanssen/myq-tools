@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jayjanssen/myq-tools/myqlib"
+	"math"
 	"os"
 	"os/signal"
 	"runtime/pprof"
@@ -88,6 +89,14 @@ func main() {
 
 	if flag.NArg() != 1 {
 		flag.Usage()
+	}
+
+	if interval.Seconds() < 1 {
+		fmt.Fprintln(os.Stderr, "Error: interval must be >= 1s")
+		flag.Usage()
+	} else if math.Mod(float64(interval.Nanoseconds()), 1000000000) != 0.0 {
+		fmt.Fprintln(os.Stderr, "Warning: interval will be rounded to",
+			fmt.Sprintf("%.0f", interval.Seconds()), "seconds")
 	}
 
 	view := flag.Arg(0)
