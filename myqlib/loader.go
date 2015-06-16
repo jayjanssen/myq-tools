@@ -209,7 +209,7 @@ func (l FileLoader) harvestFile(filename string) (chan MyqSample, error) {
 	go func() {
 		defer file.Close()
 		defer close(ch)
-		scanMySQLShowLines(scanner, ch)
+		scanMySQLShowLines(scanner, ch, l.loaderInterval.getInterval())
 	}()
 
 	return ch, nil
@@ -277,7 +277,7 @@ func (l LiveLoader) harvestMySQLAdmin(command MySQLAdminCommand) (chan MyqSample
 	// The file scanning goes into the background
 	go func() {
 		defer close(ch)
-		scanMySQLShowLines(scanner, ch)
+		scanMySQLShowLines(scanner, ch, l.loaderInterval.getInterval())
 	}()
 
 	// Handle if the subcommand exits
