@@ -1,7 +1,6 @@
 package myqlib
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -43,7 +42,7 @@ func (s MyqSample) getInt(key string) (int64, error) {
 		return 0, errors.New("Key not found")
 	}
 
-	conv, err := strconv.ParseInt(val, 0, 64)
+	conv, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
 		return 0, err
 	} else {
@@ -202,14 +201,13 @@ func (l FileLoader) harvestFile(filename string) (chan MyqSample, error) {
 		return nil, err
 	}
 
-	scanner := bufio.NewScanner(file)
 	var ch = make(chan MyqSample)
 
 	// The file scanning goes into the background
 	go func() {
 		defer file.Close()
 		defer close(ch)
-		scanMySQLShowLines(scanner, ch, l.loaderInterval.getInterval())
+		parseSamples(file, ch, l.loaderInterval.getInterval())
 	}()
 
 	return ch, nil
@@ -271,13 +269,12 @@ func (l LiveLoader) harvestMySQLAdmin(command MySQLAdminCommand) (chan MyqSample
 		return nil, err
 	}
 
-	scanner := bufio.NewScanner(stdout)
 	var ch = make(chan MyqSample)
 
 	// The file scanning goes into the background
 	go func() {
 		defer close(ch)
-		scanMySQLShowLines(scanner, ch, l.loaderInterval.getInterval())
+		parseSamples(stdout, ch, l.loaderInterval.getInterval())
 	}()
 
 	// Handle if the subcommand exits
