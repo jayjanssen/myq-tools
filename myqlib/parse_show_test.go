@@ -132,3 +132,31 @@ func BenchmarkParseVariables(b *testing.B) {
 		<-samples
 	}
 }
+
+func BenchmarkParseManySamples(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.lots", ""}
+		samples, err := l.getStatus()
+
+		if err != nil {
+			b.Error(err)
+		}
+		for j := 0; j <= 220; j++ {
+			<- samples
+		}
+	}
+}
+
+func BenchmarkParseManySamplesLongInterval(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		l := FileLoader{loaderInterval(1 * time.Minute), "../testdata/mysqladmin.lots", ""}
+		samples, err := l.getStatus()
+
+		if err != nil {
+			b.Error(err)
+		}
+		for j := 0; j <= 220; j++ {
+			<- samples
+		}
+	}
+}
