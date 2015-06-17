@@ -3,13 +3,13 @@
 
 require File.dirname(__FILE__) + '/lib/vagrant-common.rb'
 
-pxc_version = "56"
+ps_version = "56"
 
 # Node group counts and aws security groups (if using aws provider)
-pxc_nodes = 2
-pxc_node_name_prefix = "node"
+ps_nodes = 1
+ps_node_name_prefix = "ps"
 
-cluster_address = 'gcomm://' + Array.new( pxc_nodes ){ |i| pxc_node_name_prefix + (i+1).to_s }.join(',')
+cluster_address = 'gcomm://' + Array.new( ps_nodes ){ |i| ps_node_name_prefix + (i+1).to_s }.join(',')
 
 
 Vagrant.configure("2") do |config|
@@ -22,21 +22,21 @@ Vagrant.configure("2") do |config|
   end
 
   # Create the PXC nodes
-  (1..pxc_nodes).each do |i|
-    name = pxc_node_name_prefix + i.to_s
+  (1..ps_nodes).each do |i|
+    name = ps_node_name_prefix + i.to_s
     config.vm.define name do |node_config|
       node_config.vm.hostname = name
       node_config.vm.provision :hostmanager
       
       # Provisioners
-      provision_puppet( node_config, "pxc_server.pp" ) { |puppet| 
+      provision_puppet( node_config, "percona_server.pp" ) { |puppet| 
         puppet.facter = {
           # PXC setup
-          "percona_server_version"  => pxc_version,
+          "percona_server_version"  => ps_version,
           'innodb_buffer_pool_size' => '128M',
           'innodb_log_file_size' => '64M',
           'innodb_flush_log_at_trx_commit' => '0',
-          'pxc_bootstrap_node' => (i == 1 ? true : false ),
+          'ps_bootstrap_node' => (i == 1 ? true : false ),
           'wsrep_cluster_address' => cluster_address,
           'wsrep_provider_options' => 'gcache.size=128M; gcs.fc_limit=128',
           
@@ -56,7 +56,7 @@ Vagrant.configure("2") do |config|
       provider_virtualbox( name, node_config, 1024 ) { |vb, override|
         override.vm.network :private_network, type: "dhcp"
         
-        provision_puppet( override, "pxc_server.pp" ) {|puppet|
+        provision_puppet( override, "percona_server.pp" ) {|puppet|
           puppet.facter = {
             'default_interface' => 'eth1',
             
@@ -67,7 +67,7 @@ Vagrant.configure("2") do |config|
       }
 
       provider_vmware( name, node_config, 1024 ) { |vb, override|
-        provision_puppet( override, "pxc_server.pp" ) {|puppet|
+        provision_puppet( override, "percona_server.pp" ) {|puppet|
           puppet.facter = {
             # PXC Setup
             'datadir_dev' => 'dm-2',
