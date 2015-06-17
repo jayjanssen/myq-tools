@@ -29,9 +29,28 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 	// if the interval is larger, we check samples for intervals
 	// so we can avoid parsing them fully.
 	check_intervals := false
+	uptime_str := []byte(`Uptime`)
 	var prev_uptime float64
 	if interval.Nanoseconds() > 1000000 {
 		check_intervals = true
+	}
+	// Scan back for the Uptime in the given record and return true if it can be skipped
+	skip_interval := func( record []byte) (skippable bool) {
+		upt_pos := bytes.Index( record, uptime_str) + len(uptime_str) // After the Uptime
+		if upt_pos >= 0 {
+			upt_nl := bytes.IndexByte( record[upt_pos:], '\n' ) + upt_pos // Find the next newline
+			uptime_str := string(bytes.Trim( record[upt_pos:upt_nl], `| ` )) // Trim extra chars
+			current_uptime, _ := strconv.ParseFloat( uptime_str, 64 ) // Parse the str to float
+			if prev_uptime == 0 {
+				prev_uptime = current_uptime
+			} else {
+				if current_uptime - prev_uptime < interval.Seconds() {
+					// This sample's uptime is too early, skip it
+					return true
+				}
+			}
+		}
+		return false
 	}
 
 	// This scanner will look for the start of a new set of SHOW STATUS output
@@ -45,29 +64,14 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 			typechecked = true
 		}
 
-		if i := bytes.Index( data, recordmatch ); i >= 0 {
+		if end := bytes.Index( data, recordmatch ); end > 0 {
 			// Found a new record
-			nl := bytes.IndexByte( data[i:], '\n' ) // Find the subsequent newline
+			nl := bytes.IndexByte( data[end:], '\n' ) // Find the subsequent newline
 
-			if check_intervals {
-				// Scan back for the Uptime
-				uptime_str := []byte(`Uptime`)
-				upt_pos := bytes.Index( data[0:i], uptime_str) + len(uptime_str) // After the Uptime
-				if upt_pos >= 0 && upt_pos < i {
-					upt_nl := bytes.IndexByte( data[upt_pos:i], '\n' ) + upt_pos // Find the next newline
-					uptime_str := string(bytes.Trim( data[upt_pos:upt_nl], `| ` ))
-					current_uptime, _ := strconv.ParseFloat( uptime_str, 64 )
-					if prev_uptime == 0 {
-						prev_uptime = current_uptime
-					} else {
-						if current_uptime - prev_uptime < interval.Seconds() {
-							// This sample's uptime is too early, skip it
-							return i+nl+1, nil, nil
-						}
-					}
-				}
+			if check_intervals && skip_interval(data[0:end]) {
+				return end+nl+1, nil, nil
 			}
-			return i+nl+1, data[0:i], nil
+			return end+nl+1, data[0:end], nil
 		}
 
 		// if we're at EOF and have data, return it, otherwise let it fall through
