@@ -142,7 +142,7 @@ func BenchmarkParseManySamples(b *testing.B) {
 			b.Error(err)
 		}
 		for j := 0; j <= 220; j++ {
-			<- samples
+			<-samples
 		}
 	}
 }
@@ -156,7 +156,7 @@ func BenchmarkParseManySamplesLongInterval(b *testing.B) {
 			b.Error(err)
 		}
 		for j := 0; j <= 220; j++ {
-			<- samples
+			<-samples
 		}
 	}
 }
