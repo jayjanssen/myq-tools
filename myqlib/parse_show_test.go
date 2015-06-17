@@ -121,9 +121,21 @@ func BenchmarkParseStatus(b *testing.B) {
 	}
 }
 
-func BenchmarkParseVariables(b *testing.B) {
+func BenchmarkParseVariablesBatch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/variables", ""}
+		samples, err := l.getStatus()
+
+		if err != nil {
+			b.Error(err)
+		}
+		<-samples
+	}
+}
+
+func BenchmarkParseVariablesTabular(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/variables.tab", ""}
 		samples, err := l.getStatus()
 
 		if err != nil {

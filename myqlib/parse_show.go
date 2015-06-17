@@ -1,14 +1,12 @@
 package myqlib
 
 import (
-	"bufio"
 	"bytes"
 	"io"
 	"log"
 	"strconv"
 	"strings"
 	"time"
-	// "fmt"
 )
 
 // Different types of files to parse
@@ -54,7 +52,7 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 	}
 
 	// This scanner will look for the start of a new set of SHOW STATUS output
-	scanner := bufio.NewScanner(reader)
+	scanner := NewScanner(reader)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		// Check if this looks like a TABULAR file, but only once
 		if !typechecked {
@@ -97,7 +95,7 @@ func parseBatch(ch chan MyqSample, buffer *bytes.Buffer, outputtype showoutputty
 	var divideridx int
 
 	timesample := make(MyqSample)
-	scanner := bufio.NewScanner(buffer)
+	scanner := NewScanner(buffer)
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
