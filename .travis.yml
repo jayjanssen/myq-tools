@@ -1,14 +1,14 @@
 language: go
 go:
-  - 1.4
+- 1.4
 install:
-  - go get github.com/mitchellh/gox
+- go get github.com/mitchellh/gox
 script:
-  - go test -bench=. ./...
-  - gox -os="linux darwin freebsd" -arch="386 amd64 arm" -build-toolchain
-  - gox -os="linux darwin freebsd" -arch="386 amd64 arm" -output="bin/myq_status.{{.OS}}-{{.Arch}}"
-  - tar cvzf myq_tools.tgz bin/*
-  - zip myq_tools.zip bin/*
+- go test -bench=. ./...
+- gox -os="linux darwin freebsd" -arch="386 amd64 arm" -build-toolchain
+- gox -os="linux darwin freebsd" -arch="386 amd64 arm" -output="bin/myq_status.{{.OS}}-{{.Arch}}"
+- tar cvzf myq_tools.tgz bin/*
+- zip myq_tools.zip bin/*
 git:
   submodules: false
 notifications:
@@ -17,14 +17,16 @@ notifications:
     - jay.janssen@gmail.com
     on_success: change
     on_failure: change
+  slack:
+    secure: HVNf23mY8m2TCSoEaA8fDDgiqy/dETOxsJu+R3QOaOwFeCPNuqWHjfbv05mcv5+1lDVOuh+OWPLz7HN9G78cLqAaTYVmu71Fvllk5NhogqXpXFmDwkgqwIdqJfwsmZPudLFWorAzK0pJp0PZO2ryFWX+CVIA4IQ+SEWsFbrM56g=
 deploy:
   provider: releases
   api_key:
     secure: Zpb1YS6oYPf+KJPWp/ye8bW+pULxmZkhoBBkFIgyM30FbiCmPuZJLqm7Kkw4gUAYisj90lrsGedpvK4aHlE4BZXYt5yBuXHapjImACzX2rm1ssPbtAoyx/68SARSTB3Bm2/MCfI8Py5IRlJCzyTmK1quopWYyUGd/uSbmbsmJzQ=
-  file: 
-    - "myq_tools.tgz"
-    - "myq_tools.zip"
-  skip_cleanup: true 
+  file:
+  - myq_tools.tgz
+  - myq_tools.zip
+  skip_cleanup: true
   on:
     repo: jayjanssen/myq-tools
     all_branches: true
