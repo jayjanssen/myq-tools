@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-type MySQLAdminCommand string
+type MySQLCommand string
 
 const (
-	MYSQLADMIN        string            = "mysqladmin"
-	STATUS_COMMAND    MySQLAdminCommand = "extended-status"
-	VARIABLES_COMMAND MySQLAdminCommand = "variables"
+	MYSQLCLI          string       = "mysql"
+	STATUS_COMMAND    MySQLCommand = "SHOW GLOBAL STATUS;\n"
+	VARIABLES_COMMAND MySQLCommand = "SHOW GLOBAL VARIABLES;\n"
 	// prefix of SHOW VARIABLES keys, they are stored (if available) in the same map as the status variables
 	VAR_PREFIX = "V_"
 )
@@ -235,18 +235,17 @@ func NewLiveLoader(i time.Duration, args string) *LiveLoader {
 	return &LiveLoader{loaderInterval(i), args}
 }
 
-// Collect output from mysqladmin and send it back in a sample
-func (l LiveLoader) harvestMySQLAdmin(command MySQLAdminCommand) (chan MyqSample, error) {
-	// Make sure we have MYSQLADMIN
-	path, err := exec.LookPath(MYSQLADMIN)
+// Collect output from MYSQLCLI and send it back in a sample
+func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
+	// Make sure we have MYSQLCLI
+	path, err := exec.LookPath(MYSQLCLI)
 	if err != nil {
 		return nil, err
 	}
 
 	// Build the argument list
 	args := []string{
-		string(command), "-i",
-		fmt.Sprintf("%.0f", l.getInterval().Seconds()),
+		"-B",
 	}
 	if l.args != "" {
 		args = append(args, strings.Split(l.args, ` `)...)
@@ -265,29 +264,45 @@ func (l LiveLoader) harvestMySQLAdmin(command MySQLAdminCommand) (chan MyqSample
 		return nil, err
 	}
 
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
 
+	// parse samples in the background
 	var ch = make(chan MyqSample)
-
-	// The file scanning goes into the background
 	go func() {
 		defer close(ch)
 		parseSamples(stdout, ch, l.loaderInterval.getInterval())
+	}()
+
+	// feed the MYSQLCLI the given command every interval to produce more output
+	ticker := time.NewTicker(l.getInterval())
+	go func() {
+		defer stdin.Close()
+		for range ticker.C {
+			_, err := stdin.Write([]byte(command))
+			if err != nil {
+				panic("Could not write to MySQL command any longer")
+			}
+		}
 	}()
 
 	// Handle if the subcommand exits
 	go func() {
 		err := cmd.Wait()
 		if err != nil {
-			fmt.Println(MYSQLADMIN, "exited: ", err, stderr.String())
+			fmt.Println(MYSQLCLI, "exited: ", err, stderr.String())
 		}
 	}()
 
 	return ch, nil
 }
 
-func (l LiveLoader) getStatus() (chan MyqSample, error) { return l.harvestMySQLAdmin(STATUS_COMMAND) }
+func (l LiveLoader) getStatus() (chan MyqSample, error) { return l.harvestMySQL(STATUS_COMMAND) }
 
-func (l LiveLoader) getVars() (chan MyqSample, error) { return l.harvestMySQLAdmin(VARIABLES_COMMAND) }
+func (l LiveLoader) getVars() (chan MyqSample, error) { return l.harvestMySQL(VARIABLES_COMMAND) }
