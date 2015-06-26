@@ -299,7 +299,8 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 	go func() {
 		err := cmd.Wait()
 		if err != nil {
-			fmt.Println(MYSQLCLI, "exited: ", err, stderr.String())
+			os.Stderr.WriteString(stderr.String())
+			os.Exit(1)
 		}
 	}()
 
