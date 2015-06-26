@@ -179,6 +179,18 @@ func BenchmarkParseStatus(b *testing.B) {
 	}
 }
 
+func BenchmarkParseStatusBatch(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysql.single", ""}
+		samples, err := l.getStatus()
+
+		if err != nil {
+			b.Error(err)
+		}
+		<-samples
+	}
+}
+
 func BenchmarkParseVariablesBatch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/variables", ""}
