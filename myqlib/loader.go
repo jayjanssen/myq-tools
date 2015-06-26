@@ -250,35 +250,31 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 	if l.args != "" {
 		args = append(args, strings.Split(l.args, ` `)...)
 	}
-	// fmt.Println( args )
 
 	// Initialize the command
 	cmd := exec.Command(path, args...)
 	cleanupSubcmd(cmd)
 
+	// Collect Stderr in a buffer
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
+	// Create a pipe for Stdout
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
 	}
 
+	// Create a pipe for Stdin -- we input our command here every interval
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
 	}
 
+	// Start the command
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-
-	// parse samples in the background
-	var ch = make(chan MyqSample)
-	go func() {
-		defer close(ch)
-		parseSamples(stdout, ch, l.loaderInterval.getInterval())
-	}()
 
 	// feed the MYSQLCLI the given command every interval to produce more output
 	ticker := time.NewTicker(l.getInterval())
@@ -292,6 +288,13 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 		}
 	}()
 
+	// parse samples in the background
+	var ch = make(chan MyqSample)
+	go func() {
+		defer close(ch)
+		parseSamples(stdout, ch, l.loaderInterval.getInterval())
+	}()
+
 	// Handle if the subcommand exits
 	go func() {
 		err := cmd.Wait()
@@ -300,6 +303,7 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 		}
 	}()
 
+	// Got this far, the channel should start getting samples
 	return ch, nil
 }
 
