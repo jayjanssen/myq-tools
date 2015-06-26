@@ -28,7 +28,7 @@ func main() {
 	header := flag.Int64("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
 
-	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to mysqladmin (used for connection options)")
+	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to the mysql cli (used for connection options).  Note that '-p' for a password prompt is not supported.")
 	flag.StringVar(mysql_args, "a", "", "Short for -mysqlargs")
 	interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
 	flag.DurationVar(interval, "i", time.Second, "short for -interval")
