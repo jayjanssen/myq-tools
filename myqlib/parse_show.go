@@ -62,13 +62,20 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 			typechecked = true
 		}
 
-		if end := bytes.Index(data, recordmatch); end > 0 {
+		if end := bytes.Index(data, recordmatch); end >= 0 {
 			// Found a new record
 			nl := bytes.IndexByte(data[end:], '\n') // Find the subsequent newline
 
+			// if our record match is at position 0, we skip this line and start from the next
+			if end == 0 {
+				return end + nl + 1, nil, nil
+			}
+
+			// If we are checking interval, look at the last record's uptime
 			if check_intervals && skip_interval(data[0:end]) {
 				return end + nl + 1, nil, nil
 			}
+			// fmt.Println( "Found record: ", string(data[0:end]))
 			return end + nl + 1, data[0:end], nil
 		}
 
