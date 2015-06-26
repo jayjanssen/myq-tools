@@ -62,8 +62,8 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 			typechecked = true
 		}
 
+		// Find a new record
 		if end := bytes.Index(data, recordmatch); end >= 0 {
-			// Found a new record
 			nl := bytes.IndexByte(data[end:], '\n') // Find the subsequent newline
 
 			// if our record match is at position 0, we skip this line and start from the next
@@ -71,7 +71,7 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 				return end + nl + 1, nil, nil
 			}
 
-			// If we are checking interval, look at the last record's uptime
+			// If we are checking interval, see if we should skip this record
 			if check_intervals && skip_interval(data[0:end]) {
 				return end + nl + 1, nil, nil
 			}
@@ -98,6 +98,7 @@ func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 	}
 }
 
+// Parse a full sample into individual lines, populate a MyqSample and emit it to the channel
 func parseBatch(ch chan MyqSample, buffer *bytes.Buffer, outputtype showoutputtype) {
 	var divideridx int
 
@@ -116,16 +117,21 @@ func parseBatch(ch chan MyqSample, buffer *bytes.Buffer, outputtype showoutputty
 				continue
 			}
 
+			// Get the position of the divider if we don't have it already
 			if divideridx == 0 {
 				divideridx = bytes.Index(line, []byte(` | `))
 			} else if len(line) < divideridx {
-				continue // line truncated, probably EOF
+				// line truncated, probably EOF
+				continue
 			}
 
+			// Grab the key and value and trim the whitespace
 			key = bytes.Trim(line[:divideridx], `| `)
 			value = bytes.Trim(line[divideridx:], `| `)
 		case BATCH:
+			// Batch is much easier, just split on the tab
 			raw := bytes.Split(line, []byte("\t"))
+			// If we don't get 2 fields, skip it.
 			if len(raw) != 2 {
 				continue
 			}
