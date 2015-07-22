@@ -15,11 +15,18 @@ type MySQLCommand string
 
 const (
 	MYSQLCLI          string       = "mysql"
-	STATUS_COMMAND    MySQLCommand = "SHOW GLOBAL STATUS;\n"
-	VARIABLES_COMMAND MySQLCommand = "SHOW GLOBAL VARIABLES;\n"
+	STATUS_COMMAND    MySQLCommand = "SHOW GLOBAL STATUS;SELECT 'END';\n"
+	VARIABLES_COMMAND MySQLCommand = "SHOW GLOBAL VARIABLES;SELECT 'END';\n"
 	// prefix of SHOW VARIABLES keys, they are stored (if available) in the same map as the status variables
 	VAR_PREFIX = "V_"
 )
+
+// Build the argument list
+var MYSQLCLIARGS []string = []string{
+	"-B", // Batch mode (tab-separated output)
+	"-n", // Unbuffered
+	"-N", // Skip column names
+}
 
 type Loader interface {
 	getStatus() (chan MyqSample, error)
@@ -243,10 +250,7 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 		return nil, err
 	}
 
-	// Build the argument list
-	args := []string{
-		"-B",
-	}
+	var args = MYSQLCLIARGS
 	if l.args != "" {
 		args = append(args, strings.Split(l.args, ` `)...)
 	}
@@ -276,15 +280,22 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 		return nil, err
 	}
 
-	// feed the MYSQLCLI the given command every interval to produce more output
+	// feed the MYSQLCLI the given command to produce more output
+	send_command := func() {
+		_, err := stdin.Write([]byte(command))
+		if err != nil {
+			panic("Could not write to MySQL command any longer")
+		}
+	}
+	// send the first command immediately
+	send_command()
+
+	// produce more output every interval
 	ticker := time.NewTicker(l.getInterval())
 	go func() {
 		defer stdin.Close()
 		for range ticker.C {
-			_, err := stdin.Write([]byte(command))
-			if err != nil {
-				panic("Could not write to MySQL command any longer")
-			}
+			send_command()
 		}
 	}()
 

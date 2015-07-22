@@ -135,6 +135,21 @@ func TestTwoBatchSamples(t *testing.T) {
 	checksamples(t, samples, 2)
 }
 
+func TestManyBatchSamples(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysql.lots", ""}
+	samples, err := l.getStatus()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	checksamples(t, samples, 215)
+}
+
 func checksamples(t *testing.T, samples chan MyqSample, expected int) {
 	i := 0
 	var prev MyqSample
@@ -212,6 +227,20 @@ func BenchmarkParseVariablesTabular(b *testing.B) {
 			b.Error(err)
 		}
 		<-samples
+	}
+}
+
+func BenchmarkParseManyBatchSamples(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysql.lots", ""}
+		samples, err := l.getStatus()
+
+		if err != nil {
+			b.Error(err)
+		}
+		for j := 0; j <= 61; j++ {
+			<-samples
+		}
 	}
 }
 
