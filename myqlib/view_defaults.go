@@ -213,7 +213,37 @@ func DefaultViews() map[string]View {
 				NewGaugeCol(`#`, `Cluster size`, 2, `wsrep_cluster_size`, 0, NumberUnits),
 			),
 			NewGroupCol(`Node`, `Node's specific state`,
-				NewStringCol(`state`, `State of this node`, 4, `wsrep_local_state_comment`),
+				// NewStringCol(`state`, `State of this node`, 4, `wsrep_local_state_comment`),
+				NewFuncCol(`state`, `State of this node`, 4, func(state *MyqState, c Col) chan string {
+					ch := make( chan string, 1)
+					defer close(ch)
+
+					st := state.Cur.getStr(`wsrep_local_state_comment`)
+					if strings.HasPrefix(st, `Join`) {
+						switch st {
+						case `Joining`:
+							ch <- `Jing`
+						case `Joining: preparing for State Transfer`:
+							ch <- `J:Pr`
+						case `Joining: requested State Transfer`:
+							ch <- `J:Rq`
+						case `Joining: receiving State Transfer`:
+							ch <- `J:Rc`
+						case `Joining: State Transfer request failed`:
+							ch <- `J:RF`
+						case `Joining: State Transfer failed`:
+							ch <- `J:F`
+						case `Joined`:
+							ch <- `Jned`
+						default: 
+							ch <- st[0:4]
+						}
+					} else {
+						ch <- st[0:4]
+					}
+
+					return ch
+				}),
 			),
 			NewFuncCol(`laten`, `Average replication latency`, 5, func(state *MyqState, c Col) chan string {
 				ch := make(chan string, 1)
