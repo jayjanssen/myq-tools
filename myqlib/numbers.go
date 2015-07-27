@@ -79,7 +79,10 @@ func collapse_number(value float64, width int64, precision int64, units UnitsDef
 				// If we have space for some extra precision, use it
 				return fmt.Sprintf(fmt.Sprint(`%.`, left-1, `f%s`), raw, unit)
 			} else {
-				if factor != 1 && str == fmt.Sprintf("0%s", unit) {
+				if factor != 1 && raw < 1 && left > 0 && fmt.Sprintf(`%.1f`, raw ) != `1.0` {
+					// Raw is < 1, therefore str is rounded up.  Let's print a decimal instead
+					return fmt.Sprintf(fmt.Sprint(`%0.`, precision+left, `f%s`), raw, unit)[1:]
+				} else if factor != 1 && str == fmt.Sprintf("0%s", unit) {
 					if left > 0 {
 						// There's still some space left to print something intelligent
 						return fmt.Sprintf(fmt.Sprint(`%.`, precision+1, `f%s`), raw, unit)[1:]

@@ -24,6 +24,7 @@ func TestOne(t *testing.T) {
 	assert(`one twenty three k`, `123k`, NumberUnits, 123000, 0, 4)
 
 	assert(`point one em`, `.1m`, NumberUnits, 123000, 0, 3)
+	assert(`point six em`, `.6m`, NumberUnits, 550000, 0, 3)
 
 	assert(`twelve m`, `12m`, NumberUnits, 12300000, 0, 4)
 	assert(`twelve point three m`, `12.3m`, NumberUnits, 12300000, 0, 5)
@@ -35,7 +36,7 @@ func TestOne(t *testing.T) {
 	assert(`one point oh`, `1.0b`, MemoryUnits, 1, 1, 4)
 
 	assert(`five oh oh rounded down`, `.5K`, MemoryUnits, 500, 0, 3)
-	assert(`five fifty rounded up`, `1K`, MemoryUnits, 550, 0, 3)
+	assert(`five fifty fit`, `.5K`, MemoryUnits, 550, 0, 3)
 	assert(`five fifty bee`, `550b`, MemoryUnits, 550, 0, 4)
 
 	assert(`one kay`, `1K`, MemoryUnits, 1000, 0, 3)
