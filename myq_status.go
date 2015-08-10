@@ -139,6 +139,7 @@ func main() {
 		v.SetTimeCol(&myqlib.Timestamp_col)
 	}
 
+	// Get channel that will feed us states from the loader
 	states, err := myqlib.GetState(loader)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
