@@ -280,12 +280,19 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 		return nil, err
 	}
 
+	// Handle if the subcommand exits
+	go func() {
+		err := cmd.Wait()
+		if err != nil {
+			os.Stderr.WriteString(stderr.String())
+			os.Exit(1)
+		}
+	}()
+
 	// feed the MYSQLCLI the given command to produce more output
 	send_command := func() {
-		_, err := stdin.Write([]byte(command))
-		if err != nil {
-			panic("Could not write to MySQL command any longer")
-		}
+		// We don't check if the write failed, it's assumed the cmd.Wait() above will catch the sub proc dying
+		stdin.Write([]byte(command))
 	}
 	// send the first command immediately
 	send_command()
@@ -304,15 +311,6 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 	go func() {
 		defer close(ch)
 		parseSamples(stdout, ch, l.loaderInterval.getInterval())
-	}()
-
-	// Handle if the subcommand exits
-	go func() {
-		err := cmd.Wait()
-		if err != nil {
-			os.Stderr.WriteString(stderr.String())
-			os.Exit(1)
-		}
 	}()
 
 	// Got this far, the channel should start getting samples
