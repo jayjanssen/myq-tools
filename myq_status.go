@@ -21,9 +21,15 @@ const (
 	LOADER_ERROR
 )
 
+// Current Version (passed in on build)
+var build_version string
+var build_timestamp string
+
 func main() {
 	// Parse arguments
 	help := flag.Bool("help", false, "this help text")
+	version := flag.Bool("version", false, "print the version")
+
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
 	header := flag.Int64("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
@@ -58,10 +64,17 @@ func main() {
 
 	}
 
+	if *version {
+		fmt.Printf( "myq-tools %s (%s)\n", build_version, build_timestamp )
+		os.Exit(OK)
+	}
+
 	// Load default Views
 	views := myqlib.DefaultViews()
 
 	flag.Usage = func() {
+		fmt.Fprintf( os.Stderr, "myq-tools %s (%s)\n\n", build_version, build_timestamp )
+
 		fmt.Fprintln(os.Stderr, "Usage:\n  myq_status [flags] <view>\n")
 		fmt.Fprintln(os.Stderr, "Description:\n  iostat-like views for MySQL servers\n")
 
