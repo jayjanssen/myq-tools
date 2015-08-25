@@ -1,6 +1,6 @@
 language: go
 go:
-- 1.4
+- 1.5
 install:
 - go get github.com/mitchellh/gox
 script:
