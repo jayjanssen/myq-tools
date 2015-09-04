@@ -11,12 +11,19 @@ import (
 	"time"
 )
 
-type MySQLCommand string
+const SPECIALENDSTRING string = "MYQTOOLSEND"
 
 const (
 	MYSQLCLI          string       = "mysql"
-	STATUS_COMMAND    MySQLCommand = "SHOW GLOBAL STATUS;SELECT 'END';\n"
-	VARIABLES_COMMAND MySQLCommand = "SHOW GLOBAL VARIABLES;SELECT 'END';\n"
+
+	// These next two must match
+	END_STRING        string       = "MYQTOOLSEND"
+	END_COMMAND        string       = "SELECT 'MYQTOOLSEND'"
+
+	// The commands we send to the mysql cli
+	STATUS_COMMAND    string = "SHOW GLOBAL STATUS"
+	VARIABLES_COMMAND string = "SHOW GLOBAL VARIABLES"
+
 	// prefix of SHOW VARIABLES keys, they are stored (if available) in the same map as the status variables
 	VAR_PREFIX = "V_"
 )
@@ -243,7 +250,7 @@ func NewLiveLoader(i time.Duration, args string) *LiveLoader {
 }
 
 // Collect output from MYSQLCLI and send it back in a sample
-func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
+func (l LiveLoader) harvestMySQL(command string) (chan MyqSample, error) {
 	// Make sure we have MYSQLCLI
 	path, err := exec.LookPath(MYSQLCLI)
 	if err != nil {
@@ -290,9 +297,11 @@ func (l LiveLoader) harvestMySQL(command MySQLCommand) (chan MyqSample, error) {
 	}()
 
 	// feed the MYSQLCLI the given command to produce more output
+	full_command := strings.Join( []string{command, END_COMMAND, "\n"}, "; " )
 	send_command := func() {
 		// We don't check if the write failed, it's assumed the cmd.Wait() above will catch the sub proc dying
-		stdin.Write([]byte(command))
+
+		stdin.Write([]byte(full_command)) // command we're harvesting
 	}
 	// send the first command immediately
 	send_command()

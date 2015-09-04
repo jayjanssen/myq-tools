@@ -21,7 +21,7 @@ const (
 func parseSamples(reader io.Reader, ch chan MyqSample, interval time.Duration) {
 	outputtype := BATCH // default to BATCH
 	typechecked := false
-	recordmatch := []byte("END")
+	recordmatch := []byte(END_STRING)
 
 	// We can't have intervals smaller than 1s
 	// if the interval is larger, we check samples for intervals

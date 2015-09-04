@@ -182,6 +182,18 @@ func checksamples(t *testing.T, samples chan MyqSample, expected int) {
 	}
 }
 
+func TestTokuSample(t *testing.T) {
+	l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysql.toku", ""}
+	samples, err := l.getStatus()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	checksamples(t, samples, 2)
+}
+
+
 func BenchmarkParseStatus(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		l := FileLoader{loaderInterval(1 * time.Second), "../testdata/mysqladmin.single", ""}
