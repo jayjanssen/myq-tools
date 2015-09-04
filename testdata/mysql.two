@@ -459,7 +459,7 @@ wsrep_provider_name	Galera
 wsrep_provider_vendor	Codership Oy <info@codership.com>
 wsrep_provider_version	3.11(ra0189ab)
 wsrep_ready	ON
-END
+MYQTOOLSEND
 Aborted_clients	35
 Aborted_connects	1
 Binlog_snapshot_file	
@@ -921,4 +921,4 @@ wsrep_provider_name	Galera
 wsrep_provider_vendor	Codership Oy <info@codership.com>
 wsrep_provider_version	3.11(ra0189ab)
 wsrep_ready	ON
-END
+MYQTOOLSEND

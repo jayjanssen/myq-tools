@@ -647,7 +647,7 @@ Tokudb_FILESYSTEM_LONG_FSYNC_TIME	13855654
 Tokudb_FILESYSTEM_LONG_FSYNC_NUM	5
 Uptime	1365
 Uptime_since_flush_status	1365
-END
+MYQTOOLSEND
 Aborted_clients	30
 Aborted_connects	0
 Binlog_snapshot_file	ps1-bin.000007
@@ -1297,4 +1297,4 @@ Tokudb_FILESYSTEM_LONG_FSYNC_TIME	13855654
 Tokudb_FILESYSTEM_LONG_FSYNC_NUM	5
 Uptime	1366
 Uptime_since_flush_status	136
-END
+MYQTOOLSEND
