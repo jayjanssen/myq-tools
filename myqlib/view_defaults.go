@@ -69,7 +69,7 @@ func DefaultViews() map[string]View {
 			NewRateSumCol(`ddl`, `Data Definition commands / Second`, 5, 0, NumberUnits, `com_alter.*`, `com_create.*`, `com_drop.*`, `com_rename_table`),
 			NewRateSumCol(`admin`, `Admin commands / Second`, 5, 0, NumberUnits, `com_admin.*`),
 			NewRateSumCol(`show`, `SHOW commands / Second`, 5, 0, NumberUnits, `com_show.*`),
-			NewRateSumCol(`show`, `SET commands / Second`, 5, 0, NumberUnits, `com_set.*`),
+			NewRateSumCol(`set`, `SET commands / Second`, 5, 0, NumberUnits, `com_set.*`),
 			NewRateSumCol(`lock`, `LOCK commands / Second`, 5, 0, NumberUnits, `com_lock.*`, `com_unlock.*`),
 			NewRateSumCol(`trx`, `Transactional commands / Second`, 5, 0, NumberUnits, `com_begin`, `com_commit`, `com_rollback.*`, `com_savepoint`),
 			NewRateSumCol(`xa`, `XA commands / Second`, 5, 0, NumberUnits, `com_xa.*`),
