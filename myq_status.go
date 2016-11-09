@@ -129,13 +129,16 @@ func main() {
 		os.Exit(OK)
 	}
 
-	termheight, termwidth := myqlib.GetTermSize()
+	var termheight int64
+	var termwidth int64
 
 	// How many lines before printing a new header
 	var headernum int64
 	if *header != 0 {
 		headernum = *header // Use the specified header count
 	} else {
+		termheight, termwidth := myqlib.GetTermSize()
+		_ = termwidth
 		headernum = termheight
 	}
 
@@ -163,6 +166,8 @@ func main() {
 	lines := int64(0)
 	var buf myqlib.FixedWidthBuffer
 	if *width == true {
+		termheight, termwidth := myqlib.GetTermSize()
+		_ = termheight
 		buf.SetWidth(termwidth)
 	}
 
@@ -191,11 +196,12 @@ func main() {
 		if lines/headernum >= 1 {
 			lines = 0
 			// Recalculate the size of the terminal now too
-			termheight, termwidth = myqlib.GetTermSize()
 			if *width == true {
+				termheight, termwidth = myqlib.GetTermSize()
 				buf.SetWidth(termwidth)
 			}
 			if *header == 0 {
+				termheight, termwidth = myqlib.GetTermSize()
 				headernum = termheight
 			}
 		}
