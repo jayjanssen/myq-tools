@@ -1,0 +1,13 @@
+---
+- name: cttf
+  description: "Connections, Threads, Tables, and Files"
+  groups:
+    - name: Connects
+      description: "Connection related metrics"
+      cols:
+        - name: cons
+          description: "Connections per second"
+          length: 4
+          var_key: 'connections'
+          precision: 0
+          units: 'Number'
