@@ -1,65 +1,44 @@
 package loader
 
 import (
-	"fmt"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 // The current and most recent SampleSets
-type MyqState struct {
-	Current, Previous *MyqSampleSet
+type State struct {
+	Current, Previous SampleSet
 }
 
 // A collection of Samples at a given time
-type MyqSampleSet struct {
+type SampleSet struct {
+	// Timestamp when the SampleSet was generated, in case of a File loader, this could be the same (or very close) in every set.
 	Timestamp time.Time
-	Samples   map[MyqSchemaName]*MyqSample
+
+	// Uptime of the server from the SampleSet
+	Uptime int64
+
+	// The samples collected, key is the Sample.Source.Name
+	Samples map[string]Sample
 }
 
-// The values for a Schema for a specifc time
-type MyqSample struct {
+// The values for a Source for a specifc time
+type Sample struct {
+	// Timestamp when the SampleSet was generated, in case of a File loader, this could be the same (or very close) in every set.
 	Timestamp time.Time
-	Schema    *MyqSchema
-	Data      map[MyqSchemaKey]interface{}
+
+	// Uptime of the server from the SampleSet
+	Uptime int64
+
+	// The source the Sample was generated from
+	SampleSource *Source
+
+	// The sample map --
+	Data map[string]interface{}
 }
 
-// The name of a schema
-type MyqSchemaName string
-
-// The key identifier in a schema
-type MyqSchemaKey string
-
-// The type of a SchemaKey
-type MyqSchemaType int
-
-func (t *MyqSchemaType) UnmarshalYAML(value *yaml.Node) error {
-	switch value.Value {
-	case `INT`:
-		*t = INT
-	case `STRING`:
-		*t = STRING
-	case `FLOAT`:
-		*t = FLOAT
-	case `DATETIME`:
-		*t = DATETIME
-	default:
-		return fmt.Errorf("Invalid type: %s", value.Value)
-	}
-	return nil
-}
-
-const (
-	INT MyqSchemaType = iota
-	FLOAT
-	STRING
-	DATETIME
-)
-
-// A set of keys and types that we would fetch from a Source for a given interval to produce a Sample.
-type MyqSchema struct {
-	Name        MyqSchemaName
+// Source to collect a Sample
+type Source struct {
+	Name        string
 	Description string
-	Keys        map[MyqSchemaKey]MyqSchemaType
+	// Needs some attributes that describe how to load this source, live or file
 }

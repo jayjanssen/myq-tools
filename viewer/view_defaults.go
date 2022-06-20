@@ -1,30 +1,49 @@
 package viewer
 
-import "gopkg.in/yaml.v3"
+import (
+	_ "embed"
+	"fmt"
+	"sort"
 
-var (
-	Views []View
+	"gopkg.in/yaml.v3"
 )
 
+var (
+	ViewNames []string
+	Views     map[string]View
+)
+
+//go:embed view_defaults.yaml
+var defaultViewYaml string
+
 func LoadDefaultViews() error {
-	return ParseViews(default_view_yaml)
+	return ParseViews(defaultViewYaml)
+}
+
+// Get the name Viewer, or return an error
+func GetViewer(name string) (Viewer, error) {
+	view, ok := Views[name]
+	if !ok {
+		return nil, fmt.Errorf("view %s not found", name)
+	} else {
+		return view, nil
+	}
 }
 
 func ParseViews(yaml_str string) error {
-	return yaml.Unmarshal([]byte(yaml_str), &Views)
-}
+	var views []View
+	err := yaml.Unmarshal([]byte(yaml_str), &views)
+	if err != nil {
+		return err
+	}
 
-const default_view_yaml = `---
-- name: cttf
-  description: "Connections, Threads, Tables, and Files"
-  groups:
-    - name: Connects
-      description: "Connection related metrics"
-      cols:
-        - name: cons
-          description: "Connections per second"
-          length: 4
-          var_key: 'connections'
-          precision: 0
-          units: 'Number'
-`
+	Views = make(map[string]View)
+
+	// construct the Views map
+	for _, view := range views {
+		ViewNames = append(ViewNames, view.Name)
+		Views[view.Name] = view
+	}
+	sort.Strings(ViewNames)
+	return nil
+}
