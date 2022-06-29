@@ -1,20 +1,43 @@
 package loader
 
-import "gopkg.in/yaml.v3"
+import (
+	_ "embed"
+	"fmt"
+
+	"gopkg.in/yaml.v3"
+)
 
 var (
-	Sources []Source
+	sources   []Source
+	sourceMap map[string]*Source
 )
+
+//go:embed sources_defaults.yaml
+var defaultSourcesYaml string
 
 func LoadDefaultSources() error {
 	return ParseSources(defaultSourcesYaml)
 }
 
-func ParseSources(yaml_str string) error {
-	return yaml.Unmarshal([]byte(yaml_str), &Sources)
+// Lookup a source given its name
+func GetSource(source_name string) (*Source, error) {
+	sp, ok := sourceMap[source_name]
+	if !ok {
+		return nil, fmt.Errorf("Source not found: %s", source_name)
+	}
+	return sp, nil
 }
 
-const defaultSourcesYaml = `---
-- name: status
-  description: "Mysql server global status counters"
-`
+func ParseSources(yaml_str string) error {
+	err := yaml.Unmarshal([]byte(yaml_str), &sources)
+	if err != nil {
+		return err
+	}
+
+	sourceMap = make(map[string]*Source)
+
+	for _, source := range sources {
+		sourceMap[source.Name] = &source
+	}
+	return nil
+}
