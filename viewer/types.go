@@ -40,6 +40,7 @@ const (
 	GAUGE
 )
 
+// Convert ColTypes in yaml string form to our internal const representation
 func (ct *ColType) UnmarshalYAML(value *yaml.Node) error {
 	switch value.Value {
 	case `Rate`:
@@ -59,6 +60,7 @@ const (
 	NUMBER UnitType = iota
 )
 
+// Convert UnitTypes in yaml string form to our internal const representation
 func (ut *UnitType) UnmarshalYAML(value *yaml.Node) error {
 	switch value.Value {
 	case `Number`:
