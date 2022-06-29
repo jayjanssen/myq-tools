@@ -20,8 +20,4 @@ type StateViewer interface {
 
 	// Data for this view based on the state
 	GetData(state *loader.State) []string
-
-	// Live views output the current timestamp whereas Runtime views output the delta in Uptime since the first state
-	SetLive()
-	SetRuntime()
 }
