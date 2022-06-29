@@ -21,7 +21,7 @@ func LoadDefaultViews() error {
 }
 
 // Get the name Viewer, or return an error
-func GetViewer(name string) (Viewer, error) {
+func GetViewer(name string) (StateViewer, error) {
 	view, ok := Views[name]
 	if !ok {
 		return nil, fmt.Errorf("view %s not found", name)

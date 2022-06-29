@@ -4,8 +4,8 @@ import (
 	"github.com/jayjanssen/myq-tools2/loader"
 )
 
-// A Viewer
-type Viewer interface {
+// A StateViewer represents the output of data from a State into a (usually) constrained width with a header and one or more lines of output per State
+type StateViewer interface {
 	// Single line help for the view
 	GetShortHelp() string
 
