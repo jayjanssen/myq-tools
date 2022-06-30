@@ -14,4 +14,9 @@ type Loader interface {
 
 // Functions to read a State
 type StateReader interface {
+	// Number of seconds between Cur and Prev state
+	SecondsDiff() int64
+
+	// Cur and Prev value of a given source / key
+	GetKeyCurPrev(source, key string) (cur, prev string) // string return ?
 }
