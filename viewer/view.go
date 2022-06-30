@@ -8,15 +8,15 @@ func (v View) GetShortHelp() string {
 }
 
 // Detailed multi-line help for the view
-func (v View) GetHelp() []string {
+func (v View) GetDetailedHelp() []string {
 	return []string{""}
 }
 
 // A list of sources that this view requires
-func (v View) GetSources() []loader.Source {
-	return []loader.Source{
-		loader.Source{},
-	}
+func (v View) GetSources() ([]*loader.Source, error) {
+	return []*loader.Source{
+		&loader.Source{},
+	}, nil
 }
 
 // Header for this view, unclear if state is needed
