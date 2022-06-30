@@ -9,11 +9,8 @@ type StateViewer interface {
 	// Single line help for the view
 	GetShortHelp() string
 
-	// Detailed multi-line help for the view
-	GetHelp() []string
-
 	// A list of sources that this view requires
-	GetSources() []loader.Source
+	GetSources() ([]*loader.Source, error)
 
 	// Header for this view, unclear if state is needed
 	GetHeader(state *loader.State) []string

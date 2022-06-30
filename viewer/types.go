@@ -20,24 +20,30 @@ type Colgroup struct {
 	Cols        []Col
 }
 
-// A col represents a single output unit in a view
-type Col struct {
-	Name        string
-	Description string
-	Source      string
-	Key         string
-	Type        ColType
-	Units       UnitType
-	Length      int
-	Precision   int
-}
-
 // The type of Col
 type ColType int
 
 const (
+	// Given a key, this subtracts the prev key value from cur and divides by the num of seconds (/s)
 	RATE ColType = iota
+	// Simply output the cur value of the key
 	GAUGE
+	// Given a key, subtract the prev key value from the cur and emit the result
+	DIFF
+	// Given a key with a string value, emit the first Length chars
+	STRING
+
+	// Like string, but only shows the last Length chars
+	RIGHTMOST
+
+	// Given a list of keys, emit the rate of the sum of their values
+	RATESUM
+
+	// Given two keys, emit the ratio of the two (numerator / denominator)
+	PERCENT
+
+	// Takes a custom function, should probably just be special types
+	FUNC
 )
 
 // Convert ColTypes in yaml string form to our internal const representation

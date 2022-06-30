@@ -1,6 +1,7 @@
 package viewer
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -32,10 +33,11 @@ func TestDefsParse(t *testing.T) {
 		t.Error("First Connects column is not cons")
 	}
 
+	sources := []string{"status"}
 	mycons := Col{
 		Name:        "cons",
 		Description: "Connections per second",
-		Source:      "status",
+		Sources:     sources,
 		Key:         "connections",
 		Type:        RATE,
 		Units:       NUMBER,
@@ -43,7 +45,7 @@ func TestDefsParse(t *testing.T) {
 		Precision:   0,
 	}
 
-	if cons != mycons {
+	if reflect.DeepEqual(cons, mycons) {
 		t.Error("cons not matching!")
 	}
 
