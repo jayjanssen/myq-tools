@@ -32,3 +32,10 @@ func TestGetSource(t *testing.T) {
 		t.Errorf("Unexpected status description: %s", source.Description)
 	}
 }
+
+func TestGetSourceErr(t *testing.T) {
+	_, err := GetSource("fooey")
+	if err == nil {
+		t.Error("Expected error!")
+	}
+}
