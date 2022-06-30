@@ -1,8 +1,6 @@
 package col
 
-import (
-	"testing"
-)
+import "testing"
 
 // Funcs to get some test columns
 func getTestNumCol() numCol {
@@ -12,7 +10,6 @@ func getTestNumCol() numCol {
 			Name:        "cons",
 			Description: "Connections per second",
 			Sources:     sources,
-			Type:        RATE,
 			Length:      4,
 		},
 		Units:     NUMBER,
@@ -20,23 +17,11 @@ func getTestNumCol() numCol {
 	}
 }
 
-func TestNumColGetData(t *testing.T) {
-	col := getTestCol()
-	state := getTestState()
+func TestNumColfitNumber(t *testing.T) {
+	col := getTestNumCol()
+	out := col.fitNumber(5, col.Precision)
 
-	datas := col.GetData(state)
-
-	if len(datas) != 1 {
-		t.Errorf("Header more than 1 line: %d", len(datas))
+	if len(out) != 4 || out != "   5" {
+		t.Errorf("Unexpected fitNumber: '%s'", out)
 	}
-
-	data := datas[0]
-	if len(data) != col.Length {
-		t.Errorf("Got data of length: %d, expected: '%d'", len(data), col.Length)
-	}
-
-	if data != "   5" {
-		t.Errorf("Expected data to be '   5', not: '%s'", data)
-	}
-
 }

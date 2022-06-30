@@ -14,7 +14,6 @@ func getTestCol() defaultCol {
 		Name:        "cons",
 		Description: "Connections per second",
 		Sources:     sources,
-		Type:        RATE,
 		Length:      4,
 	}
 }
@@ -25,7 +24,6 @@ func getBadTestCol() defaultCol {
 		Name:        "cons",
 		Description: "Connections per second",
 		Sources:     sources,
-		Type:        RATE,
 		Length:      4,
 	}
 }
@@ -108,23 +106,16 @@ func TestColGetHeader(t *testing.T) {
 	}
 }
 
-func TestColGetData(t *testing.T) {
+func TestColformatString(t *testing.T) {
 	col := getTestCol()
-	state := getTestState()
 
-	datas := col.GetData(state)
-
-	if len(datas) != 1 {
-		t.Errorf("Header more than 1 line: %d", len(datas))
+	out := col.fitString("fooey")
+	if len(out) != 4 && out != "fooe" {
+		t.Errorf("truncated string improperly: '%s'", out)
 	}
 
-	data := datas[0]
-	if len(data) != col.Length {
-		t.Errorf("Got data of length: %d, expected: '%d'", len(data), col.Length)
+	out = col.fitString("f")
+	if len(out) != 4 && out != "   f" {
+		t.Errorf("padded string improperly: '%s'", out)
 	}
-
-	if data != "   5" {
-		t.Errorf("Expected data to be '   5', not: '%s'", data)
-	}
-
 }
