@@ -18,6 +18,10 @@ type Col struct {
 	Precision   int
 }
 
+func (c Col) GetName() string {
+	return c.Name
+}
+
 // Single line help for the view
 func (c Col) GetShortHelp() string {
 	return fmt.Sprintf("%s: %s", c.Name, c.Description)

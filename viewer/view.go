@@ -2,6 +2,10 @@ package viewer
 
 import "github.com/jayjanssen/myq-tools2/loader"
 
+func (v View) GetName() string {
+	return v.Name
+}
+
 // Single line help for the view
 func (v View) GetShortHelp() string {
 	return ""
@@ -20,12 +24,12 @@ func (v View) GetSources() ([]*loader.Source, error) {
 }
 
 // Header for this view, unclear if state is needed
-func (v View) GetHeader(state *loader.State) []string {
+func (v View) GetHeader(sr loader.StateReader) []string {
 	return []string{""}
 }
 
 // Data for this view based on the state
-func (v View) GetData(state *loader.State) []string {
+func (v View) GetData(sr loader.StateReader) []string {
 	return []string{""}
 }
 

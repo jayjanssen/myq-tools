@@ -23,13 +23,20 @@ func TestDefsParse(t *testing.T) {
 		t.Error("Could not get `cttf` view")
 	}
 
+	if len(cttf.Groups) == 0 {
+		t.Fatal("No groups parsed for `cttf`")
+	}
+
 	group := cttf.Groups[0]
 	if group.Name != "Connects" {
 		t.Error("First cttf group not  Connects")
 	}
 
+	if len(group.Cols) == 0 {
+		t.Fatal("No cols parsed for `Connects` group")
+	}
 	cons := group.Cols[0]
-	if cons.Name != "cons" {
+	if cons.GetName() != "cons" {
 		t.Error("First Connects column is not cons")
 	}
 
