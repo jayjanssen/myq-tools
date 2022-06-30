@@ -19,6 +19,7 @@ const (
 	OK int = iota
 	BAD_ARGS
 	LOADER_ERROR
+	SOURCES_ERROR
 )
 
 // Current Version (passed in on build)
@@ -138,8 +139,14 @@ func main() {
 		view.SetRuntime()
 	}
 
+	sources, err := view.GetSources()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		os.Exit(SOURCES_ERROR)
+	}
+
 	// Initialize the loader
-	err = loader.Initialize(*interval, view.GetSources())
+	err = loader.Initialize(*interval, sources)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(LOADER_ERROR)
