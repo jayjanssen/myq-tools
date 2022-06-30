@@ -1,4 +1,4 @@
-package viewer
+package col
 
 import (
 	"fmt"
@@ -8,31 +8,25 @@ import (
 )
 
 // Funcs to get some test columns
-func getTestCol() Col {
+func getTestCol() defaultCol {
 	sources := []string{"status"}
-	return Col{
+	return defaultCol{
 		Name:        "cons",
 		Description: "Connections per second",
 		Sources:     sources,
-		Key:         "connections",
 		Type:        RATE,
-		Units:       NUMBER,
 		Length:      4,
-		Precision:   0,
 	}
 }
 
-func getBadTestCol() Col {
+func getBadTestCol() defaultCol {
 	sources := []string{"fooey"}
-	return Col{
+	return defaultCol{
 		Name:        "cons",
 		Description: "Connections per second",
 		Sources:     sources,
-		Key:         "connections",
 		Type:        RATE,
-		Units:       NUMBER,
 		Length:      4,
-		Precision:   0,
 	}
 }
 
