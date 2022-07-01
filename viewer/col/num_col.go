@@ -101,7 +101,7 @@ func (nc numCol) fitNumber(value float64, precision int) string {
 		str := fmt.Sprintf(`%.*f%s`, precision, raw, unit)
 		left := nc.Length - utf8.RuneCountInString(str)
 
-		// fmt.Printf( "%f, %d, %d, %s, %f, %s, %d\n", value, length, precision, unit, raw, str, left )
+		// fmt.Printf("%f, %d, %d, %s, %f, %s, %d\n", value, nc.Length, nc.Precision, unit, raw, str, left)
 
 		if raw >= 0 && (nc.Length+precision)-utf8.RuneCountInString(str) >= 0 {
 			// Our number is > 0 and fits into nc.Length + precision
