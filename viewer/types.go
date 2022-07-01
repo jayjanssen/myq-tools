@@ -16,6 +16,13 @@ type View struct {
 	Cols   StateViewerList `yaml:"cols"`
 }
 
+// A colgroup is a list of (related) cols
+type Colgroup struct {
+	Name        string          `yaml:"name"`
+	Description string          `yaml:"description"`
+	Cols        StateViewerList `yaml:"cols"`
+}
+
 // A list of things that implement StateViewer
 type StateViewerList []StateViewer
 
@@ -45,11 +52,4 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*svl = newlist
 	return nil
-}
-
-// A colgroup is a list of (related) cols
-type Colgroup struct {
-	Name        string          `yaml:"name"`
-	Description string          `yaml:"description"`
-	Cols        StateViewerList `yaml:"cols"`
 }
