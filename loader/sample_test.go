@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -13,6 +14,13 @@ func newSample() *Sample {
 	sample.Data["int"] = "10"
 	sample.Data["float"] = "1.4256"
 	return sample
+}
+
+func TestSampleErr(t *testing.T) {
+	serr := NewSampleErr(errors.New("test error"))
+	if serr.Error == nil {
+		t.Error("missing error")
+	}
 }
 
 // Length works
@@ -49,6 +57,12 @@ func TestSampleGetConversions(t *testing.T) {
 		t.Errorf("Expected int64, got %s", reflect.TypeOf(v))
 	}
 
+	// int error
+	_, err = sample.GetInt(`intbad`)
+	if err == nil {
+		t.Error(`expected error`)
+	}
+
 	// float64
 	v, err = sample.GetFloat(`float`)
 	if err != nil {
@@ -57,6 +71,12 @@ func TestSampleGetConversions(t *testing.T) {
 	_, ok = v.(float64)
 	if !ok {
 		t.Errorf("Expected float64, got %s", reflect.TypeOf(v))
+	}
+
+	// float error
+	_, err = sample.GetFloat(`floatbad`)
+	if err == nil {
+		t.Error(`expected error`)
 	}
 
 	// string
@@ -108,6 +128,26 @@ func TestSampleGetErrors(t *testing.T) {
 	}
 }
 
+// GetStr
+func TestGetStr(t *testing.T) {
+	sample := newSample()
+
+	str := sample.GetStr(`string`)
+	if str != "String" {
+		t.Errorf("unexpected string: %s", str)
+	}
+
+	str = sample.GetStr(`int`)
+	if str != "10" {
+		t.Errorf("unexpected int to str: %s", str)
+	}
+
+	str = sample.GetStr(`missing`)
+	if str != "" {
+		t.Errorf("missing string not empty: '%s'", str)
+	}
+}
+
 // GetNumeric
 func TestSampleGetNumeric(t *testing.T) {
 	sample := newSample()
@@ -127,4 +167,8 @@ func TestSampleGetNumeric(t *testing.T) {
 		t.Errorf("float does not equal 1.4256: %f", f)
 	}
 
+	_, err = sample.GetNumeric(`string`)
+	if err == nil {
+		t.Error("expected error GetNumeric on string")
+	}
 }
