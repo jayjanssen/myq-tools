@@ -69,7 +69,7 @@ func TestFileLoaderVariables(t *testing.T) {
 		} else if _, ok := curr.Samples[`variables`]; !ok {
 			t.Error("Missing variables")
 		} else {
-			varss, _ := curr.Samples[`variables`]
+			varss := curr.Samples[`variables`]
 			mc, _ := varss.GetInt(`max_connections`)
 			if mc != 151 {
 				t.Error("Expected 151 max_connections")
@@ -94,7 +94,7 @@ func TestFileLoaderNilVarfile(t *testing.T) {
 		} else if _, ok := curr.Samples[`variables`]; ok {
 			t.Error("found unexpected variables")
 		} else {
-			statuss, _ := curr.Samples[`status`]
+			statuss := curr.Samples[`status`]
 			mc, _ := statuss.GetInt(`questions`)
 			if mc != 914 {
 				t.Error("Expected 914 questions in sample")

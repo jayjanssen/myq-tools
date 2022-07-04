@@ -43,14 +43,14 @@ func (s Sample) Length() int {
 func (s Sample) GetString(key string) (string, error) {
 	val, ok := s.Data[key]
 	if !ok {
-		return "", errors.New("Key not found")
+		return "", errors.New("key not found")
 	}
 	return val, nil // no errors possible here
 }
 func (s Sample) GetInt(key string) (int64, error) {
 	val, ok := s.Data[key]
 	if !ok {
-		return 0, errors.New("Key not found")
+		return 0, errors.New("key not found")
 	}
 
 	conv, err := strconv.ParseInt(val, 10, 64)
@@ -62,7 +62,7 @@ func (s Sample) GetInt(key string) (int64, error) {
 func (s Sample) GetFloat(key string) (float64, error) {
 	val, ok := s.Data[key]
 	if !ok {
-		return 0.0, errors.New("Key not found")
+		return 0.0, errors.New("key not found")
 	}
 
 	conv, err := strconv.ParseFloat(val, 64)
@@ -95,6 +95,6 @@ func (s Sample) GetNumeric(key string) (interface{}, error) {
 	} else if val, err := s.GetFloat(key); err == nil {
 		return val, nil
 	} else {
-		return nil, fmt.Errorf("Value is not numeric: `%v`", s.GetStr(key))
+		return nil, fmt.Errorf("value is not numeric: `%v`", s.GetStr(key))
 	}
 }

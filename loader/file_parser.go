@@ -38,7 +38,7 @@ func (f *FileParser) Initialize(interval time.Duration) error {
 
 	// Check the interval
 	if interval.Seconds() < 1 {
-		return fmt.Errorf("Interval cannot be less than 1s (%s)", interval.String())
+		return fmt.Errorf("interval cannot be less than 1s (%s)", interval.String())
 	}
 
 	uptime_str := []byte(`Uptime`)
