@@ -43,17 +43,15 @@ func parseCompleteFile(t testing.TB, fp *FileParser) chan *Sample {
 	go func() {
 		for {
 			sd := fp.GetNextSample()
-			if sd.Error != nil {
-				t.Error(sd.Error)
-			}
-			if sd != nil {
-				datas <- sd
-				continue
-			} else {
+			if sd == nil {
 				// EOF
 				close(datas)
 				break
 			}
+			if sd.Error != nil {
+				t.Fatal(sd.Error)
+			}
+			datas <- sd
 		}
 	}()
 	return datas
