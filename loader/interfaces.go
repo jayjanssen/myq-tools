@@ -6,7 +6,7 @@ import "time"
 type Loader interface {
 
 	// Setup the loader to load the given schema(s) and error-check
-	Initialize(interval time.Duration, sources []Source) error
+	Initialize(interval time.Duration, sources []SourceKey) error
 
 	// Produces a state for every interval.  The state.Prev is maintained automatically
 	GetStateChannel() <-chan *State

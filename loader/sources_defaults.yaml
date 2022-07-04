@@ -1,3 +1,5 @@
 ---
 - name: status
-  description: "Mysql server global status counters"
+  description: "MySQL server global status counters"
+- name: variables
+  description: "MySQL server global variables"

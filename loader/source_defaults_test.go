@@ -28,7 +28,7 @@ func TestGetSource(t *testing.T) {
 	if source.Name != "status" {
 		t.Errorf("Unexpected status name: %s", source.Name)
 	}
-	if source.Description != "Mysql server global status counters" {
+	if source.Description != "MySQL server global status counters" {
 		t.Errorf("Unexpected status description: %s", source.Description)
 	}
 }
