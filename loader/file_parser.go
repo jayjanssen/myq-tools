@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -19,7 +20,7 @@ const (
 )
 
 type FileParser struct {
-	scanner    *Scanner
+	scanner    *bufio.Scanner
 	outputtype showoutputtype
 	fileName   string
 }
@@ -66,7 +67,9 @@ func (f *FileParser) Initialize(interval time.Duration) error {
 	}
 
 	// This scanner will look for the start of a new set of SHOW STATUS output
-	f.scanner = NewScanner(r)
+	f.scanner = bufio.NewScanner(r)
+	f.scanner.Buffer(make([]byte, 100), bufio.MaxScanTokenSize*16)
+
 	typechecked := false                // if we've checked for TABULAR yet or not
 	recordmatch := []byte(F_END_STRING) // How to match records (type dependant)
 	f.outputtype = BATCH                // default to BATCH
@@ -124,7 +127,7 @@ func (f *FileParser) GetNextSample() *Sample {
 	var divideridx int
 
 	sample := NewSample()
-	chunkScanner := NewScanner(buffer)
+	chunkScanner := bufio.NewScanner(buffer)
 
 	for chunkScanner.Scan() {
 		line := chunkScanner.Bytes()
