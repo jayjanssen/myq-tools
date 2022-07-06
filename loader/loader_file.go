@@ -24,7 +24,7 @@ func NewFileLoader(statusFile, varFile string) *FileLoader {
 	return l
 }
 
-func (l *FileLoader) Initialize(interval time.Duration, sources []SourceKey) error {
+func (l *FileLoader) Initialize(interval time.Duration, sources []SourceName) error {
 	// Initialize the status file loader, this has to work
 	err := l.statusFile.Initialize(interval)
 	if err != nil {

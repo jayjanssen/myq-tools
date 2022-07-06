@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var sources_file_test = []SourceKey{`status`, `variables`}
+var sources_file_test = []SourceName{`status`, `variables`}
 
 func NewTestFileLoader(statusFile, varFile string) (*FileLoader, error) {
 	i, _ := time.ParseDuration("1s")

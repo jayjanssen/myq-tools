@@ -1,10 +1,14 @@
-package col
+package viewer
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jayjanssen/myq-tools2/loader"
+)
 
 // Funcs to get some test columns
 func getTestNumCol(units UnitsType, precision, width int) numCol {
-	sources := []string{"status"}
+	sources := []loader.SourceName{"status"}
 	return numCol{
 		defaultCol: defaultCol{
 			Name:    "test",

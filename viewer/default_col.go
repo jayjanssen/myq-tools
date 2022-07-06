@@ -1,4 +1,4 @@
-package col
+package viewer
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 type defaultCol struct {
 	Name        string
 	Description string
-	Sources     []string
+	Sources     []loader.SourceName
 	Type        string
 	Length      int
 }
@@ -25,17 +25,8 @@ func (c defaultCol) GetShortHelp() string {
 }
 
 // A list of sources that this view requires
-func (c defaultCol) GetSources() ([]*loader.Source, error) {
-	var sources []*loader.Source
-	for _, source_str := range c.Sources {
-		sp, err := loader.GetSource(source_str)
-		if err == nil {
-			sources = append(sources, sp)
-		} else {
-			return nil, err
-		}
-	}
-	return sources, nil
+func (c defaultCol) GetSources() ([]loader.SourceName, error) {
+	return c.Sources, nil
 }
 
 // Header for this view, unclear if state is needed

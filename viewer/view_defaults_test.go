@@ -3,6 +3,8 @@ package viewer
 import (
 	"reflect"
 	"testing"
+
+	"github.com/jayjanssen/myq-tools2/loader"
 )
 
 func TestDefsParse(t *testing.T) {
@@ -40,17 +42,14 @@ func TestDefsParse(t *testing.T) {
 		t.Error("First Connects column is not cons")
 	}
 
-	sources := []string{"status"}
-	mycons := Col{
-		Name:        "cons",
-		Description: "Connections per second",
-		Sources:     sources,
-		Key:         "connections",
-		Type:        RATE,
-		Units:       NUMBER,
-		Length:      4,
-		Precision:   0,
-	}
+	mycons := RateCol{}
+	mycons.Name = "cons"
+	mycons.Description = "Connections per second"
+	mycons.Sources = []loader.SourceName{"status"}
+	mycons.Key = "connections"
+	mycons.Units = NUMBER
+	mycons.Length = 4
+	mycons.Precision = 0
 
 	if reflect.DeepEqual(cons, mycons) {
 		t.Error("cons not matching!")

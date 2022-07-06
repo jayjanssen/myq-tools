@@ -2,6 +2,16 @@ package viewer
 
 import "github.com/jayjanssen/myq-tools2/loader"
 
+// A view is made up of Groups of Cols
+type View struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+
+	// Usually a view would have Groups OR Cols, but not both.  If both, print groups first, then individual cols
+	Groups []Colgroup      `yaml:"groups"`
+	Cols   StateViewerList `yaml:"cols"`
+}
+
 func (v View) GetName() string {
 	return v.Name
 }
@@ -17,10 +27,11 @@ func (v View) GetDetailedHelp() []string {
 }
 
 // A list of sources that this view requires
-func (v View) GetSources() ([]*loader.Source, error) {
-	return []*loader.Source{
-		&loader.Source{},
-	}, nil
+func (v View) GetSources() ([]loader.SourceName, error) {
+	return []loader.SourceName{}, nil
+	// return []*loader.Source{
+	// 	&loader.Source{},
+	// }, nil
 }
 
 // Header for this view, unclear if state is needed

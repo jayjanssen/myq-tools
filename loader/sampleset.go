@@ -7,16 +7,16 @@ import (
 // A collection of Samples at a given time
 type SampleSet struct {
 	// The samples collected
-	Samples map[SourceKey]*Sample
+	Samples map[SourceName]*Sample
 }
 
 func newSampleSet() *SampleSet {
 	ss := SampleSet{}
-	ss.Samples = make(map[SourceKey]*Sample)
+	ss.Samples = make(map[SourceName]*Sample)
 	return &ss
 }
 
-func (ssp *SampleSet) SetSample(key SourceKey, sp *Sample) {
+func (ssp *SampleSet) SetSample(key SourceName, sp *Sample) {
 	ssp.Samples[key] = sp
 }
 

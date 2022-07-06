@@ -9,7 +9,7 @@ import (
 
 var (
 	sources   []*Source
-	sourceMap map[SourceKey]*Source
+	sourceMap map[SourceName]*Source
 )
 
 //go:embed sources_defaults.yaml
@@ -20,7 +20,7 @@ func LoadDefaultSources() error {
 }
 
 // Lookup a source given its name
-func GetSource(source_name SourceKey) (*Source, error) {
+func GetSource(source_name SourceName) (*Source, error) {
 	sp, ok := sourceMap[source_name]
 	if !ok {
 		return nil, fmt.Errorf("Source not found: %s", source_name)
@@ -34,7 +34,7 @@ func ParseSources(yaml_str string) error {
 		return err
 	}
 
-	sourceMap = make(map[SourceKey]*Source)
+	sourceMap = make(map[SourceName]*Source)
 
 	for _, source := range sources {
 		sourceMap[source.Name] = source

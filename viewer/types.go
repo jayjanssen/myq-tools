@@ -6,16 +6,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// A view is made up of Groups of Cols
-type View struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-
-	// Usually a view would have Groups OR Cols, but not both.  If both, print groups first, then individual cols
-	Groups []Colgroup      `yaml:"groups"`
-	Cols   StateViewerList `yaml:"cols"`
-}
-
 // A colgroup is a list of (related) cols
 type Colgroup struct {
 	Name        string          `yaml:"name"`
@@ -37,13 +27,12 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 
 		switch rawmap["type"] {
 		case `Rate`:
-			fmt.Println("here")
-			c := Col{}
+			c := RateCol{}
 			content.Decode(&c)
 			fmt.Printf("content decoded: %v\n", c)
 			newlist = append(newlist, c)
 		case `Gauge`:
-			c := Col{}
+			c := RateCol{}
 			content.Decode(&c)
 			newlist = append(newlist, c)
 		default:

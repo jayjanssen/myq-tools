@@ -1,4 +1,4 @@
-package col
+package viewer
 
 import (
 	"fmt"

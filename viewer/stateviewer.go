@@ -13,7 +13,7 @@ type StateViewer interface {
 	GetShortHelp() string
 
 	// A list of sources that this view requires
-	GetSources() ([]*loader.Source, error)
+	GetSources() ([]loader.SourceName, error)
 
 	// Header for this view, unclear if state is needed
 	GetHeader(loader.StateReader) []string

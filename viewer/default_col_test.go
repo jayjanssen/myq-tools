@@ -1,4 +1,4 @@
-package col
+package viewer
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 // Funcs to get some test columns
 func getTestCol() defaultCol {
-	sources := []string{"status"}
+	sources := []loader.SourceName{"status"}
 	return defaultCol{
 		Name:        "cons",
 		Description: "Connections per second",
@@ -19,7 +19,7 @@ func getTestCol() defaultCol {
 }
 
 func getBadTestCol() defaultCol {
-	sources := []string{"fooey"}
+	sources := []loader.SourceName{"fooey"}
 	return defaultCol{
 		Name:        "cons",
 		Description: "Connections per second",
@@ -51,16 +51,6 @@ func TestColGetSources(t *testing.T) {
 
 	if len(sources) != 1 {
 		t.Errorf("Got the wrong number of sources: %d", len(sources))
-	}
-}
-
-func TestColGetSourcesErr(t *testing.T) {
-	loader.LoadDefaultSources()
-
-	bcol := getBadTestCol()
-	_, err := bcol.GetSources()
-	if err == nil {
-		t.Error("Expected error!")
 	}
 }
 
