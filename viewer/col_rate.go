@@ -4,7 +4,7 @@ import "github.com/jayjanssen/myq-tools2/loader"
 
 type RateCol struct {
 	numCol
-	Key string
+	Key SourceKey
 }
 
 // Data for this view based on the state
