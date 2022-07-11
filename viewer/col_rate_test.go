@@ -7,13 +7,13 @@ import (
 )
 
 func getTestRateCol() RateCol {
+	sk := loader.SourceKey{"status", "connections"}
 	rc := RateCol{}
 	rc.Name = "test"
-	rc.Sources = []loader.SourceName{"status"}
+	rc.Key = sk
 	rc.Length = 4
 	rc.Units = NUMBER
 	rc.Precision = 0
-	rc.Key = "connections"
 
 	return rc
 }

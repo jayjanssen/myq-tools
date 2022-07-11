@@ -59,8 +59,8 @@ type testStateReader struct {
 	rate float64
 }
 
-func (sr testStateReader) GetKeyCurPrev(source, key string) (string, string) {
-	if source == "status" && key == "connections" {
+func (sr testStateReader) GetKeyCurPrev(sk loader.SourceKey) (string, string) {
+	if sk.SourceName == "status" && sk.Key == "connections" {
 		return "100", "105"
 	}
 	return "", ""

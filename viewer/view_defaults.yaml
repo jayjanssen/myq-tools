@@ -7,16 +7,14 @@
       cols:
         - name: cons
           description: Connections per second
-          source: status
-          key: connections
+          key: status/connections
           type: Rate
           units: Number
           length: 4
           precision: 0
         - name: acns
           description: Aborted connections per second
-          source: status
-          key: aborted_connects
+          key: status/aborted_connects
           type: Rate
           units: Number
           length: 4
@@ -34,40 +32,35 @@
       cols:
         - name: conn
           description: Threads connected
-          source: status
-          key: threads_connect
+          key: status/threads_connect
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: run
           description: Threads running
-          source: status
-          key: threads_running
+          key: status/threads_running
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: cach
           description: Threads cached
-          source: status
-          key: threads_cached
+          key: status/threads_cached
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: crtd
           description: Threads created per second
-          source: status
-          key: threads_created
+          key: status/threads_created
           type: Rate
           units: Number
           length: 4
           precision: 0
         - name: slow
           description: Threads that were slow to launch per second
-          source: status
-          key: slow_launch_threads
+          key: status/slow_launch_threads
           type: Rate
           units: Number
           length: 4
@@ -77,16 +70,14 @@
       cols:
         - name: tot
           description: Threadpool threads
-          source: status
-          key: threadpool_threads
+          key: status/threadpool_threads
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: idle
           description: Threads idle threads
-          source: status
-          key: threadpool_idle_threads
+          key: status/threadpool_idle_threads
           type: Gauge
           units: Number
           length: 4
@@ -96,32 +87,28 @@
       cols:
         - name: open
           description: Open Tables
-          source: status
-          key: open_tables
+          key: status/open_tables
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: opns
           description: Opened Tables per second
-          source: status
-          key: opened_tables
+          key: status/opened_tables
           type: Rate
           units: Number
           length: 4
           precision: 0
         - name: immd
           description: Immediate Table locks
-          source: status
-          key: table_locks_immediate
+          key: status/table_locks_immediate
           type: Rate
           units: Number
           length: 4
           precision: 0
         - name: wait
           description: Table locks Waited
-          source: status
-          key: table_locks_waited
+          key: status/table_locks_waited
           type: Rate
           units: Number
           length: 4
@@ -131,16 +118,14 @@
       cols:
         - name: open
           description: Open Table Definitions
-          source: status
-          key: open_table_definitions
+          key: status/open_table_definitions
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: opns
           description: Opened Table Definitions per second
-          source: status
-          key: opened_table_definitions
+          key: status/opened_table_definitions
           type: Rate
           units: Number
           length: 4
@@ -150,16 +135,14 @@
       cols:
         - name: open
           description: Open Files
-          source: status
-          key: open_files
+          key: status/open_files
           type: Gauge
           units: Number
           length: 4
           precision: 0
         - name: opns
           description: Opened Files per second
-          source: status
-          key: opened_files
+          key: status/opened_files
           type: Rate
           units: Number
           length: 4

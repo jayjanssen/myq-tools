@@ -4,22 +4,26 @@ import "github.com/jayjanssen/myq-tools2/loader"
 
 type RateCol struct {
 	numCol
-	Key SourceKey
+	key loader.SourceKey
 }
 
 // Data for this view based on the state
-func (c RateCol) GetData(sr loader.StateReader) (result []string) {
+func (c RateCol) GetData(sr loader.StateReader) []string {
 	raw := c.getRate(sr)
+	str := c.fitNumber(raw, c.Precision)
 
-	var res []string
-	res = append(res, raw)
-	return res
+	return []string{str}
 }
 
-func (c RateCol) getRate(sr loader.StateReader) (result string) {
-	cur, prev := sr.GetKeyCurPrev()
+func (c RateCol) getRate(sr loader.StateReader) (result float64) {
+	cur, prev := sr.GetKeyCurPrev(c.key)
 
-	// Apply precision
-	// return fmt.Sprintf("%.2s")
-	return "   5"
+	diff := CalculateDiff(cur, prev)
+	secs := sr.SecondsDiff()
+
+	if secs <= 0 {
+		return diff
+	} else {
+		return diff / float64(secs)
+	}
 }
