@@ -41,8 +41,8 @@ func (l *FileLoader) Initialize(interval time.Duration, sources []SourceName) er
 
 		// Currently, only a single sample on a variables file is parsed.  This is less than ideal if variables were changed over a long collection run.  Also, a potential variables file with many samples will be parsed completely, which is inefficient if we are using just one.
 		l.variablesSample = l.variablesFile.GetNextSample()
-		if l.variablesSample != nil && l.variablesSample.Error != nil {
-			return fmt.Errorf("error parsing variables: %v", l.variablesSample.Error)
+		if l.variablesSample != nil && l.variablesSample.Error() != nil {
+			return fmt.Errorf("error parsing variables: %v", l.variablesSample.Error())
 		}
 
 	}
@@ -51,8 +51,8 @@ func (l *FileLoader) Initialize(interval time.Duration, sources []SourceName) er
 }
 
 // Create and feed a channel of MyqSamples based on the given status and var file.
-func (l *FileLoader) GetStateChannel() <-chan *State {
-	ch := make(chan *State)
+func (l *FileLoader) GetStateChannel() <-chan StateReader {
+	ch := make(chan StateReader)
 
 	sfl := l.statusFile
 
@@ -80,8 +80,8 @@ func (l *FileLoader) GetStateChannel() <-chan *State {
 			ssp.SetSample(`status`, sd)
 
 			state := newState()
-			state.Current = ssp
-			state.Previous = prev_ssp
+			state.SetCurrent(ssp)
+			state.SetPrevious(prev_ssp)
 
 			// The state's uptime comes from our status file data
 			if _, ok := sd.Data[`uptime`]; ok {

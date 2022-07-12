@@ -15,9 +15,14 @@ func newTestSample() *Sample {
 	return sample
 }
 
+// File Loader implements the Loader interface
+func TestSampleImplementsSampleReader(t *testing.T) {
+	var _ SampleReader = newTestSample()
+}
+
 func TestSampleErr(t *testing.T) {
 	serr := NewSampleErr(errors.New("test error"))
-	if serr.Error == nil {
+	if serr.Error() == nil {
 		t.Error("missing error")
 	}
 }

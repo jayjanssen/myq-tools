@@ -62,7 +62,7 @@ func TestFileLoaderVariables(t *testing.T) {
 	// Block waiting for a sample from ch, or else a timeout
 	select {
 	case s := <-ch:
-		curr := s.Current
+		curr := s.GetCurrent()
 		errs := curr.GetErrors()
 		if errs != nil {
 			t.Errorf("Sample returned error: %v", errs)
@@ -87,16 +87,18 @@ func TestFileLoaderNilVarfile(t *testing.T) {
 	// Block waiting for a sample from ch, or else a timeout
 	select {
 	case s := <-ch:
-		curr := s.Current
+		curr := s.GetCurrent()
 		if errs := curr.GetErrors(); errs != nil {
-			t.Errorf("Sample returned error: %v", errs)
-		} else if _, ok := curr.Samples[`variables`]; ok {
+			t.Fatalf("Sample returned error: %v", errs)
+		}
+
+		if curr.HasSource(`variables`) {
 			t.Error("found unexpected variables")
-		} else {
-			mc, _ := curr.GetInt(SourceKey{`status`, `questions`})
-			if mc != 914 {
-				t.Errorf("Expected 914 questions in sample, got `%d`", mc)
-			}
+		}
+
+		mc, _ := curr.GetInt(SourceKey{`status`, `questions`})
+		if mc != 914 {
+			t.Errorf("Expected 914 questions in sample, got `%d`", mc)
 		}
 	case <-time.After(2 * time.Second):
 		t.Error("Sample missing")

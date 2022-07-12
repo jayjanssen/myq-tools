@@ -14,22 +14,29 @@ type Sample struct {
 	Data map[string]string
 
 	// Any errors from trying to collect this sample
-	Error error
+	err error
 }
 
 func NewSample() *Sample {
 	s := new(Sample)
 	s.Data = make(map[string]string)
 	s.Timestamp = time.Now()
-	s.Error = nil
+	s.err = nil
 	return s
 }
 
 func NewSampleErr(err error) *Sample {
 	s := new(Sample)
-	s.Error = err
+	s.err = err
 	s.Timestamp = time.Now()
 	return s
+}
+
+func (s Sample) GetSecondsComparable() float64 {
+	return float64(s.Timestamp.UnixMilli()) / float64(1000)
+}
+func (s Sample) GetTimeGenerated() time.Time {
+	return s.Timestamp
 }
 
 // Number of keys in the Sample
@@ -44,4 +51,9 @@ func (s Sample) GetString(key string) (string, error) {
 		return "", errors.New("key not found")
 	}
 	return val, nil // no errors possible here
+}
+
+// Get the error from this Sample collection, if any
+func (s Sample) Error() error {
+	return s.err
 }

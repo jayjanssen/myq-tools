@@ -48,8 +48,8 @@ func parseCompleteFile(t testing.TB, fp *FileParser) chan *Sample {
 				close(datas)
 				break
 			}
-			if sd.Error != nil {
-				t.Fatal(sd.Error)
+			if sd.Error() != nil {
+				t.Fatal(sd.Error())
 			}
 			datas <- sd
 		}
@@ -66,8 +66,8 @@ func checkFileParserExpected(t *testing.T, fp *FileParser, expected int) {
 		for {
 			sd := fp.GetNextSample()
 			if sd != nil {
-				if sd.Error != nil {
-					t.Error(sd.Error)
+				if sd.Error() != nil {
+					t.Error(sd.Error())
 				}
 				samples <- sd
 				continue
@@ -187,8 +187,8 @@ func TestFileParserBadInterval(t *testing.T) {
 func TestSingleSample(t *testing.T) {
 	fp := newGoodFileParser(t, "./testdata/mysqladmin.single")
 	data := fp.GetNextSample()
-	if data.Error != nil {
-		t.Error(data.Error)
+	if data.Error() != nil {
+		t.Error(data.Error())
 	}
 	checkStatusParseTypes(t, data)
 }
@@ -222,8 +222,8 @@ func TestSingleBatchSample(t *testing.T) {
 	fp := newGoodFileParser(t, "./testdata/mysql.single")
 
 	data := fp.GetNextSample()
-	if data.Error != nil {
-		t.Error(data.Error)
+	if data.Error() != nil {
+		t.Error(data.Error())
 	}
 
 	checkStatusParseTypes(t, data)

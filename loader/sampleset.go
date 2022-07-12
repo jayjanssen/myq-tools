@@ -3,6 +3,7 @@ package loader
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 )
@@ -10,19 +11,25 @@ import (
 // A collection of Samples at a given time
 type SampleSet struct {
 	// The samples collected
-	Samples map[SourceName]*Sample
+	Samples map[SourceName]SampleReader
 }
 
 // Create new SampleSet
 func NewSampleSet() *SampleSet {
 	ss := SampleSet{}
-	ss.Samples = make(map[SourceName]*Sample)
+	ss.Samples = make(map[SourceName]SampleReader)
 	return &ss
 }
 
 // Store a sample for the given key into this set
 func (ssp *SampleSet) SetSample(key SourceName, sp *Sample) {
 	ssp.Samples[key] = sp
+}
+
+// Check if the given Source is in this set
+func (ssp *SampleSet) HasSource(sn SourceName) bool {
+	_, ok := ssp.Samples[sn]
+	return ok
 }
 
 // Collect errors from all the Samples
@@ -32,11 +39,27 @@ func (ssp *SampleSet) GetErrors() error {
 		if sample == nil {
 			continue
 		}
-		if sample.Error != nil {
-			errs = multierror.Append(errs, sample.Error)
+		if sample.Error() != nil {
+			errs = multierror.Append(errs, sample.Error())
 		}
 	}
 	return errs.ErrorOrNil()
+}
+
+// Get time data from a Sample, or "nil-value"
+func (ssp *SampleSet) GetSecondsComparable(sn SourceName) float64 {
+	sp, ok := ssp.Samples[sn]
+	if !ok {
+		return 0
+	}
+	return sp.GetSecondsComparable()
+}
+func (ssp *SampleSet) GetTimeGenerated(sn SourceName) time.Time {
+	sp, ok := ssp.Samples[sn]
+	if !ok {
+		return time.Unix(0, 0)
+	}
+	return sp.GetTimeGenerated()
 }
 
 // Fetch the string value of the the given SourceKey
@@ -64,7 +87,7 @@ func (ssp *SampleSet) GetInt(sk SourceKey) (int64, error) {
 func (ssp *SampleSet) GetFloat(sk SourceKey) (float64, error) {
 	val, err := ssp.GetString(sk)
 	if err != nil {
-		return 0, err
+		return 0.0, err
 	}
 
 	conv, err := strconv.ParseFloat(val, 64)
