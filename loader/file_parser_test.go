@@ -118,8 +118,11 @@ func checkStatusParseTypes(t *testing.T, data *Sample) {
 		"binlog_snapshot_file":       "string",
 	}
 
+	ssp := NewSampleSet()
+	ssp.SetSample(`status`, data)
+
 	for varname, expectedtype := range typeTests {
-		i, ierr := data.GetInt(varname)
+		i, ierr := ssp.GetInt(SourceKey{`status`, varname})
 		if ierr == nil {
 			if expectedtype != "int64" {
 				t.Fatal("Found integer, expected", expectedtype, "for", varname, "value: `", i, "`")
@@ -128,7 +131,7 @@ func checkStatusParseTypes(t *testing.T, data *Sample) {
 			}
 		}
 
-		f, ferr := data.GetFloat(varname)
+		f, ferr := ssp.GetFloat(SourceKey{`status`, varname})
 		if ferr == nil {
 			if expectedtype != "float64" {
 				t.Fatal("Found float, expected", expectedtype, "for", varname, "value: `", f, "`")
@@ -137,7 +140,7 @@ func checkStatusParseTypes(t *testing.T, data *Sample) {
 			}
 		}
 
-		s, serr := data.GetString(varname)
+		s, serr := ssp.GetString(SourceKey{`status`, varname})
 		if serr == nil {
 			if expectedtype != "string" {
 				t.Fatal("Found string, expected", expectedtype, "for", varname, "value: `", s, "`")

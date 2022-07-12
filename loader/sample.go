@@ -2,8 +2,6 @@ package loader
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -46,55 +44,4 @@ func (s Sample) GetString(key string) (string, error) {
 		return "", errors.New("key not found")
 	}
 	return val, nil // no errors possible here
-}
-func (s Sample) GetInt(key string) (int64, error) {
-	val, ok := s.Data[key]
-	if !ok {
-		return 0, errors.New("key not found")
-	}
-
-	conv, err := strconv.ParseInt(val, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return conv, nil
-}
-func (s Sample) GetFloat(key string) (float64, error) {
-	val, ok := s.Data[key]
-	if !ok {
-		return 0.0, errors.New("key not found")
-	}
-
-	conv, err := strconv.ParseFloat(val, 64)
-	if err != nil {
-		return 0.0, err
-	} else {
-		return conv, nil
-	}
-}
-
-// Same as above, just ignore the error
-func (s Sample) GetI(key string) int64 {
-	i, _ := s.GetInt(key)
-	return i
-}
-func (s Sample) GetF(key string) float64 {
-	f, _ := s.GetFloat(key)
-	return f
-}
-func (s Sample) GetStr(key string) string {
-	str, _ := s.GetString(key)
-	return str
-}
-
-// Gets either a float or an int (check type of result), or an error
-func (s Sample) GetNumeric(key string) (interface{}, error) {
-	// Ints can be parsed as a Float, but not the converse, try Int parsing first
-	if val, err := s.GetInt(key); err == nil {
-		return val, nil
-	} else if val, err := s.GetFloat(key); err == nil {
-		return val, nil
-	} else {
-		return nil, fmt.Errorf("value is not numeric: `%v`", s.GetStr(key))
-	}
 }

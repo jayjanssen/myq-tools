@@ -71,7 +71,7 @@ func (l *FileLoader) GetStateChannel() <-chan *State {
 			}
 
 			// Construct a SampleSet
-			ssp := newSampleSet()
+			ssp := NewSampleSet()
 
 			if l.variablesSample != nil {
 				// Resuse variapes sample (assume it hasn't changed)

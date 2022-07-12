@@ -66,12 +66,11 @@ func TestFileLoaderVariables(t *testing.T) {
 		errs := curr.GetErrors()
 		if errs != nil {
 			t.Errorf("Sample returned error: %v", errs)
-		} else if _, ok := curr.Samples[`variables`]; !ok {
-			t.Error("Missing variables")
 		} else {
-			varss := curr.Samples[`variables`]
-			mc, _ := varss.GetInt(`max_connections`)
-			if mc != 151 {
+			mc, err := curr.GetInt(SourceKey{`variables`, `max_connections`})
+			if err != nil {
+				t.Error(err)
+			} else if mc != 151 {
 				t.Error("Expected 151 max_connections")
 			}
 		}
@@ -94,10 +93,9 @@ func TestFileLoaderNilVarfile(t *testing.T) {
 		} else if _, ok := curr.Samples[`variables`]; ok {
 			t.Error("found unexpected variables")
 		} else {
-			statuss := curr.Samples[`status`]
-			mc, _ := statuss.GetInt(`questions`)
+			mc, _ := curr.GetInt(SourceKey{`status`, `questions`})
 			if mc != 914 {
-				t.Error("Expected 914 questions in sample")
+				t.Errorf("Expected 914 questions in sample, got `%d`", mc)
 			}
 		}
 	case <-time.After(2 * time.Second):

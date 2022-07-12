@@ -10,7 +10,7 @@ func getTestRateCol() RateCol {
 	sk := loader.SourceKey{"status", "connections"}
 	rc := RateCol{}
 	rc.Name = "test"
-	rc.Key = sk
+	rc.key = sk
 	rc.Length = 4
 	rc.Units = NUMBER
 	rc.Precision = 0
