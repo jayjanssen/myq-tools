@@ -11,9 +11,9 @@ import (
 
 // A numCol is an abstract object that contains Units and Precision values.  Implementation of those are left to the "subclasses"
 type numCol struct {
-	defaultCol
-	Units     UnitsType
-	Precision int
+	defaultCol `yaml:",inline"`
+	Units      UnitsType `yaml:"units"`
+	Precision  int       `yaml:"precision"`
 }
 
 // The type of numeric value

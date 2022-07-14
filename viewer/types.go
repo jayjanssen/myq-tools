@@ -21,15 +21,12 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 	var newlist StateViewerList
 	for _, content := range value.Content {
 		rawmap := make(map[string]string)
-		// yaml.Unmarshal(content, &rawmap)
 		content.Decode(&rawmap)
-		fmt.Printf("content type: %v\n", rawmap["type"])
 
 		switch rawmap["type"] {
 		case `Rate`:
 			c := RateCol{}
 			content.Decode(&c)
-			fmt.Printf("content decoded: %v\n", c)
 			newlist = append(newlist, c)
 		case `Gauge`:
 			c := RateCol{}

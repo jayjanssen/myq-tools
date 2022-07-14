@@ -8,11 +8,12 @@ import (
 
 // A defaultCol contains base attributes and methods shared by all Cols
 type defaultCol struct {
-	Name        string
-	Description string
-	Sources     []loader.SourceName
-	Type        string
-	Length      int
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+	Type        string `yaml:"type"`
+	Length      int    `yaml:"length"`
+
+	Sources []loader.SourceName
 }
 
 func (c defaultCol) GetName() string {

@@ -54,26 +54,24 @@ func TestColGetSources(t *testing.T) {
 	}
 }
 
-// Test object that implements loader.StateReader
-type testStateReader struct {
-	rate float64
-}
-
-func (sr testStateReader) GetKeyCurPrev(sk loader.SourceKey) (string, string) {
-	if sk.SourceName == "status" && sk.Key == "connections" {
-		return "100", "105"
-	}
-	return "", ""
-}
-
-func (sr testStateReader) SecondsDiff() int64 {
-	return 1
-}
-
 func getTestState() loader.StateReader {
-	return testStateReader{
-		rate: 10,
-	}
+	sp := loader.NewState()
+	curss := loader.NewSampleSet()
+	prevss := loader.NewSampleSet()
+
+	cursamp := loader.NewSample()
+	curss.SetSample(`status`, cursamp)
+
+	prevsamp := loader.NewSample()
+	prevss.SetSample(`status`, prevsamp)
+
+	sp.SetCurrent(curss)
+	sp.SetPrevious(prevss)
+
+	cursamp.Data[`connections`] = `105`
+	prevsamp.Data[`connections`] = `100`
+
+	return sp
 }
 
 func TestColGetHeader(t *testing.T) {
