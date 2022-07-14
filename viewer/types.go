@@ -29,7 +29,7 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 			content.Decode(&c)
 			newlist = append(newlist, c)
 		case `Gauge`:
-			c := RateCol{}
+			c := GaugeCol{}
 			content.Decode(&c)
 			newlist = append(newlist, c)
 		default:

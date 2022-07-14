@@ -18,11 +18,13 @@ func (c RateCol) GetData(sr loader.StateReader) []string {
 	if err != nil {
 		str = c.fitString(`-`)
 	} else {
-		str = c.fitNumber(raw, c.Precision)
+		num := c.fitNumber(raw, c.Precision)
+		str = c.fitString(num) // adds padding if needed
 	}
 	return []string{str}
 }
 
+// Calculates the rate for the given StateReader, returns an error if there's a data problem.
 func (c RateCol) getRate(sr loader.StateReader) (float64, error) {
 	// get cur, or else return an error
 	currssp := sr.GetCurrent()

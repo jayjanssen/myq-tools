@@ -68,3 +68,70 @@ func TestRateColParse(t *testing.T) {
 		t.Logf("rc: %+v", col)
 	}
 }
+
+// Create a state reader to test with
+func getTestRateState(con_prev, con_cur string) loader.StateReader {
+	sp := loader.NewState()
+	curss := loader.NewSampleSet()
+	prevss := loader.NewSampleSet()
+
+	cursamp := loader.NewSample()
+	curss.SetSample(`status`, cursamp)
+
+	prevsamp := loader.NewSample()
+	prevss.SetSample(`status`, prevsamp)
+
+	sp.SetCurrent(curss)
+	sp.SetPrevious(prevss)
+
+	cursamp.Data[`connections`] = con_cur
+	prevsamp.Data[`connections`] = con_prev
+
+	return sp
+}
+
+func TestRateColgetRate(t *testing.T) {
+	col := getTestRateCol()
+
+	// Normal rate
+	state := getTestRateState(`10`, `15`)
+	rate, err := col.getRate(state)
+	if err != nil {
+		t.Error(err)
+	}
+	if rate != 5 {
+		t.Errorf(`unexpected rate: %f`, rate)
+	}
+	outputs := col.GetData(state)
+	if len(outputs) != 1 {
+		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
+	}
+	if outputs[0] != `   5` {
+		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
+	}
+
+	// Blank prev rate
+	state = getTestRateState(``, `15`)
+	rate, err = col.getRate(state)
+	if err != nil {
+		t.Error(err)
+	}
+	if rate != 15 {
+		t.Errorf(`unexpected rate: %f`, rate)
+	}
+
+	// Bad value
+	state = getTestRateState(``, `notanumber`)
+	rate, err = col.getRate(state)
+	if err == nil {
+		t.Error(`expected error parsing notanumber`)
+	}
+	outputs = col.GetData(state)
+	if len(outputs) != 1 {
+		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
+	}
+	if outputs[0] != `   -` {
+		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
+	}
+
+}
