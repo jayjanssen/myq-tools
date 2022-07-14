@@ -79,7 +79,7 @@ func (l *FileLoader) GetStateChannel() <-chan StateReader {
 			}
 			ssp.SetSample(`status`, sd)
 
-			state := newState()
+			state := NewState()
 			state.SetCurrent(ssp)
 			state.SetPrevious(prev_ssp)
 

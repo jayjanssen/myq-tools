@@ -9,7 +9,7 @@ type State struct {
 	Uptime int64
 }
 
-func newState() *State {
+func NewState() *State {
 	return &State{}
 }
 
