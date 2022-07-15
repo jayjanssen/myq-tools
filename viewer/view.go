@@ -4,12 +4,10 @@ import "github.com/jayjanssen/myq-tools2/loader"
 
 // A view is made up of Groups of Cols
 type View struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
+	GroupCol `yaml:",inline"`
 
 	// Usually a view would have Groups OR Cols, but not both.  If both, print groups first, then individual cols
-	Groups []Colgroup      `yaml:"groups"`
-	Cols   StateViewerList `yaml:"cols"`
+	Groups []GroupCol `yaml:"groups"`
 }
 
 func (v View) GetName() string {

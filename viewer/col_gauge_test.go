@@ -9,7 +9,7 @@ import (
 )
 
 func getTestGaugeCol() GaugeCol {
-	sk := loader.SourceKey{"status", "threads_connect"}
+	sk := loader.SourceKey{SourceName: "status", Key: "threads_connect"}
 	rc := GaugeCol{}
 	rc.Name = "conn"
 	rc.Description = "Threads connected"

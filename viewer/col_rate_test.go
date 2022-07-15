@@ -9,7 +9,7 @@ import (
 )
 
 func getTestRateCol() RateCol {
-	sk := loader.SourceKey{"status", "connections"}
+	sk := loader.SourceKey{SourceName: "status", Key: "connections"}
 	rc := RateCol{}
 	rc.Name = "cons"
 	rc.Description = "Connections per second"
@@ -122,7 +122,7 @@ func TestRateColgetRate(t *testing.T) {
 
 	// Bad value
 	state = getTestRateState(``, `notanumber`)
-	rate, err = col.getRate(state)
+	_, err = col.getRate(state)
 	if err == nil {
 		t.Error(`expected error parsing notanumber`)
 	}

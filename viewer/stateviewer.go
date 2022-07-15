@@ -20,4 +20,7 @@ type StateViewer interface {
 
 	// Data for this view based on the state
 	GetData(loader.StateReader) []string
+
+	// Blank for this view when we need to pad extra lines
+	GetBlankLine() string
 }

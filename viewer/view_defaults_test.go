@@ -15,6 +15,7 @@ func TestDefsParse(t *testing.T) {
 	if len(Views) < 1 {
 		t.Fatal("No views parsed!")
 	}
+
 	name := ViewNames[0]
 	if name != "cttf" {
 		t.Fatal("First view is not named `cttf`!")
@@ -45,7 +46,7 @@ func TestDefsParse(t *testing.T) {
 	mycons := RateCol{}
 	mycons.Name = "cons"
 	mycons.Description = "Connections per second"
-	mycons.Key = loader.SourceKey{`status`, `connections`}
+	mycons.Key = loader.SourceKey{SourceName: "status", Key: "connections"}
 	mycons.Type = "Rate"
 	mycons.Units = NUMBER
 	mycons.Length = 4

@@ -6,13 +6,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// A colgroup is a list of (related) cols
-type Colgroup struct {
-	Name        string          `yaml:"name"`
-	Description string          `yaml:"description"`
-	Cols        StateViewerList `yaml:"cols"`
-}
-
 // A list of things that implement StateViewer
 type StateViewerList []StateViewer
 

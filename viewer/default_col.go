@@ -36,11 +36,7 @@ func (c defaultCol) GetHeader(sr loader.StateReader) (result []string) {
 	return
 }
 
-// helper function to fit a plain string to our Length
-func (c defaultCol) fitString(input string) string {
-	if len(input) > int(c.Length) {
-		return input[0:c.Length] // First width characters
-	} else {
-		return fmt.Sprintf(`%*s`, c.Length, input)
-	}
+// Blank line for this view
+func (c defaultCol) GetBlankLine() string {
+	return fitString(` `, c.Length)
 }

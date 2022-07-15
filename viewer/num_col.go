@@ -33,39 +33,39 @@ type UnitsDef map[float64]string
 
 // Lookup map given a UnitsType
 var unitsLookup = map[UnitsType]UnitsDef{
-	NUMBER: UnitsDef{
+	NUMBER: {
 		1:          ``,
 		1000:       `k`,
 		1000000:    `m`,
 		1000000000: `g`,
 	},
-	MEMORY: UnitsDef{
+	MEMORY: {
 		1:             `b`,
 		1024:          `K`,
 		1048576:       `M`,
 		1073741824:    `G`,
 		1099511627776: `T`,
 	},
-	SECOND: UnitsDef{
+	SECOND: {
 		1000:        `ks`,
 		1:           `s`,
 		0.001:       `ms`,
 		0.000001:    `µs`,
 		0.000000001: `ns`,
 	},
-	MICROSECOND: UnitsDef{
+	MICROSECOND: {
 		1000000000: `ks`,
 		1000000:    `s`,
 		1000:       `ms`,
 		1:          `µs`,
 	},
-	NANOSECOND: UnitsDef{
+	NANOSECOND: {
 		1000000000: `s`,
 		1000000:    `ms`,
 		1000:       `µs`,
 		1:          `ns`,
 	},
-	PERCENT: UnitsDef{
+	PERCENT: {
 		1: `%`,
 	},
 }
