@@ -16,10 +16,10 @@ func (c RateCol) GetData(sr loader.StateReader) []string {
 	var str string
 	raw, err := c.getRate(sr)
 	if err != nil {
-		str = fitString(`-`, c.Length)
+		str = FitString(`-`, c.Length)
 	} else {
 		num := c.fitNumber(raw, c.Precision)
-		str = fitString(num, c.Length) // adds padding if needed
+		str = FitString(num, c.Length) // adds padding if needed
 	}
 	return []string{str}
 }

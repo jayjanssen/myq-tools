@@ -32,7 +32,7 @@ func main() {
 	version := flag.Bool("version", false, "print the version")
 
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
-	header := flag.Int64("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
+	header := flag.Int("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
 
 	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to the mysql cli (used for connection options).  Note that '-p' for a password prompt is not supported.")
@@ -163,29 +163,30 @@ func main() {
 	}
 
 	// Apply selected view to output each sample
-	linesSinceHeader := int64(0)
-	var buf viewer.FixedWidthBuffer
-	if *width == true {
-		buf.SetWidth(termwidth)
+	linesSinceHeader := 0
+
+	printOutput := func(s string) {
+		if *width == true {
+			s = viewer.FitString(s, termwidth)
+		}
+		fmt.Println(s)
 	}
 
 	// Main loop through loader States
 	for state := range loader.GetStateChannel() {
 		// Reprint a header whenever lines == 0
 		if linesSinceHeader == 0 {
-			for headerLn := range view.GetHeader(state) {
-				buf.WriteString(fmt.Sprint(headerLn, "\n"))
+			for _, headerLn := range view.GetHeader(state) {
+				printOutput(headerLn)
 				linesSinceHeader += 1
 			}
 		}
 
 		// Output data
-		for dataln := range view.GetData(state) {
-			buf.WriteString(fmt.Sprint(dataln, "\n"))
+		for _, dataLn := range view.GetData(state) {
+			printOutput(dataLn)
 			linesSinceHeader += 1
 		}
-		buf.WriteTo(os.Stdout)
-		buf.Reset()
 
 		// Determine if we need to reset lines to 0 (and trigger a header)
 		if linesSinceHeader/headerRepeat >= 1 {
@@ -195,9 +196,6 @@ func main() {
 			if *width == true || *header == 0 {
 				// Recalculate the size of the terminal now too
 				termheight, termwidth = viewer.GetTermSize()
-				if *width == true {
-					buf.SetWidth(termwidth)
-				}
 				if *header == 0 {
 					headerRepeat = termheight
 				}

@@ -1,7 +1,6 @@
 package viewer
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,15 +9,16 @@ import (
 )
 
 // this needs some error handling and testing love
-func GetTermSize() (height, width int64) {
+func GetTermSize() (int, int) {
 	cmd := exec.Command("stty", "size")
 	cmd.Stdin = os.Stdin
 	out, _ := cmd.Output()
 	vals := strings.Split(strings.TrimSpace(string(out)), " ")
 
-	height, _ = strconv.ParseInt(vals[0], 10, 64)
-	width, _ = strconv.ParseInt(vals[1], 10, 64)
-	return
+	height, _ := strconv.ParseInt(vals[0], 10, 64)
+	width, _ := strconv.ParseInt(vals[1], 10, 64)
+
+	return int(height), int(width)
 }
 
 // // Set OS-specific SysProcAttrs if they exist
@@ -34,27 +34,6 @@ func GetTermSize() (height, width int64) {
 // 		c.SysProcAttr = attr
 // 	}
 // }
-
-// A buffer that only allows lines maxwidth long
-type FixedWidthBuffer struct {
-	bytes.Buffer
-	maxwidth int64
-}
-
-// Set the new maximum width for the buffer
-func (b *FixedWidthBuffer) SetWidth(w int64) {
-	b.maxwidth = w
-}
-
-// Write a string to the buffer, truncate anything longer than maxwidth
-func (b *FixedWidthBuffer) WriteString(s string) (n int, err error) {
-	runes := bytes.Runes([]byte(s))
-	if b.maxwidth != 0 && len(runes) > int(b.maxwidth) {
-		return b.Buffer.WriteString(string(runes[:b.maxwidth]))
-	} else {
-		return b.Buffer.WriteString(s)
-	}
-}
 
 // Calculate diff between two numbers, if negative, just return bigger
 func CalculateDiff(bigger, smaller float64) float64 {
@@ -89,7 +68,7 @@ func CalculateRate(bigger, smaller, seconds float64) float64 {
 // String functions
 
 // helper function to fit a plain string to our Length
-func fitString(input string, length int) string {
+func FitString(input string, length int) string {
 	if len(input) > int(length) {
 		return input[0:length] // First width characters
 	} else {
@@ -98,10 +77,50 @@ func fitString(input string, length int) string {
 }
 
 // helper function to fit a plain string to our Length
-func fitStringLeft(input string, length int) string {
+func FitStringLeft(input string, length int) string {
 	if len(input) > int(length) {
 		return input[0:length] // First width characters
 	} else {
 		return fmt.Sprintf(`%-*s`, length, input)
 	}
+}
+
+// Generate a combined set of lines for all given StateViewers
+func groupColOutput(svs StateViewerList, getColOut func(sv StateViewer) []string) (result []string) {
+	// Collect the string arrays from each column
+	colsOutput := make([][]string, len(svs))
+	maxLines := 0
+	for i, c := range svs {
+		colsOutput[i] = getColOut(c)
+		if maxLines < len(colsOutput[i]) {
+			maxLines = len(colsOutput[i])
+		}
+	}
+
+	// Each col will output one or more lines, and they may output different amounts of lines. We use blank lines when a col doesn't have a value for a given line
+
+	// Output maxLines # of lines to result
+	for line := 0; line < maxLines; line += 1 {
+		lineStr := ``
+		for colI, colOut := range colsOutput {
+			colLines := len(colOut) // How many lines does this col have?
+
+			// Figure out which colOut line we should be printing
+			staggeredI := line - (maxLines - colLines)
+
+			// If staggeredI is negative, print a Blank, otherwise use the colOut
+			if staggeredI < 0 {
+				col := svs[colI]
+				lineStr += col.GetBlankLine()
+			} else {
+				lineStr += colOut[staggeredI]
+			}
+
+			// Add a space for the next line
+			lineStr += ` `
+		}
+		// Append the lineStr less 1 character (trailing space)
+		result = append(result, lineStr[:len(lineStr)-1])
+	}
+	return
 }

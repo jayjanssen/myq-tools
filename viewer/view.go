@@ -10,15 +10,6 @@ type View struct {
 	Groups []GroupCol `yaml:"groups"`
 }
 
-func (v View) GetName() string {
-	return v.Name
-}
-
-// Single line help for the view
-func (v View) GetShortHelp() string {
-	return ""
-}
-
 // Detailed multi-line help for the view
 func (v View) GetDetailedHelp() []string {
 	return []string{""}
@@ -33,13 +24,43 @@ func (v View) GetSources() ([]loader.SourceName, error) {
 }
 
 // Header for this view, unclear if state is needed
-func (v View) GetHeader(sr loader.StateReader) []string {
-	return []string{""}
+func (v View) GetHeader(sr loader.StateReader) (result []string) {
+	// Collect all the StateViewers for this view
+	var svs StateViewerList
+	for _, group := range v.Groups {
+		svs = append(svs, group)
+	}
+	svs = append(svs, v.Cols...)
+
+	// Get the header output of all those svs
+	colOuts := groupColOutput(svs, func(sv StateViewer) []string {
+		return sv.GetHeader(sr)
+	})
+
+	// Get the length of this view based on the length of the first colOut
+	if v.Length == 0 && len(colOuts) > 0 {
+		v.Length = len(colOuts[0])
+	}
+
+	// Send our name, then the output of our StateViewers
+	result = append(result, FitStringLeft(v.Name, v.Length))
+	result = append(result, colOuts...)
+	return
 }
 
 // Data for this view based on the state
-func (v View) GetData(sr loader.StateReader) []string {
-	return []string{""}
+func (v View) GetData(sr loader.StateReader) (result []string) {
+	// Collect all the StateViewers for this view
+	var svs StateViewerList
+	for _, group := range v.Groups {
+		svs = append(svs, group)
+	}
+	svs = append(svs, v.Cols...)
+
+	// Get the data output of all those svs
+	return groupColOutput(svs, func(sv StateViewer) []string {
+		return sv.GetData(sr)
+	})
 }
 
 // Live views output the current timestamp whereas Runtime views output the delta in Uptime since the first state

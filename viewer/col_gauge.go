@@ -14,7 +14,7 @@ func (c GaugeCol) GetData(sr loader.StateReader) []string {
 	// get cur, or else return an error
 	currssp := sr.GetCurrent()
 	if currssp == nil {
-		return []string{fitString(`-`, c.Length)}
+		return []string{FitString(`-`, c.Length)}
 	}
 
 	var str string
@@ -28,5 +28,5 @@ func (c GaugeCol) GetData(sr loader.StateReader) []string {
 		str = `-`
 	}
 
-	return []string{fitString(str, c.Length)}
+	return []string{FitString(str, c.Length)}
 }

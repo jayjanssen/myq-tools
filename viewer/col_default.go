@@ -38,5 +38,5 @@ func (c defaultCol) GetHeader(sr loader.StateReader) (result []string) {
 
 // Blank line for this view
 func (c defaultCol) GetBlankLine() string {
-	return fitString(` `, c.Length)
+	return FitString(` `, c.Length)
 }
