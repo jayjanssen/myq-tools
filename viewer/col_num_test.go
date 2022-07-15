@@ -7,9 +7,9 @@ import (
 )
 
 // Funcs to get some test columns
-func getTestNumCol(units UnitsType, precision, width int) numCol {
+func getTestcolNum(units UnitsType, precision, width int) colNum {
 	sources := []loader.SourceName{"status"}
-	return numCol{
+	return colNum{
 		defaultCol: defaultCol{
 			Name:    "test",
 			Sources: sources,
@@ -23,7 +23,7 @@ func getTestNumCol(units UnitsType, precision, width int) numCol {
 func TestNumbers(t *testing.T) {
 
 	assert := func(test_name, expected string, units UnitsType, val float64, precision, width int) {
-		col := getTestNumCol(units, precision, width)
+		col := getTestcolNum(units, precision, width)
 		str := col.fitNumber(val, col.Precision)
 		if str != expected {
 			t.Errorf("%s err: `%s` != `%s`", test_name, str, expected)
@@ -49,6 +49,8 @@ func TestNumbers(t *testing.T) {
 	assert(`twelve point three m`, `12.3m`, NUMBER, 12300000, 0, 5)
 
 	assert(`three hundred kay`, `300k`, NUMBER, 300000, 0, 4)
+
+	assert(`wayyy to big`, `####`, NUMBER, 3000000000000000, 0, 4)
 
 	assert(`one bee`, `1b`, MEMORY, 1, 0, 3)
 	assert(`one point nil`, `1b`, MEMORY, 1, 1, 3)

@@ -7,7 +7,7 @@ import (
 )
 
 type RateCol struct {
-	numCol `yaml:",inline"`
+	colNum `yaml:",inline"`
 	Key    loader.SourceKey `yaml:"key"`
 }
 

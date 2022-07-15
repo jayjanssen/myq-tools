@@ -83,3 +83,11 @@ func TestColGetHeader(t *testing.T) {
 		t.Errorf("Expected header to be 'cons', not: %s", header)
 	}
 }
+
+func TestColGetBlankLine(t *testing.T) {
+	col := getTestCol()
+	line := col.GetBlankLine()
+	if line != `    ` {
+		t.Errorf(`unexpected blank line: '%s'`, line)
+	}
+}

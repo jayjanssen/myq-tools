@@ -21,9 +21,9 @@ func TestDefsParse(t *testing.T) {
 		t.Fatal("First view is not named `cttf`!")
 	}
 
-	cttf, ok := Views[name]
+	cttf, ok := Views[`cttf`]
 	if !ok {
-		t.Fatal("Could not get `cttf` view")
+		t.Fatalf("Could not get `cttf` view: %v", err)
 	}
 
 	if len(cttf.Groups) == 0 {
@@ -58,4 +58,25 @@ func TestDefsParse(t *testing.T) {
 		t.Logf("expected: %+v", mycons)
 	}
 
+}
+
+func TestGetViewer(t *testing.T) {
+	err := LoadDefaultViews()
+	if err != nil {
+		t.Error(err)
+	}
+
+	cttf, err := GetViewer(`cttf`)
+	if err != nil {
+		t.Fatalf("could not GetViewer(`cttf`) : %v", err)
+	}
+
+	if cttf.GetName() != `cttf` {
+		t.Errorf(`cttf view had bad name: %s`, cttf.GetName())
+	}
+
+	_, err = GetViewer(`bad`)
+	if err == nil {
+		t.Error("expected error fetching bad view")
+	}
 }

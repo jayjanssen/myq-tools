@@ -9,8 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// A numCol is an abstract object that contains Units and Precision values.  Implementation of those are left to the "subclasses"
-type numCol struct {
+// A colNum is an abstract object that contains Units and Precision values.  Implementation of those are left to the "subclasses"
+type colNum struct {
 	defaultCol `yaml:",inline"`
 	Units      UnitsType `yaml:"units"`
 	Precision  int       `yaml:"precision"`
@@ -83,7 +83,7 @@ func (ut *UnitsType) UnmarshalYAML(value *yaml.Node) error {
 
 // Given the value, fit it into our Precision, Length, and Units
 // callers should pass the Col.Precision value as the second argument
-func (nc numCol) fitNumber(value float64, precision int) string {
+func (nc colNum) fitNumber(value float64, precision int) string {
 	// Get the units we will be using
 	units := unitsLookup[nc.Units]
 

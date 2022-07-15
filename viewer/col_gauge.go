@@ -5,7 +5,7 @@ import (
 )
 
 type GaugeCol struct {
-	numCol `yaml:",inline"`
+	colNum `yaml:",inline"`
 	Key    loader.SourceKey `yaml:"key"`
 }
 
