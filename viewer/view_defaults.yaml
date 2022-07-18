@@ -22,7 +22,7 @@
         - name: acls
           description: Aborted clients (existing connections)
           source: status
-          key: aborted_clients
+          key: status/aborted_clients
           type: Rate
           units: Number
           length: 4

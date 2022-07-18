@@ -130,8 +130,32 @@ func TestRateColgetRate(t *testing.T) {
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}
+	if len(outputs[0]) != 4 {
+		t.Errorf(`output should be 4: %d`, len(outputs[0]))
+	}
 	if outputs[0] != `   -` {
 		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
 	}
 
+}
+
+func TestRateColBadSourceKey(t *testing.T) {
+	// the key value is incorrect, it should be <source>/<key>
+	yaml_str := `---
+- name: acls
+  description: Aborted clients (existing connections)
+  source: status
+  key: aborted_clients
+  type: Rate
+  units: Number
+  length: 4
+  precision: 0
+`
+
+	var cols StateViewerList
+	err := yaml.Unmarshal([]byte(yaml_str), &cols)
+
+	if err == nil {
+		t.Error(`expected error parsing bad sourcekey`)
+	}
 }
