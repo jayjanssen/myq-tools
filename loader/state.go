@@ -15,14 +15,16 @@ func NewState() *State {
 	return &State{}
 }
 
-// Seconds between Cur and Prev samples for the given SourceName, return 0 if Source not found, or other error
+// Seconds between Cur and Prev samples for the given SourceName, return 0 if Source not found, there is no Prev sample, or other error
 func (sp *State) SecondsDiff(sn SourceName) float64 {
 	var curr, prev float64
 	if sp.Current != nil {
 		curr = sp.Current.GetSecondsComparable(sn)
 	}
-	if sp.Previous != nil {
-		prev = sp.Previous.GetSecondsComparable(sn)
+
+	// No prev sample, this is the first.
+	if sp.Previous == nil {
+		return 0
 	}
 	return curr - prev
 }

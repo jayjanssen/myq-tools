@@ -159,3 +159,40 @@ func TestRateColBadSourceKey(t *testing.T) {
 		t.Error(`expected error parsing bad sourcekey`)
 	}
 }
+
+// Create a state reader to test with
+func getTestRateNullPrevState(con_cur string) loader.StateReader {
+	sp := loader.NewState()
+	curss := loader.NewSampleSet()
+
+	cursamp := loader.NewSample()
+	curss.SetSample(`status`, cursamp)
+
+	sp.SetCurrent(curss)
+
+	cursamp.Data[`connections`] = con_cur
+
+	return sp
+}
+
+func TestRateColgetRateNullPrev(t *testing.T) {
+	col := getTestRateCol()
+
+	// Normal rate
+	state := getTestRateNullPrevState(`1500`)
+	rate, err := col.getRate(state)
+	if err != nil {
+		t.Error(err)
+	}
+	if rate != 1500 {
+		t.Errorf(`unexpected rate: %f`, rate)
+	}
+	outputs := col.GetData(state)
+	if len(outputs) != 1 {
+		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
+	}
+	if outputs[0] != `1500` {
+		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
+	}
+
+}
