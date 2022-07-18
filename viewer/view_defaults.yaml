@@ -32,7 +32,7 @@
       cols:
         - name: conn
           description: Threads connected
-          key: status/threads_connect
+          key: status/threads_connected
           type: Gauge
           units: Number
           length: 4
