@@ -4,11 +4,15 @@ import "github.com/jayjanssen/myq-tools2/loader"
 
 // A view is made up of Groups of Cols
 type View struct {
+	// Views *are* a GroupCol in that they can have a Cols
 	GroupCol `yaml:",inline"`
 
 	// Usually a view would have Groups OR Cols, but not both.  If both, print groups first, then individual cols
 	Groups []GroupCol `yaml:"groups"`
 }
+
+// How to print out the time with our output
+var timeCol SampleTimeCol = NewSampleTimeCol()
 
 // A list of sources that this view requires
 func (v View) GetSources() ([]loader.SourceName, error) {
@@ -19,9 +23,10 @@ func (v View) GetSources() ([]loader.SourceName, error) {
 }
 
 // Header for this view, unclear if state is needed
-func (v View) GetHeader(sr loader.StateReader) (result []string) {
+func (v View) GetHeader(sr loader.StateReader) []string {
 	// Collect all the StateViewers for this view
 	var svs StateViewerList
+	svs = append(svs, timeCol)
 	for _, group := range v.Groups {
 		svs = append(svs, group)
 	}
@@ -37,16 +42,14 @@ func (v View) GetHeader(sr loader.StateReader) (result []string) {
 		v.Length = len(colOuts[0])
 	}
 
-	// Send our name, then the output of our StateViewers
-	result = append(result, FitStringLeft(v.Name, v.Length))
-	result = append(result, colOuts...)
-	return
+	return colOuts
 }
 
 // Data for this view based on the state
 func (v View) GetData(sr loader.StateReader) (result []string) {
 	// Collect all the StateViewers for this view
 	var svs StateViewerList
+	svs = append(svs, timeCol)
 	for _, group := range v.Groups {
 		svs = append(svs, group)
 	}
@@ -56,13 +59,4 @@ func (v View) GetData(sr loader.StateReader) (result []string) {
 	return groupColOutput(svs, func(sv StateViewer) []string {
 		return sv.GetData(sr)
 	})
-}
-
-// Live views output the current timestamp whereas Runtime views output the delta in Uptime since the first state
-func (v View) SetLive() {
-
-}
-
-func (v View) SetRuntime() {
-
 }

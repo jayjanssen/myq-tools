@@ -1,5 +1,7 @@
 package loader
 
+import "fmt"
+
 // The current State of the monitored server
 type State struct {
 	// The current and most recent SampleSets
@@ -23,6 +25,11 @@ func (sp *State) SecondsDiff(sn SourceName) float64 {
 		prev = sp.Previous.GetSecondsComparable(sn)
 	}
 	return curr - prev
+}
+
+// Get what to print in the timestamp col
+func (sp *State) GetTimeString() string {
+	return fmt.Sprintf(`%ds`, sp.Uptime)
 }
 
 // Get the Current and Previous Samplesets, could be nil!

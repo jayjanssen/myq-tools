@@ -11,6 +11,9 @@ type FileLoader struct {
 	statusFile      *FileParser
 	variablesFile   *FileParser
 	variablesSample *Sample
+
+	// The first uptime reported in the status file
+	firstUptime int64
 }
 
 func NewFileLoader(statusFile, varFile string) *FileLoader {
@@ -86,7 +89,13 @@ func (l *FileLoader) GetStateChannel() <-chan StateReader {
 			// The state's uptime comes from our status file data
 			if _, ok := sd.Data[`uptime`]; ok {
 				// Set the uptime if we have it
-				state.Uptime, _ = strconv.ParseInt(sd.Data[`uptime`], 10, 64)
+				currUptime, _ := strconv.ParseInt(sd.Data[`uptime`], 10, 64)
+				state.Uptime = currUptime - l.firstUptime
+
+				// Set the first up time if we don't have it
+				if l.firstUptime == 0 {
+					l.firstUptime = state.Uptime
+				}
 			}
 
 			ch <- state

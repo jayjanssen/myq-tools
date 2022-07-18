@@ -52,9 +52,8 @@ func TestViewGetHeader(t *testing.T) {
 	lines := view.GetHeader(sr)
 
 	expectedLines := []string{
-		`Test View`,
-		`Connects `,
-		`cons conn`,
+		`         Connects `,
+		`    time cons conn`,
 	}
 
 	if len(lines) != len(expectedLines) {
@@ -74,7 +73,7 @@ func TestViewGetData(t *testing.T) {
 	lines := view.GetData(sr)
 
 	expectedLines := []string{
-		`   5    4`,
+		`      0s    5    4`,
 	}
 
 	if len(lines) != len(expectedLines) {
