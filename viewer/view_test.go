@@ -69,7 +69,7 @@ func TestViewGetHeader(t *testing.T) {
 
 func TestViewGetData(t *testing.T) {
 	view := getTestView()
-	sr := getTestGroupState()
+	sr := getTestViewState()
 
 	lines := view.GetData(sr)
 
