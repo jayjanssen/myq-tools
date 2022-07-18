@@ -25,6 +25,13 @@ func (c defaultCol) GetShortHelp() string {
 	return fmt.Sprintf("%s: %s", c.Name, c.Description)
 }
 
+// Detailed help -- by default same as short help
+func (c defaultCol) GetDetailedHelp() []string {
+	result := make([]string, 1)
+	result[0] = c.GetShortHelp()
+	return result
+}
+
 // A list of sources that this view requires
 func (c defaultCol) GetSources() ([]loader.SourceName, error) {
 	return c.Sources, nil

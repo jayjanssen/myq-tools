@@ -3,7 +3,7 @@ package loader
 // The current State of the monitored server
 type State struct {
 	// The current and most recent SampleSets
-	Current, Previous SampleSetReader
+	Current, Previous *SampleSet
 
 	// Uptime of the server from the SampleSet
 	Uptime int64
@@ -16,10 +16,10 @@ func NewState() *State {
 // Seconds between Cur and Prev samples for the given SourceName, return 0 if Source not found, or other error
 func (sp *State) SecondsDiff(sn SourceName) float64 {
 	var curr, prev float64
-	if sp.Current == nil {
+	if sp.Current != nil {
 		curr = sp.Current.GetSecondsComparable(sn)
 	}
-	if sp.Previous == nil {
+	if sp.Previous != nil {
 		prev = sp.Previous.GetSecondsComparable(sn)
 	}
 	return curr - prev
@@ -27,16 +27,22 @@ func (sp *State) SecondsDiff(sn SourceName) float64 {
 
 // Get the Current and Previous Samplesets, could be nil!
 func (sp *State) GetCurrent() SampleSetReader {
+	if sp.Current == nil {
+		return nil
+	}
 	return sp.Current
 }
 func (sp *State) GetPrevious() SampleSetReader {
+	if sp.Previous == nil {
+		return nil
+	}
 	return sp.Previous
 }
 
 // Set the Current and Previous Samplesets
-func (sp *State) SetCurrent(ssr SampleSetReader) {
+func (sp *State) SetCurrent(ssr *SampleSet) {
 	sp.Current = ssr
 }
-func (sp *State) SetPrevious(ssr SampleSetReader) {
+func (sp *State) SetPrevious(ssr *SampleSet) {
 	sp.Previous = ssr
 }

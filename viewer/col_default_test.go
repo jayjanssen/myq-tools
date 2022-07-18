@@ -27,6 +27,19 @@ func TestColGetShortHelp(t *testing.T) {
 	}
 }
 
+func TestColGetDetailedHelp(t *testing.T) {
+	col := getTestCol()
+
+	help := col.GetDetailedHelp()
+	if len(help) != 1 {
+		t.Errorf("detailed help unexpected line count: %d", len(help))
+	}
+
+	if help[0] != "cons: Connections per second" {
+		t.Error("bad detailed help")
+	}
+}
+
 func TestColGetSources(t *testing.T) {
 	loader.LoadDefaultSources()
 

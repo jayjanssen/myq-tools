@@ -10,11 +10,6 @@ type View struct {
 	Groups []GroupCol `yaml:"groups"`
 }
 
-// Detailed multi-line help for the view
-func (v View) GetDetailedHelp() []string {
-	return []string{""}
-}
-
 // A list of sources that this view requires
 func (v View) GetSources() ([]loader.SourceName, error) {
 	return []loader.SourceName{}, nil

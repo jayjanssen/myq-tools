@@ -9,8 +9,11 @@ type StateViewer interface {
 	// Get name of the view
 	GetName() string
 
-	// Single line help for this view
+	// Single line help for this viewer
 	GetShortHelp() string
+
+	// Detailed help for this viewer
+	GetDetailedHelp() []string
 
 	// A list of sources that this view requires
 	GetSources() ([]loader.SourceName, error)

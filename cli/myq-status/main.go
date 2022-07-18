@@ -110,7 +110,7 @@ func main() {
 	}
 
 	// Look for the requested view
-	viewName := viewer.Viewname(flag.Arg(0))
+	viewName := flag.Arg(0)
 	view, err := viewer.GetViewer(viewName)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -120,23 +120,25 @@ func main() {
 	// Print help for the requested view
 	if *help {
 		fmt.Fprintf(os.Stderr, "'%s':\n", viewName)
-		for helpst := range view.GetHelp() {
+		for helpst := range view.GetDetailedHelp() {
 			fmt.Fprintln(os.Stderr, helpst)
 		}
 		os.Exit(OK)
 	}
 
 	// The Loader and Timecol we will use
-	var loader loader.Loader
+	var load loader.Loader
 
 	if *statusfile == "" {
 		// No file given, this is a live collection and we use timestamps
-		loader = loader.NewLiveLoader(*mysql_args)
-		view.SetLive()
+		// load = loader.NewLiveLoader(*mysql_args)
+		// view.SetLive()
+		fmt.Fprintln(os.Stderr, "live loader not implemented yet")
+		os.Exit(LOADER_ERROR)
 	} else {
 		// File given, load it (and the optional varfile)
-		loader = loader.NewFileLoader(*statusfile, *varfile)
-		view.SetRuntime()
+		load = loader.NewFileLoader(*statusfile, *varfile)
+		// view.SetRuntime()
 	}
 
 	sources, err := view.GetSources()
@@ -146,7 +148,7 @@ func main() {
 	}
 
 	// Initialize the loader
-	err = loader.Initialize(*interval, sources)
+	err = load.Initialize(*interval, sources)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(LOADER_ERROR)
@@ -173,7 +175,7 @@ func main() {
 	}
 
 	// Main loop through loader States
-	for state := range loader.GetStateChannel() {
+	for state := range load.GetStateChannel() {
 		// Reprint a header whenever lines == 0
 		if linesSinceHeader == 0 {
 			for _, headerLn := range view.GetHeader(state) {
