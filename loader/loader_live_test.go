@@ -1,72 +1,82 @@
 package loader
 
-// import (
-// 	"testing"
-// 	"time"
-// )
+import (
+	"testing"
+	"time"
+)
 
-// func NewTestLiveLoader(args string) (*LiveLoader, error) {
-// 	i, _ := time.ParseDuration("1s")
-// 	db, err := NewLiveLoader(args, i)
-// 	return db, err
-// }
+var sources_live_test = []SourceName{`status`, `variables`}
 
-// func NewGoodLiveLoader(t testing.TB) *LiveLoader {
-// 	db, err := NewTestLiveLoader("-h 127.0.0.1 -u root -proot")
-// 	if err != nil {
-// 		t.Errorf("Connection error: %s", err)
-// 	}
-// 	return db
-// }
+func NewTestLiveLoader(dsn string) (*LiveLoader, error) {
+	i, _ := time.ParseDuration("1s")
+	db := NewLiveLoader(dsn)
+	err := db.Initialize(i, sources_live_test)
 
-// // NewLiveLoader
-// // - should return an error on a bad dsn
-// func TestNewLiveLoaderFail(t *testing.T) {
-// 	_, err := NewTestLiveLoader("")
-// 	if err == nil {
-// 		t.Error("No error!")
-// 	}
-// }
+	return db, err
+}
 
-// // - should be able to make a successful connection
-// func TestNewLiveLoader(t *testing.T) {
-// 	NewGoodLiveLoader(t)
-// }
+func NewGoodLiveLoader(t testing.TB) *LiveLoader {
+	db, err := NewTestLiveLoader("root@tcp(127.0.0.1:3306)/")
+	if err != nil {
+		t.Errorf("Connection error: %s", err)
+	}
+	return db
+}
 
-// // Sql Loader implements the Loader interface
-// func TestLiveLoaderImplementsLoader(t *testing.T) {
-// 	var _ Loader = NewGoodLiveLoader(t)
-// }
+// NewLiveLoader
+// - should return an error on a bad dsn
+func TestNewLiveLoaderFail(t *testing.T) {
+	_, err := NewTestLiveLoader("10.1.1.1")
+	if err == nil {
+		t.Error("No error!")
+	}
+}
 
-// // GetSample
-// func TestLiveLoaderGetSample(t *testing.T) {
-// 	l := NewGoodLiveLoader(t)
+// - should be able to make a successful connection
+func TestNewLiveLoader(t *testing.T) {
+	_, err := NewTestLiveLoader("tcp(127.0.0.1:3306)/")
+	if err != nil {
+		t.Error(err)
+	}
+}
 
-// 	samples_ch := l.GetSamples()
+// Sql Loader implements the Loader interface
+func TestLiveLoaderImplementsLoader(t *testing.T) {
+	var _ Loader = NewGoodLiveLoader(t)
+}
 
-// 	sample := <-samples_ch
-// 	if sample.Err != nil {
-// 		t.Errorf("Sample error: %s", sample.Err)
-// 	}
+// GetSample
+func TestLiveLoaderGetSample(t *testing.T) {
+	l := NewGoodLiveLoader(t)
 
-// 	_, err := sample.Status.GetString("uptime")
-// 	if err != nil {
-// 		t.Error("uptime not in sample")
-// 	}
+	ch := l.GetStateChannel()
 
-// }
+	// Block waiting for a sample from ch, or else a timeout
+	select {
+	case s := <-ch:
+		curr := s.GetCurrent()
+		errs := curr.GetErrors()
+		if errs != nil {
+			t.Fatalf("Sample returned error: %v", errs)
+		}
 
-// // GetSamples
-// func TestLiveLoaderGetSamples(t *testing.T) {
-// 	l := NewGoodLiveLoader(t)
-// 	ch := l.GetSamples()
+		// variables/port == 3306
+		port, err := curr.GetInt(SourceKey{`variables`, `port`})
+		if err != nil {
+			t.Error(err)
+		} else if port != 3306 {
+			t.Errorf("Expected port 3306, got: %d", port)
+		}
 
-// 	if ch == nil {
-// 		t.Error("channel nil")
-// 	}
-// 	sample := <-ch
-// 	_, err := sample.Status.GetString("uptime")
-// 	if err != nil {
-// 		t.Error("uptime not in sample")
-// 	}
-// }
+		// status/uptime == Int
+		uptime, err := curr.GetInt(SourceKey{`status`, `uptime`})
+		if err != nil {
+			t.Error(err)
+		} else if uptime < 10 {
+			t.Errorf("Expected uptime > 10, got: %d", uptime)
+		}
+
+	case <-time.After(2 * time.Second):
+		t.Error("Sample missing")
+	}
+}

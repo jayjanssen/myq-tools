@@ -1,174 +1,116 @@
 package loader
 
-// import (
-// 	"bytes"
-// 	"os"
-// 	"os/exec"
-// 	"reflect"
-// 	"strings"
-// 	"syscall"
-// 	"time"
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
 
-// 	"github.com/jayjanssen/myq-tools/model"
-// )
+	_ "github.com/go-sql-driver/mysql"
+)
 
-// const (
-// 	MYSQLCLI string = "mysql"
+const (
+	// The commands we send to the mysql cli
+	STATUS_QUERY    string = "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_status"
+	VARIABLES_QUERY string = "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables"
+)
 
-// 	// These next two must match
-// 	END_STRING  string = "MYQTOOLSEND"
-// 	END_COMMAND string = "SELECT 'MYQTOOLSEND'"
+// SHOW output via mysqladmin on a live server
+type LiveLoader struct {
+	interval time.Duration
+	dsn      string
+	db       *sql.DB
+}
 
-// 	// The commands we send to the mysql cli
-// 	STATUS_COMMAND    string = "SHOW GLOBAL STATUS"
-// 	VARIABLES_COMMAND string = "SHOW GLOBAL VARIABLES"
-// )
+// Create a new SqlLoader
+// - dsn https://pkg.go.dev/github.com/go-sql-driver/mysql#Config
+// - i:  interval for GetSamples
+func NewLiveLoader(dsn string) *LiveLoader {
+	ll := &LiveLoader{}
+	ll.dsn = dsn
 
-// // Build the argument list
-// var MYSQLCLIARGS []string = []string{
-// 	"-B", // Batch mode (tab-separated output)
-// 	"-n", // Unbuffered
-// 	"-N", // Skip column names
-// }
+	return ll
+}
 
-// func getMySQLCLICmd(extra_args string) (*exec.Cmd, error) {
-// 	// Make sure we have MYSQLCLI
-// 	path, err := exec.LookPath(MYSQLCLI)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+// Connect to the DB and report any errors
+func (l *LiveLoader) Initialize(interval time.Duration, sources []SourceName) error {
+	l.interval = interval
 
-// 	all_args := MYSQLCLIARGS
-// 	if extra_args != "" {
-// 		all_args = append(all_args, strings.Split(extra_args, ` `)...)
-// 	}
+	// Open the db connection and confirm it works
+	db, err := sql.Open("mysql", l.dsn)
+	if err != nil {
+		return err
+	}
+	db.SetMaxOpenConns(1)
+	l.db = db
 
-// 	// Initialize the command
-// 	return exec.Command(path, all_args...), nil
-// }
+	return nil
+}
 
-// type LiveLoader struct {
-// 	interval time.Duration
-// 	args     string
-// }
+// Returns a channel where new MyqSamples are collected and sent every l.interval from the l.db connection.
+func (l *LiveLoader) GetStateChannel() <-chan StateReader {
+	ch := make(chan StateReader)
 
-// func NewLiveLoader(args string, i time.Duration) (*LiveLoader, error) {
+	// Closure to build the next state and send to down the channel
+	var prev_ssp *SampleSet
+	generateState := func() {
+		ssp := l.getSampleSet()
 
-// 	// Use the given args to connect to mysql and get a status, if this fails we can't connect to mysql
-// 	cmd, err := getMySQLCLICmd(args + ` -e status`)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+		state := NewState()
+		state.SetCurrent(ssp)
+		state.SetPrevious(prev_ssp)
 
-// 	_, err = cmd.CombinedOutput()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &LiveLoader{i, args}, nil
-// }
+		ch <- state
+		prev_ssp = ssp
+	}
 
-// // Creates a MyqData struct given a query that returns records with two fields (a key and value)
-// func (l LiveLoader) LoadFromCli(query string) (<-chan *model.MyqData, error) {
+	// Generate the first state right away
+	generateState()
 
-// 	cmd, err := getMySQLCLICmd(l.args)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	// Start a ticker in a goroutine to collect samples every l.interval
+	ticker := time.NewTicker(l.interval)
+	go func() {
 
-// 	// Send the subprocess a SIGTERM when we exit
-// 	attr := new(syscall.SysProcAttr)
-// 	r := reflect.ValueOf(attr)
-// 	f := reflect.Indirect(r).FieldByName(`Pdeathsig`)
-// 	if f.IsValid() {
-// 		f.Set(reflect.ValueOf(syscall.SIGTERM))
-// 		cmd.SysProcAttr = attr
-// 	}
+		// Send another State every tick
+		for range ticker.C {
+			generateState()
+		}
+	}()
+	return ch
+}
 
-// 	// Collect Stderr in a buffer
-// 	var stderr bytes.Buffer
-// 	cmd.Stderr = &stderr
+// Collects a Sampleset
+func (l *LiveLoader) getSampleSet() *SampleSet {
+	ssp := NewSampleSet()
 
-// 	// Create a pipe for Stdout
-// 	stdout, err := cmd.StdoutPipe()
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	status := l.getSample(STATUS_QUERY)
+	variables := l.getSample(VARIABLES_QUERY)
 
-// 	// Create a pipe for Stdin -- we input our command here every interval
-// 	stdin, err := cmd.StdinPipe()
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	ssp.SetSample(`status`, status)
+	ssp.SetSample(`variables`, variables)
 
-// 	// Start the command
-// 	if err := cmd.Start(); err != nil {
-// 		return nil, err
-// 	}
+	return ssp
+}
 
-// 	// Handle if the subcommand exits
-// 	go func() {
-// 		err := cmd.Wait()
-// 		if err != nil {
-// 			os.Stderr.WriteString(stderr.String())
-// 			os.Exit(1)
-// 		}
-// 	}()
+// Create a Sample given a query
+func (l *LiveLoader) getSample(query string) *Sample {
+	sample := NewSample()
 
-// 	// Construct the command to send to the subprocess
-// 	full_command := strings.Join([]string{query, END_COMMAND, "\n"}, "; ")
-// 	send_command := func() {
-// 		// We don't check if the write failed, it's assumed the cmd.Wait() above will catch the sub proc dying
+	rows, err := l.db.Query(query)
+	if err != nil {
+		sample.err = fmt.Errorf("cannot run query (%s): %s", query, err)
+		return sample
+	}
+	defer rows.Close()
 
-// 		stdin.Write([]byte(full_command)) // command we're harvesting
-// 	}
-// 	// send the first command immediately
-// 	send_command()
-
-// 	// produce more output every interval
-// 	ticker := time.NewTicker(l.interval)
-// 	go func() {
-// 		defer stdin.Close()
-// 		for range ticker.C {
-// 			send_command()
-// 		}
-// 	}()
-
-// 	// parse samples in the background
-// 	ch := make(chan *model.MyqData)
-// 	go func() {
-// 		defer close(ch)
-// 		parseSamples(stdout, ch, l.interval)
-// 	}()
-
-// 	// Got this far, the channel should start getting samples
-// 	return ch, nil
-// }
-
-// // Returns a channel where new MyqSamples are collected and sent every l.interval from the l.db connection.
-// func (l LiveLoader) GetSamples() <-chan *model.MyqSample {
-
-// 	// Setup channels for MyqData for Status and variable commands
-// 	status_ch, err := l.LoadFromCli(STATUS_COMMAND)
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	var_ch, err := l.LoadFromCli(VARIABLES_COMMAND)
-// 	if err != nil {
-// 		return nil
-// 	}
-
-// 	ch := make(chan *model.MyqSample)
-// 	go func() {
-// 		for {
-// 			status_data, status_ok := <-status_ch
-// 			var_data, var_ok := <-var_ch
-
-// 			if !status_ok || !var_ok {
-// 				break
-// 			}
-
-// 			ch <- model.NewMyqSample(*status_data, *var_data)
-// 		}
-// 	}()
-// 	return ch
-// }
+	for rows.Next() {
+		var name, value string
+		if err := rows.Scan(&name, &value); err != nil {
+			sample.err = fmt.Errorf("Error parsing query results (%s): %s", query, err)
+			return sample
+		}
+		// All data keys are lower case
+		sample.Data[strings.ToLower(name)] = value
+	}
+	return sample
+}

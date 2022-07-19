@@ -132,13 +132,11 @@ func main() {
 	if *statusfile == "" {
 		// No file given, this is a live collection and we use timestamps
 		// load = loader.NewLiveLoader(*mysql_args)
-		// view.SetLive()
 		fmt.Fprintln(os.Stderr, "live loader not implemented yet")
 		os.Exit(LOADER_ERROR)
 	} else {
 		// File given, load it (and the optional varfile)
 		load = loader.NewFileLoader(*statusfile, *varfile)
-		// view.SetRuntime()
 	}
 
 	sources, err := view.GetSources()
@@ -168,7 +166,7 @@ func main() {
 	linesSinceHeader := 0
 
 	printOutput := func(s string) {
-		if *width == true {
+		if *width {
 			s = viewer.FitString(s, termwidth)
 		}
 		fmt.Println(s)
@@ -195,7 +193,7 @@ func main() {
 			linesSinceHeader = 0
 
 			// Recalculate terminal size if this affects our width or headerRepeat
-			if *width == true || *header == 0 {
+			if *width || *header == 0 {
 				// Recalculate the size of the terminal now too
 				termheight, termwidth = viewer.GetTermSize()
 				if *header == 0 {
