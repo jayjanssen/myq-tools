@@ -64,12 +64,11 @@ func (l *LiveLoader) GetStateChannel() <-chan StateReader {
 		prev_ssp = ssp
 	}
 
-	// Generate the first state right away
-	generateState()
-
 	// Start a ticker in a goroutine to collect samples every l.interval
 	ticker := time.NewTicker(l.interval)
 	go func() {
+		// Generate the first state right away
+		generateState()
 
 		// Send another State every tick
 		for range ticker.C {

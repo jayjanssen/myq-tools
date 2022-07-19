@@ -80,3 +80,11 @@ func TestLiveLoaderGetSample(t *testing.T) {
 		t.Error("Sample missing")
 	}
 }
+
+func Benchmark(b *testing.B) {
+	l := NewGoodLiveLoader(b)
+
+	for i := 0; i < b.N; i++ {
+		l.getSampleSet()
+	}
+}
