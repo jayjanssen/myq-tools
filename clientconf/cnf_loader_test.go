@@ -16,28 +16,43 @@ func TestGetCnfFiles(t *testing.T) {
 	}
 }
 
-func TestLoadFiles(t *testing.T) {
+func TestInitCnf(t *testing.T) {
+	cnf := initCnf()
+
+	if !cnf.HasSection(`client`) {
+		t.Fatal(`missing client section`)
+	}
+
+	clientMap := cnf.Section(`client`).KeysHash()
+	expectedMap := map[string]string{
+		`host`: `127.0.0.1`,
+		`port`: `3306`,
+	}
+	for k, v := range expectedMap {
+		if clientMap[k] != v {
+			t.Errorf(`unexpected value for key %s: %s`, k, clientMap[k])
+		}
+	}
+}
+
+func TestAppendFiles(t *testing.T) {
 	files := []string{
 		`./testcnf/my.cnf`,
 		`./testcnf/.my.cnf`,
 		`/dev/null`,
 	}
 
-	cfg, err := loadFiles(files)
+	cnf := initCnf()
+	err := appendFiles(cnf, files)
 	if err != nil {
-		t.Error(err)
+		t.Fatalf(err.Error())
 	}
 
-	if !cfg.HasSection(`client`) {
-		t.Fatalf(`no [client] section found: %v`, cfg.SectionStrings())
+	if !cnf.HasSection(`client`) {
+		t.Fatalf(`no [client] section found: %v`, cnf.SectionStrings())
 	}
 
-	client, err := cfg.GetSection(`client`)
-	if err != nil {
-		t.Error(err)
-	}
-
-	clientMap := client.KeysHash()
+	clientMap := cnf.Section(`client`).KeysHash()
 
 	expectedMap := map[string]string{
 		`port`:     `3306`,
@@ -49,5 +64,57 @@ func TestLoadFiles(t *testing.T) {
 			t.Errorf(`unexpected value for key %s: %s`, k, clientMap[k])
 		}
 	}
-	// t.Errorf(`client: %v`, client.KeysHash())
+}
+
+func TestApplyFlags(t *testing.T) {
+	cnf := initCnf()
+
+	userFlag = "testuser"
+	passwordFlag = "testpassword"
+	hostFlag = "testhost"
+	portFlag = "testport"
+	socketFlag = "testsocket"
+
+	applyFlags(cnf)
+
+	if !cnf.HasSection(`client`) {
+		t.Fatal(`missing client section`)
+	}
+
+	clientMap := cnf.Section(`client`).KeysHash()
+	expectedMap := map[string]string{
+		`user`:     `testuser`,
+		`password`: `testpassword`,
+		`host`:     `testhost`,
+		`port`:     `testport`,
+		`socket`:   `testsocket`,
+	}
+	for k, v := range expectedMap {
+		if clientMap[k] != v {
+			t.Errorf(`unexpected value for key %s: %s`, k, clientMap[k])
+		}
+	}
+}
+
+func TestCnfToConfig(t *testing.T) {
+	cnf := initCnf()
+
+	config := cnfToConfig(cnf)
+	if config.FormatDSN() != `jayj@tcp(127.0.0.1:3306)/` {
+		t.Errorf(`Unexpected dsn: %s`, config.FormatDSN())
+	}
+
+	// Second round
+	cnf = initCnf()
+	userFlag = "testuser"
+	passwordFlag = "testpassword"
+	hostFlag = "testhost"
+	portFlag = "testport"
+	socketFlag = "testsocket"
+	applyFlags(cnf)
+	config = cnfToConfig(cnf)
+	if config.FormatDSN() != `testuser:testpassword@tcp(testhost:testport)/` {
+		t.Errorf(`Unexpected dsn: %s`, config.FormatDSN())
+	}
+
 }

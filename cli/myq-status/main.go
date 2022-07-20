@@ -36,8 +36,6 @@ func main() {
 	header := flag.Int("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
 
-	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to the mysql cli (used for connection options).  Note that '-p' for a password prompt is not supported.")
-	flag.StringVar(mysql_args, "a", "", "Short for -mysqlargs")
 	interval := flag.Duration("interval", time.Second, "Time between samples (example: 1s or 1h30m)")
 	flag.DurationVar(interval, "i", time.Second, "short for -interval")
 
@@ -45,6 +43,7 @@ func main() {
 	flag.StringVar(statusfile, "f", "", "short for -file")
 	varfile := flag.String("varfile", "", "parse mysqladmin variables file instead of connecting to mysql, for optional use with -file")
 	flag.StringVar(varfile, "vf", "", "short for -varfile")
+	clientconf.SetMySQLFlags()
 
 	flag.Parse()
 
@@ -134,7 +133,7 @@ func main() {
 		// No file given, this is a live collection and we use timestamps
 		config, err := clientconf.GenerateConfig()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintf(os.Stderr, "%v", err)
 		}
 		load = loader.NewLiveLoader(config.FormatDSN())
 	} else {
