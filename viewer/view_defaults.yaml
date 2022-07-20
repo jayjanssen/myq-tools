@@ -1,0 +1,149 @@
+---
+- name: cttf
+  description: Connections, Threads, Tables, and Files
+  groups:
+    - name: Connects
+      description: Connection related metrics
+      cols:
+        - name: cons
+          description: Connections per second
+          key: status/connections
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+        - name: acns
+          description: Aborted connections per second
+          key: status/aborted_connects
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+        - name: acls
+          description: Aborted clients (existing connections)
+          source: status
+          key: status/aborted_clients
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+    - name: Threads
+      description: Thread related metrics
+      cols:
+        - name: conn
+          description: Threads connected
+          key: status/threads_connected
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: run
+          description: Threads running
+          key: status/threads_running
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: cach
+          description: Threads cached
+          key: status/threads_cached
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: crtd
+          description: Threads created per second
+          key: status/threads_created
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+        - name: slow
+          description: Threads that were slow to launch per second
+          key: status/slow_launch_threads
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+    - name: Pool
+      description: Thread pool metrics
+      cols:
+        - name: tot
+          description: Threadpool threads
+          key: status/threadpool_threads
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: idle
+          description: Threads idle threads
+          key: status/threadpool_idle_threads
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+    - name: Tables
+      description: Table metrics
+      cols:
+        - name: open
+          description: Open Tables
+          key: status/open_tables
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: opns
+          description: Opened Tables per second
+          key: status/opened_tables
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+        - name: immd
+          description: Immediate Table locks
+          key: status/table_locks_immediate
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+        - name: wait
+          description: Table locks Waited
+          key: status/table_locks_waited
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+    - name: Defs
+      description: Table Definition metrics
+      cols:
+        - name: open
+          description: Open Table Definitions
+          key: status/open_table_definitions
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: opns
+          description: Opened Table Definitions per second
+          key: status/opened_table_definitions
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0
+    - name: Files
+      description: File metrics
+      cols:
+        - name: open
+          description: Open Files
+          key: status/open_files
+          type: Gauge
+          units: Number
+          length: 4
+          precision: 0
+        - name: opns
+          description: Opened Files per second
+          key: status/opened_files
+          type: Rate
+          units: Number
+          length: 4
+          precision: 0

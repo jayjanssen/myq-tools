@@ -1,18 +1,17 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"math"
 	"os"
 	"os/signal"
 	"runtime/pprof"
-	"sort"
 	"syscall"
 	"time"
 
-	"github.com/jayjanssen/myq-tools/myqlib"
+	"github.com/jayjanssen/myq-tools2/loader"
+	"github.com/jayjanssen/myq-tools2/viewer"
 )
 
 // Exit codes
@@ -20,6 +19,7 @@ const (
 	OK int = iota
 	BAD_ARGS
 	LOADER_ERROR
+	SOURCES_ERROR
 )
 
 // Current Version (passed in on build)
@@ -32,7 +32,7 @@ func main() {
 	version := flag.Bool("version", false, "print the version")
 
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
-	header := flag.Int64("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
+	header := flag.Int("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
 
 	mysql_args := flag.String("mysqlargs", "", "Arguments to pass to the mysql cli (used for connection options).  Note that '-p' for a password prompt is not supported.")
@@ -71,8 +71,13 @@ func main() {
 	}
 
 	// Load default Views
-	views := myqlib.DefaultViews()
+	err := viewer.LoadDefaultViews()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading default views: %s\n", err)
+		os.Exit(LOADER_ERROR)
+	}
 
+	// Define standard usage output
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "myq-tools %s (%s)\n\n", build_version, build_timestamp)
 
@@ -83,28 +88,19 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "\nViews:")
 
-		var view_usage bytes.Buffer
-
-		var sorted_views []string
-		for name, _ := range views {
-			sorted_views = append(sorted_views, name)
+		for _, name := range viewer.ViewNames {
+			view, _ := viewer.GetViewer(name)
+			fmt.Fprintf(os.Stderr, "  %s: %s\n", name, view.GetShortHelp())
 		}
-		sort.Strings(sorted_views)
-		for _, name := range sorted_views {
-			view := views[name]
-			view_usage.WriteString(fmt.Sprint("  ", name, ": "))
-			for shortst := range view.ShortHelp() {
-				view_usage.WriteString(fmt.Sprint(shortst, "\n"))
-			}
-		}
-		view_usage.WriteTo(os.Stderr)
 		os.Exit(BAD_ARGS)
 	}
 
+	// Print usage if we don't have exactly one non-flag cli arg
 	if flag.NArg() != 1 {
 		flag.Usage()
 	}
 
+	// Sanity check interval
 	if interval.Seconds() < 1 {
 		fmt.Fprintln(os.Stderr, "Error: interval must be >= 1s")
 		flag.Usage()
@@ -113,97 +109,96 @@ func main() {
 			fmt.Sprintf("%.0f", interval.Seconds()), "seconds")
 	}
 
-	view := flag.Arg(0)
-	v, ok := views[view]
-	if !ok {
-		fmt.Fprintln(os.Stderr, "Error: view", view, "not found")
+	// Look for the requested view
+	viewName := flag.Arg(0)
+	view, err := viewer.GetViewer(viewName)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		flag.Usage()
 	}
 
+	// Print help for the requested view
 	if *help {
-		var view_usage bytes.Buffer
-		view_usage.WriteString(fmt.Sprint(`'`, view, `': `))
-		for helpst := range v.Help() {
-			view_usage.WriteString(fmt.Sprint(helpst, "\n"))
+		fmt.Fprintf(os.Stderr, "'%s':\n", viewName)
+		for helpst := range view.GetDetailedHelp() {
+			fmt.Fprintln(os.Stderr, helpst)
 		}
-		view_usage.WriteTo(os.Stderr)
 		os.Exit(OK)
 	}
 
-	var termheight int64
-	var termwidth int64
-
-	// How many lines before printing a new header
-	var headernum int64
-	if *header != 0 {
-		headernum = *header // Use the specified header count
-	} else {
-		termheight, termwidth := myqlib.GetTermSize()
-		_ = termwidth
-		headernum = termheight
-	}
-
 	// The Loader and Timecol we will use
-	var loader myqlib.Loader
+	var load loader.Loader
 
-	if *statusfile != "" {
-		// File given, load it (and the optional varfile)
-		loader = myqlib.NewFileLoader(*interval, *statusfile, *varfile)
-		v.SetTimeCol(&myqlib.Runtime_col)
-	} else {
+	if *statusfile == "" {
 		// No file given, this is a live collection and we use timestamps
-		loader = myqlib.NewLiveLoader(*interval, *mysql_args)
-		v.SetTimeCol(&myqlib.Timestamp_col)
+		// load = loader.NewLiveLoader(*mysql_args)
+		fmt.Fprintln(os.Stderr, "live loader not implemented yet")
+		os.Exit(LOADER_ERROR)
+	} else {
+		// File given, load it (and the optional varfile)
+		load = loader.NewFileLoader(*statusfile, *varfile)
 	}
 
-	// Get channel that will feed us states from the loader
-	states, err := myqlib.GetState(loader)
+	sources, err := view.GetSources()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err)
+		os.Exit(SOURCES_ERROR)
+	}
+
+	// Initialize the loader
+	err = load.Initialize(*interval, sources)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(LOADER_ERROR)
 	}
 
-	// Apply selected view to output each sample
-	lines := int64(0)
-	var buf myqlib.FixedWidthBuffer
-	if *width == true {
-		termheight, termwidth := myqlib.GetTermSize()
-		_ = termheight
-		buf.SetWidth(termwidth)
+	// How big is our terminal?
+	termheight, termwidth := viewer.GetTermSize()
+
+	// How many lines before printing a new header
+	headerRepeat := termheight
+	if *header != 0 {
+		// Use the specified --header count
+		headerRepeat = *header
 	}
 
-	for state := range states {
+	// Apply selected view to output each sample
+	linesSinceHeader := 0
+
+	printOutput := func(s string) {
+		if *width {
+			s = viewer.FitString(s, termwidth)
+		}
+		fmt.Println(s)
+	}
+
+	// Main loop through loader States
+	for state := range load.GetStateChannel() {
 		// Reprint a header whenever lines == 0
-		if lines == 0 {
-			headers := []string{}
-			for headerln := range v.Header(state) {
-				headers = append(headers, headerln)
-			} // headers come out in reverse order
-			for i := len(headers) - 1; i >= 0; i-- {
-				buf.WriteString(fmt.Sprint(headers[i], "\n"))
-				lines += 1
+		if linesSinceHeader == 0 {
+			for _, headerLn := range view.GetHeader(state) {
+				printOutput(headerLn)
+				linesSinceHeader += 1
 			}
 		}
 
 		// Output data
-		for dataln := range v.Data(state) {
-			buf.WriteString(fmt.Sprint(dataln, "\n"))
-			lines += 1
+		for _, dataLn := range view.GetData(state) {
+			printOutput(dataLn)
+			linesSinceHeader += 1
 		}
-		buf.WriteTo(os.Stdout)
-		buf.Reset()
 
 		// Determine if we need to reset lines to 0 (and trigger a header)
-		if lines/headernum >= 1 {
-			lines = 0
-			// Recalculate the size of the terminal now too
-			if *width == true {
-				termheight, termwidth = myqlib.GetTermSize()
-				buf.SetWidth(termwidth)
-			}
-			if *header == 0 {
-				termheight, termwidth = myqlib.GetTermSize()
-				headernum = termheight
+		if linesSinceHeader/headerRepeat >= 1 {
+			linesSinceHeader = 0
+
+			// Recalculate terminal size if this affects our width or headerRepeat
+			if *width || *header == 0 {
+				// Recalculate the size of the terminal now too
+				termheight, termwidth = viewer.GetTermSize()
+				if *header == 0 {
+					headerRepeat = termheight
+				}
 			}
 		}
 	}
