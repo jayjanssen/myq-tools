@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jayjanssen/myq-tools2/clientconf"
 	"github.com/jayjanssen/myq-tools2/loader"
 	"github.com/jayjanssen/myq-tools2/viewer"
 )
@@ -131,9 +132,11 @@ func main() {
 
 	if *statusfile == "" {
 		// No file given, this is a live collection and we use timestamps
-		// load = loader.NewLiveLoader(*mysql_args)
-		fmt.Fprintln(os.Stderr, "live loader not implemented yet")
-		os.Exit(LOADER_ERROR)
+		config, err := clientconf.GenerateConfig()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, err.Error())
+		}
+		load = loader.NewLiveLoader(config.FormatDSN())
 	} else {
 		// File given, load it (and the optional varfile)
 		load = loader.NewFileLoader(*statusfile, *varfile)

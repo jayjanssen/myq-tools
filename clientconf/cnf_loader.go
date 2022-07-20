@@ -1,4 +1,4 @@
-package myqclientconf
+package clientconf
 
 import (
 	"fmt"
