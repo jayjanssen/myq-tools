@@ -57,6 +57,7 @@ func (l *LiveLoader) GetStateChannel() <-chan StateReader {
 		ssp := l.getSampleSet()
 
 		state := NewState()
+		state.Live = true
 		state.SetCurrent(ssp)
 		state.SetPrevious(prev_ssp)
 

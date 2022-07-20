@@ -1,11 +1,17 @@
 package loader
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // The current State of the monitored server
 type State struct {
 	// The current and most recent SampleSets
 	Current, Previous *SampleSet
+
+	// Is this a Live state?
+	Live bool
 
 	// Uptime of the server from the SampleSet
 	Uptime int64
@@ -31,7 +37,11 @@ func (sp *State) SecondsDiff(sn SourceName) float64 {
 
 // Get what to print in the timestamp col
 func (sp *State) GetTimeString() string {
-	return fmt.Sprintf(`%ds`, sp.Uptime)
+	if sp.Live {
+		return time.Now().Format(`15:04:05`)
+	} else {
+		return fmt.Sprintf(`%ds`, sp.Uptime)
+	}
 }
 
 // Get the Current and Previous Samplesets, could be nil!
