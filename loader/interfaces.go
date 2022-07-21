@@ -38,9 +38,9 @@ type SampleSetReader interface {
 	// Collect errors from all the Samples
 	GetErrors() error
 
-	// Get time data from a Sample, or "nil-value"
-	GetSecondsComparable(SourceName) float64
-	GetTimeGenerated(SourceName) time.Time
+	// Get Time data for the Set
+	GetTimeGenerated() time.Time
+	GetUptime() int64
 
 	// Fetch the given SourceKey and parse it into the given type
 	GetString(SourceKey) (string, error)
@@ -58,14 +58,11 @@ type SampleSetReader interface {
 
 type SampleSetWriter interface {
 	SetSample(key SourceName, s SampleReader)
+	SetUptime(int64)
 }
 
 // Functions to read a Sample
 type SampleReader interface {
-	// A number representing seconds that can be compared (subtracted) from other Samples from the same target/source.
-	// This could be Unix seconds (since 1970), seconds since the mysql server started, or some other basis entirely
-	GetSecondsComparable() float64
-
 	// Timestamp when the Sample was parsed
 	GetTimeGenerated() time.Time
 

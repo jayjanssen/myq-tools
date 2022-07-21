@@ -72,19 +72,17 @@ func TestRateColParse(t *testing.T) {
 // Create a state reader to test with
 func getTestRateState(con_prev, con_cur string) loader.StateReader {
 	sp := loader.NewState()
-	curss := loader.NewSampleSet()
 	prevss := loader.NewSampleSet()
 
 	cursamp := loader.NewSample()
-	curss.SetSample(`status`, cursamp)
+	cursamp.Data[`connections`] = con_cur
+
+	sp.GetCurrentWriter().SetSample(`status`, cursamp)
 
 	prevsamp := loader.NewSample()
 	prevss.SetSample(`status`, prevsamp)
-
-	sp.SetCurrent(curss)
 	sp.SetPrevious(prevss)
 
-	cursamp.Data[`connections`] = con_cur
 	prevsamp.Data[`connections`] = con_prev
 
 	return sp
@@ -100,7 +98,7 @@ func TestRateColgetRate(t *testing.T) {
 		t.Error(err)
 	}
 	if rate != 5 {
-		t.Errorf(`unexpected rate: %f`, rate)
+		t.Fatalf(`unexpected rate: %f`, rate)
 	}
 	outputs := col.GetData(state)
 	if len(outputs) != 1 {
@@ -163,12 +161,9 @@ func TestRateColBadSourceKey(t *testing.T) {
 // Create a state reader to test with
 func getTestRateNullPrevState(con_cur string) loader.StateReader {
 	sp := loader.NewState()
-	curss := loader.NewSampleSet()
 
 	cursamp := loader.NewSample()
-	curss.SetSample(`status`, cursamp)
-
-	sp.SetCurrent(curss)
+	sp.GetCurrentWriter().SetSample(`status`, cursamp)
 
 	cursamp.Data[`connections`] = con_cur
 

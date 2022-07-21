@@ -48,7 +48,6 @@ func CalculateDiff(bigger, smaller float64) float64 {
 // Calculate the rate of change between two values, given the time difference between them
 func CalculateRate(bigger, smaller, seconds float64) float64 {
 	diff := CalculateDiff(bigger, smaller)
-
 	if seconds <= 0 { // negative seconds is weird
 		return diff
 	} else {

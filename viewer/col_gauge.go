@@ -13,9 +13,6 @@ type GaugeCol struct {
 func (c GaugeCol) GetData(sr loader.StateReader) []string {
 	// get cur, or else return an error
 	currssp := sr.GetCurrent()
-	if currssp == nil {
-		return []string{FitString(`-`, c.Length)}
-	}
 
 	var str string
 

@@ -54,15 +54,19 @@ func (l *LiveLoader) GetStateChannel() <-chan StateReader {
 	// Closure to build the next state and send to down the channel
 	var prev_ssp *SampleSet
 	generateState := func() {
-		ssp := l.getSampleSet()
-
 		state := NewState()
 		state.Live = true
-		state.SetCurrent(ssp)
+
+		status := l.getSample(STATUS_QUERY)
+		variables := l.getSample(VARIABLES_QUERY)
+
+		state.GetCurrentWriter().SetSample(`status`, status)
+		state.GetCurrentWriter().SetSample(`variables`, variables)
+
 		state.SetPrevious(prev_ssp)
 
 		ch <- state
-		prev_ssp = ssp
+		prev_ssp = state.Current
 	}
 
 	// Start a ticker in a goroutine to collect samples every l.interval
@@ -77,19 +81,6 @@ func (l *LiveLoader) GetStateChannel() <-chan StateReader {
 		}
 	}()
 	return ch
-}
-
-// Collects a Sampleset
-func (l *LiveLoader) getSampleSet() *SampleSet {
-	ssp := NewSampleSet()
-
-	status := l.getSample(STATUS_QUERY)
-	variables := l.getSample(VARIABLES_QUERY)
-
-	ssp.SetSample(`status`, status)
-	ssp.SetSample(`variables`, variables)
-
-	return ssp
 }
 
 // Create a Sample given a query

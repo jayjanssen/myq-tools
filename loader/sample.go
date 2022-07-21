@@ -7,7 +7,7 @@ import (
 
 // The values for a Source for a specifc time
 type Sample struct {
-	// Timestamp when the SampleSet was generated, in case of a File loader, this could be the same (or very close) in every set.
+	// Timestamp when the Sample was generated, in case of a File loader, this could be the same (or very close) in every set.
 	Timestamp time.Time
 
 	// The sample map --
@@ -32,9 +32,6 @@ func NewSampleErr(err error) *Sample {
 	return s
 }
 
-func (s Sample) GetSecondsComparable() float64 {
-	return float64(s.Timestamp.UnixMilli()) / float64(1000)
-}
 func (s Sample) GetTimeGenerated() time.Time {
 	return s.Timestamp
 }

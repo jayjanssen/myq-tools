@@ -72,11 +72,9 @@ func TestGaugeColParse(t *testing.T) {
 // Create a state reader to test with
 func getTestGaugeState(con_cur string) loader.StateReader {
 	sp := loader.NewState()
-	curss := loader.NewSampleSet()
-
 	cursamp := loader.NewSample()
-	curss.SetSample(`status`, cursamp)
-	sp.SetCurrent(curss)
+	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+
 	cursamp.Data[`threads_connect`] = con_cur
 
 	return sp

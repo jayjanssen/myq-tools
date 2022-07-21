@@ -2,7 +2,6 @@ package loader
 
 import (
 	"fmt"
-	"time"
 )
 
 // The current State of the monitored server
@@ -12,43 +11,46 @@ type State struct {
 
 	// Is this a Live state?
 	Live bool
-
-	// Uptime of the server from the SampleSet
-	Uptime int64
 }
 
 func NewState() *State {
-	return &State{}
+	sp := &State{}
+	sp.Current = NewSampleSet()
+	return sp
 }
 
 // Seconds between Cur and Prev samples for the given SourceName, return 0 if Source not found, there is no Prev sample, or other error
 func (sp *State) SecondsDiff(sn SourceName) float64 {
-	var curr, prev float64
-	if sp.Current != nil {
-		curr = sp.Current.GetSecondsComparable(sn)
-	}
-
 	// No prev sample, this is the first.
 	if sp.Previous == nil {
 		return 0
 	}
-	return curr - prev
+
+	// Live state
+	if sp.Live {
+		curTime := sp.GetCurrent().GetTimeGenerated()
+		prevTime := sp.GetPrevious().GetTimeGenerated()
+		diff := curTime.Sub(prevTime)
+		return diff.Seconds()
+	}
+
+	// File loader state
+	curUptime := sp.GetCurrent().GetUptime()
+	prevUptime := sp.GetCurrent().GetUptime()
+	return float64(curUptime - prevUptime)
 }
 
 // Get what to print in the timestamp col
 func (sp *State) GetTimeString() string {
 	if sp.Live {
-		return time.Now().Format(`15:04:05`)
+		return sp.GetCurrent().GetTimeGenerated().Format(`15:04:05`)
 	} else {
-		return fmt.Sprintf(`%ds`, sp.Uptime)
+		return fmt.Sprintf(`%ds`, sp.GetCurrent().GetUptime())
 	}
 }
 
 // Get the Current and Previous Samplesets, could be nil!
 func (sp *State) GetCurrent() SampleSetReader {
-	if sp.Current == nil {
-		return nil
-	}
 	return sp.Current
 }
 func (sp *State) GetPrevious() SampleSetReader {
@@ -58,10 +60,12 @@ func (sp *State) GetPrevious() SampleSetReader {
 	return sp.Previous
 }
 
-// Set the Current and Previous Samplesets
-func (sp *State) SetCurrent(ssr *SampleSet) {
-	sp.Current = ssr
-}
+// Set Previous Samplesets
 func (sp *State) SetPrevious(ssr *SampleSet) {
 	sp.Previous = ssr
+}
+
+// Get the interface to write to the Current SS
+func (sp *State) GetCurrentWriter() SampleSetWriter {
+	return sp.Current
 }

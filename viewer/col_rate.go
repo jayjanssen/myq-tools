@@ -1,8 +1,6 @@
 package viewer
 
 import (
-	"errors"
-
 	"github.com/jayjanssen/myq-tools2/loader"
 )
 
@@ -28,9 +26,6 @@ func (c RateCol) GetData(sr loader.StateReader) []string {
 func (c RateCol) getRate(sr loader.StateReader) (float64, error) {
 	// get cur, or else return an error
 	currssp := sr.GetCurrent()
-	if currssp == nil {
-		return 0, errors.New(`no current sampleset`)
-	}
 	cur, err := currssp.GetFloat(c.Key)
 	if err != nil {
 		return 0, err

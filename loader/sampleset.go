@@ -12,18 +12,30 @@ import (
 type SampleSet struct {
 	// The samples collected
 	Samples map[SourceName]SampleReader
+
+	// Timestamp when the Sample was generated, in case of a File loader, this could be the same (or very close) in every set.
+	Timestamp time.Time
+
+	// Uptime of the server relative to start of loading
+	Uptime int64
 }
 
 // Create new SampleSet
 func NewSampleSet() *SampleSet {
 	ss := SampleSet{}
+	ss.Timestamp = time.Now()
 	ss.Samples = make(map[SourceName]SampleReader)
 	return &ss
 }
 
 // Store a sample for the given key into this set
-func (ssp *SampleSet) SetSample(key SourceName, sp *Sample) {
+func (ssp *SampleSet) SetSample(key SourceName, sp SampleReader) {
 	ssp.Samples[key] = sp
+}
+
+// Store the uptime for the sample
+func (ssp *SampleSet) SetUptime(u int64) {
+	ssp.Uptime = u
 }
 
 // Check if the given Source is in this set
@@ -46,20 +58,12 @@ func (ssp *SampleSet) GetErrors() error {
 	return errs.ErrorOrNil()
 }
 
-// Get time data from a Sample, or "nil-value"
-func (ssp *SampleSet) GetSecondsComparable(sn SourceName) float64 {
-	sp, ok := ssp.Samples[sn]
-	if !ok {
-		return 0
-	}
-	return sp.GetSecondsComparable()
+// Get time data this Set was generated
+func (ssp *SampleSet) GetTimeGenerated() time.Time {
+	return ssp.Timestamp
 }
-func (ssp *SampleSet) GetTimeGenerated(sn SourceName) time.Time {
-	sp, ok := ssp.Samples[sn]
-	if !ok {
-		return time.Unix(0, 0)
-	}
-	return sp.GetTimeGenerated()
+func (ssp *SampleSet) GetUptime() int64 {
+	return ssp.Uptime
 }
 
 // Fetch the string value of the the given SourceKey

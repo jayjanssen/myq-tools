@@ -9,11 +9,10 @@ import (
 // Create a state reader to test with
 func getTestSampleTimeState() loader.StateReader {
 	sp := loader.NewState()
-	curss := loader.NewSampleSet()
 
 	cursamp := loader.NewSample()
-	curss.SetSample(`status`, cursamp)
-	sp.SetCurrent(curss)
+	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+
 	cursamp.Data[`threads_connect`] = "10"
 
 	return sp

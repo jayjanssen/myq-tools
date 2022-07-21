@@ -85,6 +85,7 @@ func Benchmark(b *testing.B) {
 	l := NewGoodLiveLoader(b)
 
 	for i := 0; i < b.N; i++ {
-		l.getSampleSet()
+		l.getSample(STATUS_QUERY)
+		l.getSample(VARIABLES_QUERY)
 	}
 }

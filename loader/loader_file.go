@@ -66,40 +66,35 @@ func (l *FileLoader) GetStateChannel() <-chan StateReader {
 			// Get the next data from the Status file
 			sd := sfl.GetNextSample()
 
-			// If the status data is nil, we're done
+			// Nil status data == EOF
 			if sd == nil {
-				// EOF
 				close(ch)
 				break
 			}
 
-			// Construct a SampleSet
-			ssp := NewSampleSet()
-
+			// Construct the new State
+			state := NewState()
+			state.GetCurrentWriter().SetSample(`status`, sd)
 			if l.variablesSample != nil {
 				// Resuse variapes sample (assume it hasn't changed)
-				ssp.SetSample(`variables`, l.variablesSample)
+				state.GetCurrentWriter().SetSample(`variables`, l.variablesSample)
 			}
-			ssp.SetSample(`status`, sd)
-
-			state := NewState()
-			state.SetCurrent(ssp)
 			state.SetPrevious(prev_ssp)
 
 			// The state's uptime comes from our status file data
 			if _, ok := sd.Data[`uptime`]; ok {
 				// Set the uptime if we have it
 				currUptime, _ := strconv.ParseInt(sd.Data[`uptime`], 10, 64)
-				state.Uptime = currUptime - l.firstUptime
+				state.GetCurrentWriter().SetUptime(currUptime - l.firstUptime)
 
 				// Set the first up time if we don't have it
 				if l.firstUptime == 0 {
-					l.firstUptime = state.Uptime
+					l.firstUptime = state.GetCurrent().GetUptime()
 				}
 			}
 
 			ch <- state
-			prev_ssp = ssp
+			prev_ssp = state.Current
 		}
 	}()
 

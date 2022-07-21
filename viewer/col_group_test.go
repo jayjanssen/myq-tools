@@ -27,16 +27,13 @@ func TestGroupColImplementsStateViewer(t *testing.T) {
 // Create a state reader to test with
 func getTestGroupState() loader.StateReader {
 	sp := loader.NewState()
-	curss := loader.NewSampleSet()
 	prevss := loader.NewSampleSet()
 
 	cursamp := loader.NewSample()
-	curss.SetSample(`status`, cursamp)
+	sp.GetCurrentWriter().SetSample(`status`, cursamp)
 
 	prevsamp := loader.NewSample()
 	prevss.SetSample(`status`, prevsamp)
-
-	sp.SetCurrent(curss)
 	sp.SetPrevious(prevss)
 
 	cursamp.Data[`connections`] = `15`
