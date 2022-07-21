@@ -15,7 +15,7 @@ type Loader interface {
 // Functions to read a State
 type StateReader interface {
 	// Seconds between Cur and Prev samples for the given SourceName
-	SecondsDiff(SourceName) float64
+	SecondsDiff() float64
 
 	// Get what to print in the timestamp col
 	GetTimeString() string

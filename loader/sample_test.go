@@ -34,3 +34,8 @@ func TestSampleLength(t *testing.T) {
 		t.Error("Expecting 3 KV, got", sample.Length())
 	}
 }
+
+func TestSampleGetTimestamp(t *testing.T) {
+	sample := newTestSample()
+	sample.GetTimeGenerated()
+}

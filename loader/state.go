@@ -20,7 +20,7 @@ func NewState() *State {
 }
 
 // Seconds between Cur and Prev samples for the given SourceName, return 0 if Source not found, there is no Prev sample, or other error
-func (sp *State) SecondsDiff(sn SourceName) float64 {
+func (sp *State) SecondsDiff() float64 {
 	// No prev sample, this is the first.
 	if sp.Previous == nil {
 		return 0
@@ -31,6 +31,11 @@ func (sp *State) SecondsDiff(sn SourceName) float64 {
 		curTime := sp.GetCurrent().GetTimeGenerated()
 		prevTime := sp.GetPrevious().GetTimeGenerated()
 		diff := curTime.Sub(prevTime)
+
+		// Sub can yield a -0.0
+		if diff <= 0 {
+			return 0.0
+		}
 		return diff.Seconds()
 	}
 

@@ -38,5 +38,5 @@ func (c RateCol) getRate(sr loader.StateReader) (float64, error) {
 	}
 
 	// Return the calculated rate
-	return CalculateRate(cur, prev, sr.SecondsDiff(c.Key.SourceName)), nil
+	return CalculateRate(cur, prev, sr.SecondsDiff()), nil
 }
