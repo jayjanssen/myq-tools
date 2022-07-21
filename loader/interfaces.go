@@ -52,6 +52,12 @@ type SampleSetReader interface {
 	GetF(SourceKey) float64
 	GetStr(SourceKey) string
 
+	// Get a Sum of a series of SourceKeys
+	GetFloatSum([]SourceKey) float64
+
+	// Given a SourceKey list with a patterns, expand that to the full list of SourceKeys without patterns.  The result of this should be cached!
+	ExpandSourceKeys([]SourceKey) []SourceKey
+
 	// Gets either a float or an int (check type of result), or an error
 	GetNumeric(SourceKey) (interface{}, error)
 }
@@ -68,6 +74,9 @@ type SampleReader interface {
 
 	// Number of keys in the Sample
 	Length() int
+
+	// Get a list of all key strings in this stample
+	GetKeys() []string
 
 	// Get the String value of a given key
 	GetString(key string) (string, error)

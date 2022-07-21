@@ -41,6 +41,14 @@ func (s Sample) Length() int {
 	return len(s.Data)
 }
 
+// Get a list of all key strings in this stample
+func (s Sample) GetKeys() (result []string) {
+	for k, _ := range s.Data {
+		result = append(result, k)
+	}
+	return
+}
+
 // Get methods for the given key. Returns a value of the appropriate type (error is nil) or default value and an error if it can't parse
 func (s Sample) GetString(key string) (string, error) {
 	val, ok := s.Data[key]

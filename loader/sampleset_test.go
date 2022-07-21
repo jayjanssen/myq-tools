@@ -154,3 +154,41 @@ func TestSampleGetNumeric(t *testing.T) {
 		t.Error("expected error GetNumeric on string")
 	}
 }
+
+func TestSampleSetGetFloatSum(t *testing.T) {
+	ssp := newTestSampleSet()
+
+	tot := ssp.GetFloatSum([]SourceKey{
+		{`testing`, `int`},
+		{`testing`, `float`},
+	})
+
+	if tot != 11.4256 {
+		t.Errorf("unxpected GetFloatSum: %f", tot)
+	}
+}
+
+func newTestSampleSetExpand() *SampleSet {
+	ssp := NewSampleSet()
+	s := newTestSample()
+	ssp.SetSample(`testing`, s)
+
+	return ssp
+}
+
+func TestSampleSetExpandSourceKeys(t *testing.T) {
+	ssp := newTestSampleSet()
+
+	sample := NewSample()
+	sample.Data["prefix"] = "String"
+	sample.Data["prefab"] = "10"
+	sample.Data["something else"] = "1.4256"
+
+	ssp.SetSample(`testing`, sample)
+
+	expanded := ssp.ExpandSourceKeys([]SourceKey{{`testing`, `pre*`}})
+
+	if len(expanded) != 2 {
+		t.Fatalf(`unexpected amount of expanded keys: %d`, len(expanded))
+	}
+}

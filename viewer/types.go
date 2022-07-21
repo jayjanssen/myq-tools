@@ -9,17 +9,21 @@ import (
 // A list of things that implement StateViewer
 type StateViewerList []StateViewer
 
+type typesucker struct {
+	Type string `yaml:"type"`
+}
+
 // Convert StateViewerList entries into their individual types
 func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 	var newlist StateViewerList
 	for _, content := range value.Content {
-		rawmap := make(map[string]string)
-		err := content.Decode(&rawmap)
+		typeobj := typesucker{}
+		err := content.Decode(&typeobj)
 		if err != nil {
 			return err
 		}
 
-		switch rawmap["type"] {
+		switch typeobj.Type {
 		case `Rate`:
 			c := RateCol{}
 			err = content.Decode(&c)
@@ -34,8 +38,15 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 				return err
 			}
 			newlist = append(newlist, c)
+		case `RateSum`:
+			c := RateSumCol{}
+			err = content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
 		default:
-			return fmt.Errorf("invalid column type: %s", rawmap["type"])
+			return fmt.Errorf("invalid column type: %s", typeobj.Type)
 		}
 	}
 	*svl = newlist

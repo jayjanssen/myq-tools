@@ -2,6 +2,7 @@ package loader
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -126,4 +127,42 @@ func (ssp *SampleSet) GetNumeric(sk SourceKey) (interface{}, error) {
 	} else {
 		return nil, fmt.Errorf("value is not numeric: `%v`", ssp.GetStr(sk))
 	}
+}
+
+// Get a Sum of a series of SourceKeys
+func (ssp *SampleSet) GetFloatSum(sks []SourceKey) float64 {
+	var total float64
+	for _, sk := range sks {
+		total += ssp.GetF(sk)
+	}
+	return total
+}
+
+// Takes a list of SourceKeys where the .Key might contain a regex
+func (ssp *SampleSet) ExpandSourceKeys(sks []SourceKey) (results []SourceKey) {
+	// Go through every input in sks
+	for _, sk := range sks {
+		re, err := regexp.Compile(sk.Key)
+		// Not a regex?
+		if err != nil {
+			results = append(results, sk)
+			continue
+		}
+
+		// Get the sample
+		sp, ok := ssp.Samples[sk.SourceName]
+		// no such source?
+		if !ok {
+			continue
+		}
+
+		// Check our regex against every key in the sample
+		for _, key := range sp.GetKeys() {
+			if re.MatchString(key) {
+				results = append(results, SourceKey{sk.SourceName, key})
+			}
+		}
+	}
+
+	return
 }
