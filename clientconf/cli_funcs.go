@@ -25,6 +25,10 @@ func SetMySQLFlags() {
 
 	flag.StringVar(&socketFlag, "socket", "", "mysql socket")
 	flag.StringVar(&socketFlag, "S", "", "short for -socket")
+
+	flag.StringVar(&sslCertFlag, "ssl-cert", "", "mysql ssl cert")
+	flag.StringVar(&sslKeyFlag, "ssl-key", "", "mysql ssl key")
+	flag.StringVar(&sslCaFlag, "ssl-ca", "", "mysql ssl CA")
 }
 
 // Creates a [https://pkg.go.dev/github.com/go-sql-driver/mysql#Config]('Config') option from the go-sql-driver/mysql from three sources:
@@ -44,7 +48,10 @@ func GenerateConfig() (*mysql.Config, error) {
 	applyFlags(cnf)
 
 	// Translate cnf to mysql.Config
-	config := cnfToConfig(cnf)
+	config, err := cnfToConfig(cnf)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
 	return config, errs.ErrorOrNil()
 }

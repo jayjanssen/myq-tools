@@ -1,7 +1,11 @@
 package clientconf
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/user"
 
@@ -76,12 +80,11 @@ var passwordFlag string
 var hostFlag string
 var portFlag string
 var socketFlag string
+var sslCertFlag string
+var sslKeyFlag string
+var sslCaFlag string
 
-// SSL stuff TODO
-// * ssl-cert
-// * ssl-key
-// * ssl-ca
-// * ssl-cipher
+// ssl cipher support TODO.  MySQL cipher names don't match go's crypto/tls package of course: https://cs.opensource.google/go/go/+/refs/tags/go1.18.4:src/crypto/tls/cipher_suites.go;l=54-72.
 
 // Apply the flag variables to the given cnf [client] section
 func applyFlags(cnf *ini.File) {
@@ -100,13 +103,23 @@ func applyFlags(cnf *ini.File) {
 	if socketFlag != "" {
 		cnf.Section(`client`).NewKey(`socket`, socketFlag)
 	}
+
+	if sslCertFlag != "" {
+		cnf.Section(`client`).NewKey(`ssl-cert`, sslCertFlag)
+	}
+	if sslKeyFlag != "" {
+		cnf.Section(`client`).NewKey(`ssl-key`, sslKeyFlag)
+	}
+	if sslCaFlag != "" {
+		cnf.Section(`client`).NewKey(`ssl-ca`, sslCaFlag)
+	}
 }
 
 // Translate cnf to mysql.Config
-func cnfToConfig(cnf *ini.File) *mysql.Config {
+func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	config := mysql.NewConfig()
 	if !cnf.HasSection(`client`) {
-		return config
+		return config, nil
 	}
 
 	// clientMap is all the resolved settings
@@ -136,5 +149,41 @@ func cnfToConfig(cnf *ini.File) *mysql.Config {
 		config.Net = `tcp`
 	}
 
-	return config
+	// SSL Stuff
+	var errs *multierror.Error
+
+	// Handle CA
+	rootCertPool := x509.NewCertPool()
+	if sslca, ok := clientMap[`ssl-ca`]; ok {
+		pem, err := ioutil.ReadFile(sslca)
+		if err != nil {
+			errs = multierror.Append(errs, fmt.Errorf(`ssl-ca error: %v`, err))
+		} else {
+			if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+				errs = multierror.Append(errs, errors.New("failed to append PEM"))
+			}
+		}
+	}
+
+	// Handle cert/key
+	sslcert, certok := clientMap[`ssl-cert`]
+	sslkey, keyok := clientMap[`ssl-key`]
+	if (certok && !keyok) || (!certok && keyok) {
+		errs = multierror.Append(errs, errors.New("need both ssl-cert and ssl-key set"))
+	} else if certok && keyok {
+		clientCert := make([]tls.Certificate, 0, 1)
+		certs, err := tls.LoadX509KeyPair(sslcert, sslkey)
+		if err != nil {
+			errs = multierror.Append(errs, fmt.Errorf(`ssl-cert/key error: %v`, err))
+		} else {
+			clientCert = append(clientCert, certs)
+			mysql.RegisterTLSConfig("custom", &tls.Config{
+				RootCAs:      rootCertPool,
+				Certificates: clientCert,
+			})
+			config.TLSConfig = `custom`
+		}
+	}
+
+	return config, errs.ErrorOrNil()
 }

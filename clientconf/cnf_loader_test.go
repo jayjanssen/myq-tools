@@ -99,7 +99,10 @@ func TestApplyFlags(t *testing.T) {
 func TestCnfToConfig(t *testing.T) {
 	cnf := initCnf()
 
-	config := cnfToConfig(cnf)
+	config, err := cnfToConfig(cnf)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if config.FormatDSN() != `jayj@tcp(127.0.0.1:3306)/` {
 		t.Errorf(`Unexpected dsn: %s`, config.FormatDSN())
 	}
@@ -112,8 +115,28 @@ func TestCnfToConfig(t *testing.T) {
 	portFlag = "testport"
 	socketFlag = "testsocket"
 	applyFlags(cnf)
-	config = cnfToConfig(cnf)
+	config, err = cnfToConfig(cnf)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if config.FormatDSN() != `testuser:testpassword@tcp(testhost:testport)/` {
+		t.Errorf(`Unexpected dsn: %s`, config.FormatDSN())
+	}
+
+}
+
+func TestCnfToConfigSSL(t *testing.T) {
+	cnf := initCnf()
+	sslCertFlag = "./testcnf/client-cert.pem"
+	sslKeyFlag = "./testcnf/client-key.pem"
+	sslCaFlag = "./testcnf/ca.pem"
+	applyFlags(cnf)
+
+	config, err := cnfToConfig(cnf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.FormatDSN() != `jayj@tcp(127.0.0.1:3306)/?tls=custom` {
 		t.Errorf(`Unexpected dsn: %s`, config.FormatDSN())
 	}
 
