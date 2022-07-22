@@ -168,14 +168,6 @@ func TestSampleSetGetFloatSum(t *testing.T) {
 	}
 }
 
-func newTestSampleSetExpand() *SampleSet {
-	ssp := NewSampleSet()
-	s := newTestSample()
-	ssp.SetSample(`testing`, s)
-
-	return ssp
-}
-
 func TestSampleSetExpandSourceKeys(t *testing.T) {
 	ssp := newTestSampleSet()
 

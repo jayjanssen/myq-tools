@@ -43,7 +43,7 @@ func (s Sample) Length() int {
 
 // Get a list of all key strings in this stample
 func (s Sample) GetKeys() (result []string) {
-	for k, _ := range s.Data {
+	for k := range s.Data {
 		result = append(result, k)
 	}
 	return
