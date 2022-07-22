@@ -184,3 +184,21 @@ func TestSampleSetExpandSourceKeys(t *testing.T) {
 		t.Fatalf(`unexpected amount of expanded keys: %d`, len(expanded))
 	}
 }
+
+func TestSampleSetExpandSourceKeysRegex(t *testing.T) {
+	ssp := newTestSampleSet()
+
+	sample := NewSample()
+	sample.Data["prefix"] = "String"
+	sample.Data["prefab"] = "10"
+	sample.Data["fabpre"] = "1.4256"
+
+	ssp.SetSample(`testing`, sample)
+
+	expanded := ssp.ExpandSourceKeys([]SourceKey{{`testing`, `^pre*`}})
+
+	if len(expanded) != 2 {
+		t.Fatalf(`unexpected amount of expanded keys: %d`, len(expanded))
+	}
+	t.Fatalf(`expanded: %+v`, expanded)
+}

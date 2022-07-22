@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -30,8 +31,8 @@ func TestStateSecondsDiff(t *testing.T) {
 	state.SetPrevious(prevssp)
 	state.GetCurrentWriter().SetUptime(15)
 	diff = state.SecondsDiff()
-	if diff == 5 {
-		t.Errorf(`bad diff: %f`, diff)
+	if fmt.Sprintf("%.0f", diff) != `5` {
+		t.Errorf(`bad diff: '%s'`, fmt.Sprintf("%.0f", diff))
 	}
 
 	state.Live = true
