@@ -55,15 +55,6 @@ func CalculateRate(bigger, smaller, seconds float64) float64 {
 	}
 }
 
-// Return the sum of all variables in the given data
-// func CalculateSum(data model.MyqData, variable_names []string) (sum float64) {
-// 	for _, v := range variable_names {
-// 		v, _ := data.GetFloat(v)
-// 		sum += v
-// 	}
-// 	return sum
-// }
-
 // String functions
 
 // helper function to fit a plain string to our Length

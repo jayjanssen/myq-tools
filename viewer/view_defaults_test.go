@@ -16,11 +16,6 @@ func TestDefsParse(t *testing.T) {
 		t.Fatal("No views parsed!")
 	}
 
-	name := ViewNames[0]
-	if name != "cttf" {
-		t.Fatal("First view is not named `cttf`!")
-	}
-
 	cttf, ok := Views[`cttf`]
 	if !ok {
 		t.Fatalf("Could not get `cttf` view: %v", err)

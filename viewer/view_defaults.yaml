@@ -279,3 +279,227 @@
           units: Memory
           length: 6
           precision: 0 
+- name: query
+  description: Query types, sorts temp tables
+  groups:
+    - name: Selects
+      description: Select types
+      cols: 
+        - name: fjoin
+          description: Full joins per second
+          type: Rate
+          key: status/select_full_join
+          units: Number
+          length: 5
+          precision: 0
+        - name: rjoin
+          description: Full range joins per second
+          type: Rate
+          key: status/select_full_range_join
+          units: Number
+          length: 5
+          precision: 0
+        - name: range
+          description: Range per second
+          type: Rate
+          key: status/select_range
+          units: Number
+          length: 5
+          precision: 0
+        - name: rchk
+          description: Range check per second
+          type: Rate
+          key: status/select_range_check
+          units: Number
+          length: 5
+          precision: 0
+        - name: scan
+          description: Scans per second
+          type: Rate
+          key: status/select_scan
+          units: Number
+          length: 5
+          precision: 0
+    - name: Sorts
+      description: Sort types
+      cols:
+        - name: pass
+          description: Merge passses per second
+          type: Rate
+          key: status/sort_merge_passes
+          units: Number
+          length: 5
+          precision: 0
+        - name: range
+          description: Range per second
+          type: Rate
+          key: status/sort_range
+          units: Number
+          length: 5
+          precision: 0
+        - name: rows
+          description: Rows per second
+          type: Rate
+          key: status/sort_rows
+          units: Number
+          length: 5
+          precision: 0
+        - name: scan
+          description: Scans per second
+          type: Rate
+          key: status/sort_scan
+          units: Number
+          length: 5
+          precision: 0
+    - name: Temp Tables
+      description: Internal temporary tables
+      cols:
+        - name: tmps
+          description: Temporary tables per second
+          type: Rate
+          key: status/created_tmp_tables
+          units: Number
+          length: 5
+          precision: 0
+        - name: disk
+          description: On disk temp tables per second
+          type: Rate
+          key: status/created_tmp_disk_tables
+          units: Number
+          length: 5
+          precision: 0
+        - name: files
+          description: Temp files per second
+          type: Rate
+          key: status/created_tmp_files
+          units: Number
+          length: 5
+          precision: 0
+  cols:
+    - name: slow
+      description: Slow queries per second
+      type: Rate
+      key: status/slow_queries
+      units: Number
+      length: 4
+      precision: 0
+- name: innodb
+  description: Innodb metrics
+  groups:
+    - name: Row ops
+      description: Row-level operations
+      cols:
+        - name: read
+          description: Rows read per second
+          type: Rate
+          key: status/innodb_rows_read
+          units: Number
+          length: 5
+          precision: 0 
+        - name: dml
+          description: Inserts / Updates / Deletes per second
+          type: RateSum
+          keys: 
+            - status/innodb_rows_inserted
+            - status/innodb_rows_updated
+            - status/innodb_rows_deleted
+          units: Number
+          length: 5
+          precision: 0 
+    - name: Buffer pool
+      description: Buffer pool stats
+      cols:
+        - name: data
+          description: Data buffered
+          type: Gauge
+          key: status/innodb_buffer_pool_bytes_data
+          units: Memory
+          length: 5
+          precision: 0 
+        - name: dirt
+          description: Buffer pool percent dirty
+          type: Percent
+          numerator: status/innodb_buffer_pool_pages_dirty
+          denominator: status/innodb_buffer_pool_pages_total
+          units: Percent
+          length: 4
+          precision: 0 
+        - name: rreq
+          description: Logical read requests per second
+          type: Rate
+          key: status/innodb_buffer_pool_read_requests
+          units: Number
+          length: 5
+          precision: 0 
+        - name: read
+          description: Physical reads per second
+          type: Rate
+          key: status/innodb_buffer_pool_reads
+          units: Number
+          length: 4
+          precision: 0 
+        - name: wreq
+          description: Locical write requests per second
+          type: Rate
+          key: status/innodb_buffer_pool_write_requests
+          units: Number
+          length: 5
+          precision: 0 
+        - name: write
+          description: Physical writes per second
+          type: Rate
+          key: status/innodb_buffer_pool_pages_flushed
+          units: Number
+          length: 4
+          precision: 0 
+    - name: Log
+      description: Redo log information
+      cols:
+        - name: Chkpt
+          description: Checkpoint age
+          type: Gauge
+          key: status/innodb_checkpoint_age
+          units: Memory
+          length: 5
+          precision: 0 
+        - name: '%'
+          description: Percent of max checkpoint
+          type: Percent
+          numerator: status/innodb_checkpoint_age
+          denominator: status/innodb_checkpoint_max_age
+          units: Percent
+          length: 4
+          precision: 0 
+        - name: lsn
+          description: Log growth (log sequence number) per second
+          type: Rate
+          key: status/innodb_lsn_current
+          units: Memory
+          length: 5
+          precision: 0 
+    - name: Data
+      description: Data operations
+      cols:
+        - name: read
+          description: Bytes read per second
+          type: Rate
+          key: status/innodb_data_read
+          units: Memory
+          length: 5
+          precision: 0 
+        - name: lsn
+          description: Bytes written per second
+          type: Rate
+          key: status/innodb_data_written
+          units: Memory
+          length: 5
+          precision: 0 
+  cols:
+    - name: Hist
+      description: History list length
+      type: Gauge
+      key: status/innodb_history_list_length
+      units: Number
+      length: 5
+      precision: 0 
+        
