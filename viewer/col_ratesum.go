@@ -33,7 +33,6 @@ func (rsc RateSumCol) getRate(sr loader.StateReader) (float64, error) {
 	if len(rsc.expandedKeys) == 0 {
 		return 0, fmt.Errorf(`no keys found: %s`, rsc.Name)
 	}
-	fmt.Printf("ekeys: %+v\n", rsc.expandedKeys)
 
 	// get cur, or else return an error
 	curSum := sr.GetCurrent().GetFloatSum(rsc.expandedKeys)
