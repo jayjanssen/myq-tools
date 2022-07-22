@@ -1,6 +1,10 @@
 package viewer
 
-import "github.com/jayjanssen/myq-tools2/loader"
+import (
+	"fmt"
+
+	"github.com/jayjanssen/myq-tools2/loader"
+)
 
 // A view is made up of Groups of Cols
 type View struct {
@@ -13,6 +17,25 @@ type View struct {
 
 // How to print out the time with our output
 var timeCol SampleTimeCol = NewSampleTimeCol()
+
+// Get help for this view
+func (v View) GetDetailedHelp() (output []string) {
+	// Gather the svs
+	var svs StateViewerList
+	for _, group := range v.Groups {
+		svs = append(svs, group)
+	}
+	svs = append(svs, v.Cols...)
+
+	// Gather and indent the lines
+	output = append(output, v.GetShortHelp())
+	for _, sv := range svs {
+		for _, line := range sv.GetDetailedHelp() {
+			output = append(output, fmt.Sprintf("   %s", line))
+		}
+	}
+	return
+}
 
 // A list of sources that this view requires
 func (v View) GetSources() ([]loader.SourceName, error) {

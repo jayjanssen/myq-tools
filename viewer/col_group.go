@@ -1,6 +1,8 @@
 package viewer
 
 import (
+	"fmt"
+
 	"github.com/jayjanssen/myq-tools2/loader"
 )
 
@@ -8,6 +10,18 @@ import (
 type GroupCol struct {
 	defaultCol `yaml:",inline"`
 	Cols       StateViewerList `yaml:"cols"`
+}
+
+// Get help for this view
+func (gc GroupCol) GetDetailedHelp() (output []string) {
+	// Gather and indent the lines
+	output = append(output, gc.GetShortHelp())
+	for _, col := range gc.Cols {
+		for _, line := range col.GetDetailedHelp() {
+			output = append(output, fmt.Sprintf("   %s", line))
+		}
+	}
+	return
 }
 
 // Header for this Group, the name of the Group is first, then the headers of each individual col

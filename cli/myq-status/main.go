@@ -90,7 +90,7 @@ func main() {
 
 		for _, name := range viewer.ViewNames {
 			view, _ := viewer.GetViewer(name)
-			fmt.Fprintf(os.Stderr, "  %s: %s\n", name, view.GetShortHelp())
+			fmt.Fprintf(os.Stderr, "   %s\n", view.GetShortHelp())
 		}
 		os.Exit(BAD_ARGS)
 	}
@@ -119,8 +119,7 @@ func main() {
 
 	// Print help for the requested view
 	if *help {
-		fmt.Fprintf(os.Stderr, "'%s':\n", viewName)
-		for helpst := range view.GetDetailedHelp() {
+		for _, helpst := range view.GetDetailedHelp() {
 			fmt.Fprintln(os.Stderr, helpst)
 		}
 		os.Exit(OK)
