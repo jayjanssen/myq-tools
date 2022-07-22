@@ -1,4 +1,4 @@
-myq-tools [![Build Status](https://travis-ci.org/jayjanssen/myq-tools.svg?branch=master)](https://travis-ci.org/jayjanssen/myq-tools)
+myq-tools
 =========
 
 Tools for monitoring MySQL (successor to myq_gadgets)
@@ -20,7 +20,6 @@ Binaries are available in the Releases tab here in Github.
 Running development/latest version
 ----------------------------------
 1. Download and install golang.
-1. Clone this repo to your GO home
-1. Execute 'go run myq_status.go'
-
+2. Clone this repo to your GO home
+3. Execute 'go run myq_status.go'
 
