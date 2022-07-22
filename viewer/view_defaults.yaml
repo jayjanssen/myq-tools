@@ -147,3 +147,135 @@
           units: Number
           length: 4
           precision: 0
+- name: coms
+  description: MySQL commands
+  cols:
+    - name: sel
+      description: Selects per second
+      type: Rate
+      key: status/com_select
+      units: Number
+      length: 5
+      precision: 0
+    - name: dml
+      description: Inserts, Updates, Deletes per second (and other various DML)
+      type: RateSum
+      keys:
+        - status/com_insert.*
+        - status/com_update.*
+        - status/com_delete.*
+        - status/com_load
+        - status/com_replace.*
+        - status/com_truncate
+      units: Number
+      length: 5
+      precision: 0
+    - name: ddl
+      description: Data definition commands per second
+      type: RateSum
+      keys:
+        - status/com_alter.*
+        - status/com_create.*
+        - status/com_drop.*
+        - status/com_rename_table
+      units: Number
+      length: 5
+      precision: 0
+    - name: admin
+      description: Admin commands per second
+      type: RateSum
+      keys:
+        - status/com_admin.*
+      units: Number
+      length: 5
+      precision: 0
+    - name: show
+      description: SHOW commands per second
+      type: RateSum
+      keys:
+        - status/com_show.*
+      units: Number
+      length: 5
+      precision: 0
+    - name: set
+      description: SET commands per second
+      type: RateSum
+      keys:
+        - status/com_set.*
+      units: Number
+      length: 5
+      precision: 0
+    - name: lock
+      description: LOCK commands per second
+      type: RateSum
+      keys:
+        - status/com_lock.*
+        - status/com_unlock.*
+      units: Number
+      length: 5
+      precision: 0   
+    - name: trx
+      description: Transactional commands per second
+      type: RateSum
+      keys:
+        - status/com_begin
+        - status/com_commit
+        - status/com_rollback.*
+        - status/com_savepoint
+      units: Number
+      length: 5
+      precision: 0  
+    - name: xa
+      description: XA commands per second
+      type: RateSum
+      keys:
+        - status/com_xa.*
+      units: Number
+      length: 5
+      precision: 0  
+    - name: prep
+      description: Prepared statement commands per second
+      type: RateSum
+      keys:
+        - status/com_stmt.*
+        - status/com_.*_sql
+      units: Number
+      length: 5
+      precision: 0  
+- name: throughput
+  description: MySQL Server throughput
+  groups:
+    - name: Received
+      description: Bytes received by the Server
+      cols:
+        - name: recv
+          description: Total since last sample
+          type: Diff
+          key: status/bytes_received
+          units: Memory
+          length: 6
+          precision: 0 
+        - name: recv/s
+          description: Per second since last sample
+          type: Rate
+          key: status/bytes_received
+          units: Memory
+          length: 6
+          precision: 0 
+    - name: Send
+      description: Bytes sent by the Server
+      cols:
+        - name: sent
+          description: Total since last sample
+          type: Diff
+          key: status/bytes_sent
+          units: Memory
+          length: 6
+          precision: 0 
+        - name: sent/s
+          description: Per second since last sample
+          type: Rate
+          key: status/bytes_sent
+          units: Memory
+          length: 6
+          precision: 0 
