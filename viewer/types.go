@@ -59,6 +59,13 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 				return err
 			}
 			newlist = append(newlist, c)
+		case `SortedExpandedCounts`:
+			c := SortedExpandedCountsCol{}
+			err = content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
 		default:
 			return fmt.Errorf("invalid column type: %s", typeobj.Type)
 		}

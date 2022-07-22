@@ -502,4 +502,14 @@
       units: Number
       length: 5
       precision: 0 
-        
+- name: commands
+  description: Sorted list of all command run in the interval
+  cols:
+    - name: Counts
+      description: All commands tracked by the Com_* counters
+      type: SortedExpandedCounts
+      keys:
+        - 'status/^com_*'
+      units: Number
+      length: 20
+      precision: 0
