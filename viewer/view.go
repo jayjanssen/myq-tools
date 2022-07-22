@@ -56,7 +56,7 @@ func (v View) GetHeader(sr loader.StateReader) []string {
 	svs = append(svs, v.Cols...)
 
 	// Get the header output of all those svs
-	colOuts := groupColOutput(svs, func(sv StateViewer) []string {
+	colOuts := pushColOutputDown(svs, func(sv StateViewer) []string {
 		return sv.GetHeader(sr)
 	})
 
@@ -79,7 +79,7 @@ func (v View) GetData(sr loader.StateReader) (result []string) {
 	svs = append(svs, v.Cols...)
 
 	// Get the data output of all those svs
-	return groupColOutput(svs, func(sv StateViewer) []string {
+	return pushColOutputUp(svs, func(sv StateViewer) []string {
 		return sv.GetData(sr)
 	})
 }

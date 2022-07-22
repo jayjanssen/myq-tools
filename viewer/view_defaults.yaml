@@ -511,5 +511,5 @@
       keys:
         - 'status/^com_*'
       units: Number
-      length: 20
+      length: 10
       precision: 0

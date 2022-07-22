@@ -29,7 +29,7 @@ func (gc GroupCol) GetHeader(sr loader.StateReader) (result []string) {
 	getColOut := func(sv StateViewer) []string {
 		return sv.GetHeader(sr)
 	}
-	colOuts := groupColOutput(gc.Cols, getColOut)
+	colOuts := pushColOutputDown(gc.Cols, getColOut)
 
 	// Determne the length of this Group by the first line of output from the Cols
 	if gc.Length == 0 && len(colOuts) > 0 {
@@ -44,5 +44,5 @@ func (gc GroupCol) GetData(sr loader.StateReader) []string {
 	getColOut := func(sv StateViewer) []string {
 		return sv.GetData(sr)
 	}
-	return groupColOutput(gc.Cols, getColOut)
+	return pushColOutputUp(gc.Cols, getColOut)
 }

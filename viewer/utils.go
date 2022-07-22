@@ -75,8 +75,8 @@ func FitStringLeft(input string, length int) string {
 	}
 }
 
-// Generate a combined set of lines for all given StateViewers
-func groupColOutput(svs StateViewerList, getColOut func(sv StateViewer) []string) (result []string) {
+// Generate a combined set of lines for all given StateViewers, blank lines go on top of "shorter" outputs
+func pushColOutputDown(svs StateViewerList, getColOut func(sv StateViewer) []string) (result []string) {
 	// Collect the string arrays from each column
 	colsOutput := make([][]string, len(svs))
 	maxLines := 0
@@ -104,6 +104,44 @@ func groupColOutput(svs StateViewerList, getColOut func(sv StateViewer) []string
 				lineStr += col.GetBlankLine()
 			} else {
 				lineStr += colOut[staggeredI]
+			}
+
+			// Add a space for the next line
+			lineStr += ` `
+		}
+		// Append the lineStr less 1 character (trailing space)
+		result = append(result, lineStr[:len(lineStr)-1])
+	}
+	return
+}
+
+// Generate a combined set of lines for all given StateViewers, blank lines go under "shorter" outputs
+func pushColOutputUp(svs StateViewerList, getColOut func(sv StateViewer) []string) (result []string) {
+	// Collect the string arrays from each column
+	colsOutput := make([][]string, len(svs))
+	maxLines := 0
+	for i, c := range svs {
+		colsOutput[i] = getColOut(c)
+		if maxLines < len(colsOutput[i]) {
+			maxLines = len(colsOutput[i])
+		}
+	}
+
+	// Each col will output one or more lines, and they may output different amounts of lines. We use blank lines when a col doesn't have a value for a given line
+
+	// Output maxLines # of lines to result
+	for line := 0; line < maxLines; line += 1 {
+		lineStr := ``
+		for colI, colOut := range colsOutput {
+			colLines := len(colOut) // How many lines does this col have?
+
+			// Are there any more lines for this col?
+			if line > colLines-1 {
+				// No, print a blank
+				col := svs[colI]
+				lineStr += col.GetBlankLine()
+			} else {
+				lineStr += colOut[line]
 			}
 
 			// Add a space for the next line
