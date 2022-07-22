@@ -75,6 +75,16 @@ func (ut *UnitsType) UnmarshalYAML(value *yaml.Node) error {
 	switch value.Value {
 	case `Number`:
 		*ut = NUMBER
+	case `Memory`:
+		*ut = MEMORY
+	case `Second`:
+		*ut = SECOND
+	case `Microsecond`:
+		*ut = MICROSECOND
+	case `Nanosecond`:
+		*ut = NANOSECOND
+	case `Percent`:
+		*ut = PERCENT
 	default:
 		return fmt.Errorf("invalid UnitType: %s", value.Value)
 	}
