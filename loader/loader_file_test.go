@@ -14,8 +14,8 @@ func NewTestFileLoader(statusFile, varFile string) (*FileLoader, error) {
 	return fl, err
 }
 
-func NewGoodFileLoader(t testing.TB, statusFile, varFile string) *FileLoader {
-	i, _ := time.ParseDuration("1s")
+func NewGoodFileLoader(t testing.TB, statusFile, varFile, intervalStr string) *FileLoader {
+	i, _ := time.ParseDuration(intervalStr)
 	fl := NewFileLoader(statusFile, varFile)
 
 	err := fl.Initialize(i, sources_file_test)
@@ -37,7 +37,7 @@ func TestNewFileLoaderFail(t *testing.T) {
 
 // -- empty files should not return samples
 func TestNewFileLoaderEmpty(t *testing.T) {
-	l := NewGoodFileLoader(t, "/dev/null", "")
+	l := NewGoodFileLoader(t, "/dev/null", "", "1s")
 
 	ch := l.GetStateChannel()
 	select {
@@ -51,12 +51,12 @@ func TestNewFileLoaderEmpty(t *testing.T) {
 
 // File Loader implements the Loader interface
 func TestFileLoaderImplementsLoader(t *testing.T) {
-	var _ Loader = NewGoodFileLoader(t, "/dev/null", "")
+	var _ Loader = NewGoodFileLoader(t, "/dev/null", "", "1s")
 }
 
 // Ensure variables are loaded properly
 func TestFileLoaderVariables(t *testing.T) {
-	l := NewGoodFileLoader(t, "./testdata/mysql.single", "./testdata/variables")
+	l := NewGoodFileLoader(t, "./testdata/mysql.single", "./testdata/variables", "1s")
 	ch := l.GetStateChannel()
 
 	// Block waiting for a sample from ch, or else a timeout
@@ -81,7 +81,7 @@ func TestFileLoaderVariables(t *testing.T) {
 
 // Ensure missing variables are handled appropriately
 func TestFileLoaderNilVarfile(t *testing.T) {
-	l := NewGoodFileLoader(t, "./testdata/mysql.single", "")
+	l := NewGoodFileLoader(t, "./testdata/mysql.single", "", "1s")
 	ch := l.GetStateChannel()
 
 	// Block waiting for a sample from ch, or else a timeout
@@ -100,6 +100,40 @@ func TestFileLoaderNilVarfile(t *testing.T) {
 		if mc != 914 {
 			t.Errorf("Expected 914 questions in sample, got `%d`", mc)
 		}
+	case <-time.After(2 * time.Second):
+		t.Error("Sample missing")
+	}
+}
+
+func TestFileLoader5sInterval(t *testing.T) {
+	l := NewGoodFileLoader(t, "./testdata/mysqladmin.lots", "", "5s")
+	ch := l.GetStateChannel()
+
+	// throw away the first state
+	select {
+	case <-ch:
+	case <-time.After(2 * time.Second):
+		t.Error("sample missing")
+	}
+
+	// Block waiting for a sample from ch, or else a timeout
+	select {
+	case s := <-ch:
+		curr := s.GetCurrent()
+		if errs := curr.GetErrors(); errs != nil {
+			t.Fatalf("Sample returned error: %v", errs)
+		}
+
+		mc, _ := curr.GetInt(SourceKey{`status`, `questions`})
+		if mc != 65218910 {
+			t.Errorf("Expected 65218910 questions in sample, got `%d`", mc)
+		}
+
+		diff := s.SecondsDiff()
+		if diff != 5 {
+			t.Errorf("unexpected SecondsDiff: %f", diff)
+		}
+
 	case <-time.After(2 * time.Second):
 		t.Error("Sample missing")
 	}

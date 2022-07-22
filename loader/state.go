@@ -41,7 +41,7 @@ func (sp *State) SecondsDiff() float64 {
 
 	// File loader state
 	curUptime := sp.GetCurrent().GetUptime()
-	prevUptime := sp.GetCurrent().GetUptime()
+	prevUptime := sp.GetPrevious().GetUptime()
 	return float64(curUptime - prevUptime)
 }
 
