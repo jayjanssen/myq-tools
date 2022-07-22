@@ -134,6 +134,11 @@ func TestFileLoader5sInterval(t *testing.T) {
 			t.Errorf("unexpected SecondsDiff: %f", diff)
 		}
 
+		timestamp := s.GetTimeString()
+		if timestamp != `5s` {
+			t.Errorf("unexpected GetTimeString: %s", timestamp)
+		}
+
 	case <-time.After(2 * time.Second):
 		t.Error("Sample missing")
 	}

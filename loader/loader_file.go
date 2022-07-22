@@ -83,15 +83,15 @@ func (l *FileLoader) GetStateChannel() <-chan StateReader {
 
 			// The state's uptime comes from our status file data
 			if _, ok := sd.Data[`uptime`]; ok {
+				currUptime, _ := strconv.ParseInt(sd.Data[`uptime`], 10, 64)
+
 				// Set the first up time if we don't have it
 				if l.firstUptime == 0 {
-					l.firstUptime = state.GetCurrent().GetUptime()
+					l.firstUptime = currUptime
 				}
 
 				// Set the uptime if we have it
-				currUptime, _ := strconv.ParseInt(sd.Data[`uptime`], 10, 64)
 				state.GetCurrentWriter().SetUptime(currUptime - l.firstUptime)
-
 			}
 
 			ch <- state
