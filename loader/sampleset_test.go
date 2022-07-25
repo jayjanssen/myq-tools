@@ -200,5 +200,4 @@ func TestSampleSetExpandSourceKeysRegex(t *testing.T) {
 	if len(expanded) != 2 {
 		t.Fatalf(`unexpected amount of expanded keys: %d`, len(expanded))
 	}
-	t.Fatalf(`expanded: %+v`, expanded)
 }
