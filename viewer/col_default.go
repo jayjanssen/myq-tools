@@ -38,9 +38,8 @@ func (c defaultCol) GetSources() ([]loader.SourceName, error) {
 }
 
 // Header for this view, unclear if state is needed
-func (c defaultCol) GetHeader(sr loader.StateReader) (result []string) {
-	result = append(result, fmt.Sprintf("%*s", c.Length, c.Name))
-	return
+func (c defaultCol) GetHeader(sr loader.StateReader) []string {
+	return []string{FitString(c.Name, c.Length)}
 }
 
 // Blank line for this view

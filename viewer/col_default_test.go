@@ -93,6 +93,24 @@ func TestColGetHeader(t *testing.T) {
 	if header != "cons" {
 		t.Errorf("Expected header to be 'cons', not: %s", header)
 	}
+
+	// Test too long name
+	col.Name = "consss"
+	headers = col.GetHeader(state)
+	// Expect one line header
+	if len(headers) != 1 {
+		t.Errorf("Header more than 1 line: %d", len(headers))
+	}
+
+	header = headers[0]
+	if len(header) != col.Length {
+		t.Errorf("Got header of length: %d, expected: %d", len(header), col.Length)
+	}
+
+	if header != "cons" {
+		t.Errorf("Expected header to be 'cons', not: %s", header)
+	}
+
 }
 
 func TestColGetBlankLine(t *testing.T) {

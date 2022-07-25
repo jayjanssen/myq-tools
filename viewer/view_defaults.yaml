@@ -445,7 +445,7 @@
           units: Number
           length: 5
           precision: 0 
-        - name: write
+        - name: writ
           description: Physical writes per second
           type: Rate
           key: status/innodb_buffer_pool_pages_flushed
