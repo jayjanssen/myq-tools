@@ -10,6 +10,13 @@ type PercentCol struct {
 	Denominator loader.SourceKey `yaml:"denominator"`
 }
 
+func (c PercentCol) GetSources() []loader.SourceName {
+	return []loader.SourceName{
+		c.Numerator.SourceName,
+		c.Denominator.SourceName,
+	}
+}
+
 // Data for this view based on the state
 func (c PercentCol) GetData(sr loader.StateReader) []string {
 	var str string

@@ -1,6 +1,7 @@
 package viewer
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/jayjanssen/myq-tools2/loader"
@@ -40,6 +41,24 @@ func getTestViewState() loader.StateReader {
 	prevsamp.Data[`threads_connect`] = `3`
 
 	return sp
+}
+
+func TestViewGetDetailedHelp(t *testing.T) {
+	view := getTestView()
+	helpStrs := view.GetDetailedHelp()
+
+	if len(helpStrs) != 3 {
+		fmt.Printf(`unexpected GetDetailedHelp length: %d`, len(helpStrs))
+	}
+}
+
+func TestViewGetSources(t *testing.T) {
+	view := getTestView()
+	sources := view.GetSources()
+
+	if len(sources) != 1 {
+		fmt.Printf(`unexpected GetSources length: %d`, len(sources))
+	}
 }
 
 func TestViewGetHeader(t *testing.T) {

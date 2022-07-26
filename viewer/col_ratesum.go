@@ -7,9 +7,8 @@ import (
 )
 
 type RateSumCol struct {
-	colNum       `yaml:",inline"`
-	Keys         []loader.SourceKey `yaml:"keys"`
-	expandedKeys []loader.SourceKey
+	colNum            `yaml:",inline"`
+	expandableKeysCol `yaml:",inline"`
 }
 
 func (rsc RateSumCol) GetData(sr loader.StateReader) []string {

@@ -18,6 +18,15 @@ func getTestSampleTimeState() loader.StateReader {
 	return sp
 }
 
+func TestSampleTimeColGetSources(t *testing.T) {
+	tc := NewSampleTimeCol()
+	sources := tc.GetSources()
+
+	if len(sources) != 0 {
+		t.Errorf(`unexpected sources len: %d`, len(sources))
+	}
+}
+
 func TestSampleTimeColGetHeader(t *testing.T) {
 	tc := NewSampleTimeCol()
 	sr := getTestSampleTimeState()

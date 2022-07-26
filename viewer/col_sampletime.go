@@ -14,6 +14,10 @@ func NewSampleTimeCol() SampleTimeCol {
 	return tc
 }
 
+func (c SampleTimeCol) GetSources() []loader.SourceName {
+	return []loader.SourceName{}
+}
+
 // Asks the StateReader for what time to print
 func (c SampleTimeCol) GetData(sr loader.StateReader) []string {
 	return []string{FitString(sr.GetTimeString(), c.Length)}

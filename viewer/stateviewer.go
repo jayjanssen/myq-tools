@@ -16,7 +16,7 @@ type StateViewer interface {
 	GetDetailedHelp() []string
 
 	// A list of sources that this view requires
-	GetSources() ([]loader.SourceName, error)
+	GetSources() []loader.SourceName
 
 	// Header for this view, unclear if state is needed
 	GetHeader(loader.StateReader) []string

@@ -12,6 +12,14 @@ type GroupCol struct {
 	Cols       StateViewerList `yaml:"cols"`
 }
 
+func (gc GroupCol) GetSources() []loader.SourceName {
+	var result []loader.SourceName
+	for _, col := range gc.Cols {
+		result = append(result, col.GetSources()...)
+	}
+	return result
+}
+
 // Get help for this view
 func (gc GroupCol) GetDetailedHelp() (output []string) {
 	// Gather and indent the lines

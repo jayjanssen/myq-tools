@@ -20,7 +20,6 @@ const (
 	OK int = iota
 	BAD_ARGS
 	LOADER_ERROR
-	SOURCES_ERROR
 )
 
 // Current Version (passed in on build)
@@ -140,11 +139,8 @@ func main() {
 		load = loader.NewFileLoader(*statusfile, *varfile)
 	}
 
-	sources, err := view.GetSources()
-	if err != nil {
-		fmt.Fprint(os.Stderr, err)
-		os.Exit(SOURCES_ERROR)
-	}
+	// Get a list of the sources this view requires
+	sources := view.GetSources()
 
 	// Initialize the loader
 	err = load.Initialize(*interval, sources)

@@ -5,8 +5,8 @@ import (
 )
 
 type GaugeCol struct {
-	colNum `yaml:",inline"`
-	Key    loader.SourceKey `yaml:"key"`
+	colNum    `yaml:",inline"`
+	oneKeyCol `yaml:",inline"`
 }
 
 // Data for this view based on the state

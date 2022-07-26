@@ -2,18 +2,14 @@ package viewer
 
 import (
 	"testing"
-
-	"github.com/jayjanssen/myq-tools2/loader"
 )
 
 // Funcs to get some test columns
 func getTestcolNum(units UnitsType, precision, width int) colNum {
-	sources := []loader.SourceName{"status"}
 	return colNum{
 		defaultCol: defaultCol{
-			Name:    "test",
-			Sources: sources,
-			Length:  width,
+			Name:   "test",
+			Length: width,
 		},
 		Units:     units,
 		Precision: precision,

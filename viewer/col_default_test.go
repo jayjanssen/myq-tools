@@ -1,7 +1,6 @@
 package viewer
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/jayjanssen/myq-tools2/loader"
@@ -9,11 +8,9 @@ import (
 
 // Funcs to get some test columns
 func getTestCol() defaultCol {
-	sources := []loader.SourceName{"status"}
 	return defaultCol{
 		Name:        "cons",
 		Description: "Connections per second",
-		Sources:     sources,
 		Length:      4,
 	}
 }
@@ -37,23 +34,6 @@ func TestColGetDetailedHelp(t *testing.T) {
 
 	if help[0] != "cons: Connections per second" {
 		t.Error("bad detailed help")
-	}
-}
-
-func TestColGetSources(t *testing.T) {
-	loader.LoadDefaultSources()
-
-	col := getTestCol()
-	sources, err := col.GetSources()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	fmt.Printf("sources: %v\n", sources)
-
-	if len(sources) != 1 {
-		t.Errorf("Got the wrong number of sources: %d", len(sources))
 	}
 }
 

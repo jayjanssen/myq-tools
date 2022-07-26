@@ -8,9 +8,8 @@ import (
 )
 
 type SortedExpandedCountsCol struct {
-	colNum       `yaml:",inline"`
-	Keys         []loader.SourceKey `yaml:"keys"`
-	expandedKeys []loader.SourceKey
+	colNum            `yaml:",inline"`
+	expandableKeysCol `yaml:",inline"`
 }
 
 func (secc SortedExpandedCountsCol) GetData(sr loader.StateReader) (output []string) {
@@ -42,7 +41,7 @@ func (secc SortedExpandedCountsCol) GetData(sr loader.StateReader) (output []str
 		}
 
 		// Create the [] slice for a rate we haven't seen yet
-		if _, ok := diff_variables[diff]; ok == false {
+		if _, ok := diff_variables[diff]; !ok {
 			diff_variables[diff] = make([]string, 0)
 			all_diffs = append(all_diffs, diff) // record the diff the first time
 		}

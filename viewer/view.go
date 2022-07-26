@@ -37,12 +37,28 @@ func (v View) GetDetailedHelp() (output []string) {
 	return
 }
 
-// A list of sources that this view requires
-func (v View) GetSources() ([]loader.SourceName, error) {
-	return []loader.SourceName{}, nil
-	// return []*loader.Source{
-	// 	&loader.Source{},
-	// }, nil
+// A list of sources that this view requires, deduped
+func (v View) GetSources() []loader.SourceName {
+	var svs StateViewerList
+	for _, group := range v.Groups {
+		svs = append(svs, group)
+	}
+	svs = append(svs, v.Cols...)
+
+	// Dedupe
+	sourceMap := make(map[loader.SourceName]bool)
+	for _, col := range svs {
+		for _, sourceN := range col.GetSources() {
+			sourceMap[sourceN] = true
+		}
+	}
+
+	// Build the result slice
+	var result []loader.SourceName
+	for k := range sourceMap {
+		result = append(result, k)
+	}
+	return result
 }
 
 // Header for this view, unclear if state is needed

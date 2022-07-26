@@ -45,6 +45,33 @@ func getTestGroupState() loader.StateReader {
 	return sp
 }
 
+func TestGroupColGetSources(t *testing.T) {
+	gc := getTestGroupCol()
+	sources := gc.GetSources()
+
+	if len(sources) != 2 {
+		t.Fatalf(`unexpected sources len: %d`, len(sources))
+	}
+
+	source := sources[0]
+	if source != `status` {
+		t.Errorf(`unexpected source[0]: %s`, source)
+	}
+}
+
+func TestGroupColGetDetailedHelp(t *testing.T) {
+	gc := getTestGroupCol()
+	help := gc.GetDetailedHelp()
+	if len(help) != 3 {
+		t.Fatalf(`unexpected sources len: %d`, len(help))
+	}
+
+	helpLn := help[0]
+	if helpLn != `Connects: Connection related metrics` {
+		t.Errorf(`unexpected source[0]: %s`, helpLn)
+	}
+}
+
 func TestGroupColGetHeader(t *testing.T) {
 	gc := getTestGroupCol()
 	sr := getTestGroupState()
