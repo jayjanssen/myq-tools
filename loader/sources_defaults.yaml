@@ -1,5 +1,7 @@
 ---
 - name: status
-  description: "MySQL server global status counters"
+  description: MySQL server global status counters
+  query: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_status
 - name: variables
-  description: "MySQL server global variables"
+  description: MySQL server global variables
+  query: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables

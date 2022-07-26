@@ -85,7 +85,7 @@ func Benchmark(b *testing.B) {
 	l := NewGoodLiveLoader(b)
 
 	for i := 0; i < b.N; i++ {
-		l.getSample(STATUS_QUERY)
-		l.getSample(VARIABLES_QUERY)
+		l.getSample(`SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_status`)
+		l.getSample(`SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables`)
 	}
 }

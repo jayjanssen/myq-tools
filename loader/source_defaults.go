@@ -23,7 +23,7 @@ func LoadDefaultSources() error {
 func GetSource(source_name SourceName) (*Source, error) {
 	sp, ok := sourceMap[source_name]
 	if !ok {
-		return nil, fmt.Errorf("Source not found: %s", source_name)
+		return nil, fmt.Errorf("source not found: %s", source_name)
 	}
 	return sp, nil
 }

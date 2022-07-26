@@ -4,7 +4,7 @@ package loader
 type Source struct {
 	Name        SourceName
 	Description string
-	// Needs some attributes that describe how to load this source, live or file
+	Query       string
 }
 
 // A SourceName identifies some unique portion of data gathered from a Source

@@ -4,15 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-)
-
-const (
-	// The commands we send to the mysql cli
-	STATUS_QUERY    string = "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_status"
-	VARIABLES_QUERY string = "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables"
+	"github.com/hashicorp/go-multierror"
 )
 
 // SHOW output via mysqladmin on a live server
@@ -20,6 +16,7 @@ type LiveLoader struct {
 	interval time.Duration
 	dsn      string
 	db       *sql.DB
+	sources  []*Source
 }
 
 // Create a new SqlLoader
@@ -33,8 +30,27 @@ func NewLiveLoader(dsn string) *LiveLoader {
 }
 
 // Connect to the DB and report any errors
-func (l *LiveLoader) Initialize(interval time.Duration, sources []SourceName) error {
+func (l *LiveLoader) Initialize(interval time.Duration, sourceNames []SourceName) error {
 	l.interval = interval
+
+	err := LoadDefaultSources()
+	if err != nil {
+		return err
+	}
+
+	// Try to find the source definitions for every SourceName given to us.  If any are not found, return that as a multierror
+	var errs *multierror.Error
+	for _, source_name := range sourceNames {
+		source, err := GetSource(source_name)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		} else {
+			l.sources = append(l.sources, source)
+		}
+	}
+	if errs.ErrorOrNil() != nil {
+		return errs
+	}
 
 	// Open the db connection and confirm it works
 	db, err := sql.Open("mysql", l.dsn)
@@ -57,11 +73,18 @@ func (l *LiveLoader) GetStateChannel() <-chan StateReader {
 		state := NewState()
 		state.Live = true
 
-		status := l.getSample(STATUS_QUERY)
-		variables := l.getSample(VARIABLES_QUERY)
+		var wg sync.WaitGroup
+		for _, source := range l.sources {
+			wg.Add(1)
 
-		state.GetCurrentWriter().SetSample(`status`, status)
-		state.GetCurrentWriter().SetSample(`variables`, variables)
+			go func(source *Source) {
+				defer wg.Done()
+
+				sample := l.getSample(source.Query)
+				state.GetCurrentWriter().SetSample(source.Name, sample)
+			}(source)
+		}
+		wg.Wait()
 
 		state.SetPrevious(prev_ssp)
 
