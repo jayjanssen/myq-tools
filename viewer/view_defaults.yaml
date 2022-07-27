@@ -153,6 +153,84 @@
     - name: sel
       description: Selects per second
       type: Rate
+      key: statements_count/statement/sql/select
+      units: Number
+      length: 5
+      precision: 0
+    - name: dml
+      description: Inserts, Updates, Deletes per second (and other various DML)
+      type: RateSum
+      keys:
+        - statements_count/insert
+        - statements_count/update
+        - statements_count/delete
+        - statements_count/load
+        - statements_count/replace
+        - statements_count/truncate
+      units: Number
+      length: 5
+      precision: 0
+    - name: ddl
+      description: Data definition commands per second
+      type: RateSum
+      keys:
+        - statements_count/alter
+        - statements_count/create
+        - statements_count/drop
+        - statements_count/rename_table
+      units: Number
+      length: 5
+      precision: 0
+    - name: show
+      description: SHOW commands per second
+      type: RateSum
+      keys:
+        - statements_count/show
+      units: Number
+      length: 5
+      precision: 0
+    - name: set
+      description: SET commands per second
+      type: RateSum
+      keys:
+        - 'statements_count/set'
+      units: Number
+      length: 5
+      precision: 0
+    - name: lock
+      description: LOCK commands per second
+      type: RateSum
+      keys:
+        - statements_count/lock
+        - statements_count/unlock
+      units: Number
+      length: 5
+      precision: 0   
+    - name: trx
+      description: Transactional commands per second
+      type: RateSum
+      keys:
+        - 'statements_count/begin'
+        - 'statements_count/commit'
+        - 'statements_count/rollback'
+        - 'statements_count/savepoint'
+      units: Number
+      length: 5
+      precision: 0  
+    - name: xa
+      description: XA commands per second
+      type: RateSum
+      keys:
+        - 'statements_count/xa_'
+      units: Number
+      length: 5
+      precision: 0  
+- name: comsf
+  description: MySQL commands (use only with -file, otherwise use coms view)
+  cols:
+    - name: sel
+      description: Selects per second
+      type: Rate
       key: status/com_select
       units: Number
       length: 5
@@ -509,7 +587,7 @@
       description: All commands tracked by the Com_* counters
       type: SortedExpandedCounts
       keys:
-        - 'status/^com_*'
+        - 'statements_count/.*'
       units: Number
       length: 10
       precision: 0
