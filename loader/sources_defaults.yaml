@@ -5,3 +5,6 @@
 - name: variables
   description: MySQL server global variables
   query: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables
+- name: statements_count
+  description: Counts of statements used on the server
+  query: SELECT EVENT_NAME, COUNT_STAR FROM performance_schema.events_statements_summary_global_by_event_name
