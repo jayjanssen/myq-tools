@@ -25,6 +25,7 @@ const (
 	SECOND
 	MICROSECOND
 	NANOSECOND
+	PICOSECOND
 	PERCENT
 )
 
@@ -65,6 +66,13 @@ var unitsLookup = map[UnitsType]UnitsDef{
 		1000:       `µs`,
 		1:          `ns`,
 	},
+	PICOSECOND: {
+		1000000000000: `s`,
+		1000000000:    `ms`,
+		1000000:       `µs`,
+		1000:          `ns`,
+		1:             `ps`,
+	},
 	PERCENT: {
 		1: `%`,
 	},
@@ -83,6 +91,8 @@ func (ut *UnitsType) UnmarshalYAML(value *yaml.Node) error {
 		*ut = MICROSECOND
 	case `Nanosecond`:
 		*ut = NANOSECOND
+	case `Picosecond`:
+		*ut = PICOSECOND
 	case `Percent`:
 		*ut = PERCENT
 	default:

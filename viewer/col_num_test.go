@@ -76,5 +76,6 @@ func TestNumbers(t *testing.T) {
 	assert(`four seven five mu ess`, `476µs`, SECOND, 0.000476, 0, 5)
 
 	assert(`zero en ess`, `0ns`, NANOSECOND, 0.000000, 0, 5)
+	assert(`zero pee ess`, `0ps`, PICOSECOND, 0.000000, 0, 5)
 
 }
