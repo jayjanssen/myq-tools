@@ -2,9 +2,20 @@
 - name: status
   description: MySQL server global status counters
   query: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_status
+  type: String
+  key: VARIABLE_NAME
 - name: variables
   description: MySQL server global variables
   query: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables
+  type: String
+  key: VARIABLE_NAME
 - name: statements_count
   description: Counts of statements used on the server
   query: SELECT EVENT_NAME, COUNT_STAR FROM performance_schema.events_statements_summary_global_by_event_name
+  type: String
+  key: EVENT_NAME
+- name: events_statements_summary_global_by_event_name
+  description: Statements run data
+  query: SELECT * FROM performance_schema.events_statements_summary_global_by_event_name
+  type: Map
+  key: EVENT_NAME

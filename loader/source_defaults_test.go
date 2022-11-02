@@ -21,6 +21,7 @@ func TestSourceParse(t *testing.T) {
 }
 
 func TestGetSource(t *testing.T) {
+	err := LoadDefaultSources()
 	source, err := GetSource("status")
 	if err != nil {
 		t.Error(err)
@@ -31,10 +32,17 @@ func TestGetSource(t *testing.T) {
 	if source.Description != "MySQL server global status counters" {
 		t.Errorf("Unexpected status description: %s", source.Description)
 	}
+	if source.Type != STRING {
+		t.Errorf("unexpected source type: %v", source.Type)
+	}
+	if source.Key != `VARIABLE_NAME` {
+		t.Errorf(`unexpected source key: %s`, source.Key)
+	}
 }
 
 func TestGetSourceErr(t *testing.T) {
-	_, err := GetSource("fooey")
+	err := LoadDefaultSources()
+	_, err = GetSource("fooey")
 	if err == nil {
 		t.Error("Expected error!")
 	}
