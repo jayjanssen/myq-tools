@@ -23,7 +23,10 @@ func (c SwitchCol) GetData(sr loader.StateReader) []string {
 	if val, ok := c.Cases[str]; ok {
 		str = val
 	} else {
-		str = str[0:c.Length]
+		// Truncate string if it's too long
+		if len(str) > c.Length {
+			str = str[0:c.Length]
+		}
 	}
 
 	return []string{FitString(str, c.Length)}
