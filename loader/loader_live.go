@@ -42,6 +42,14 @@ func (l *LiveLoader) Initialize(interval time.Duration, sources []SourceName) er
 		return err
 	}
 	db.SetMaxOpenConns(1)
+
+	// Run a `select 1` to confirm we are connected
+	rows, err := db.Query(`select 1`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
 	l.db = db
 
 	return nil

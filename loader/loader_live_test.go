@@ -40,6 +40,14 @@ func TestNewLiveLoader(t *testing.T) {
 	}
 }
 
+// - should return an error on a bad user
+func TestNewLiveLoaderUserFail(t *testing.T) {
+	_, err := NewTestLiveLoader("bad_user@tcp(127.0.0.1:3306)/")
+	if err == nil {
+		t.Error("No error!")
+	}
+}
+
 // Sql Loader implements the Loader interface
 func TestLiveLoaderImplementsLoader(t *testing.T) {
 	var _ Loader = NewGoodLiveLoader(t)
