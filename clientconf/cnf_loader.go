@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/user"
 
@@ -155,7 +154,7 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	// Handle CA
 	rootCertPool := x509.NewCertPool()
 	if sslca, ok := clientMap[`ssl-ca`]; ok {
-		pem, err := ioutil.ReadFile(sslca)
+		pem, err := os.ReadFile(sslca)
 		if err != nil {
 			errs = multierror.Append(errs, fmt.Errorf(`ssl-ca error: %v`, err))
 		} else {
