@@ -39,14 +39,14 @@ func (l *LiveLoader) Initialize(interval time.Duration, sources []SourceName) er
 	// Open the db connection and confirm it works
 	db, err := sql.Open("mysql", l.dsn)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %s", l.dsn, err)
 	}
 	db.SetMaxOpenConns(1)
 
 	// Run a `select 1` to confirm we are connected
 	rows, err := db.Query(`select 1`)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %s", l.dsn, err)
 	}
 	defer rows.Close()
 
