@@ -134,7 +134,7 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
-		load = loader.NewLiveLoader(config.FormatDSN())
+		load = loader.NewLiveLoader(config)
 	} else {
 		// File given, load it (and the optional varfile)
 		load = loader.NewFileLoader(*statusfile, *varfile)
