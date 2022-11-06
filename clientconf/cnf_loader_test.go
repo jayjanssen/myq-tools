@@ -16,25 +16,6 @@ func TestGetCnfFiles(t *testing.T) {
 	}
 }
 
-func TestInitCnf(t *testing.T) {
-	cnf := initCnf()
-
-	if !cnf.HasSection(`client`) {
-		t.Fatal(`missing client section`)
-	}
-
-	clientMap := cnf.Section(`client`).KeysHash()
-	expectedMap := map[string]string{
-		`host`: `127.0.0.1`,
-		`port`: `3306`,
-	}
-	for k, v := range expectedMap {
-		if clientMap[k] != v {
-			t.Errorf(`unexpected value for key %s: %s`, k, clientMap[k])
-		}
-	}
-}
-
 func TestAppendFiles(t *testing.T) {
 	files := []string{
 		`./testcnf/my.cnf`,
@@ -113,7 +94,7 @@ func TestCnfToConfig(t *testing.T) {
 	passwordFlag = "testpassword"
 	hostFlag = "testhost"
 	portFlag = "testport"
-	socketFlag = "testsocket"
+	socketFlag = ""
 	applyFlags(cnf)
 	config, err = cnfToConfig(cnf)
 	if err != nil {
@@ -127,6 +108,11 @@ func TestCnfToConfig(t *testing.T) {
 
 func TestCnfToConfigSSL(t *testing.T) {
 	cnf := initCnf()
+	userFlag = "jayj"
+	passwordFlag = ""
+	hostFlag = ""
+	portFlag = ""
+	socketFlag = ""
 	sslCertFlag = "./testcnf/client-cert.pem"
 	sslKeyFlag = "./testcnf/client-key.pem"
 	sslCaFlag = "./testcnf/ca.pem"

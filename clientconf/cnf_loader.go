@@ -49,8 +49,6 @@ func initCnf() *ini.File {
 	}
 	cnf.NewSection(`client`)
 	cnf.Section(`client`).NewKey(`user`, username)
-	cnf.Section(`client`).NewKey(`host`, `127.0.0.1`)
-	cnf.Section(`client`).NewKey(`port`, `3306`)
 
 	return cnf
 }
@@ -83,7 +81,9 @@ var sslCertFlag string
 var sslKeyFlag string
 var sslCaFlag string
 
-// ssl cipher support TODO.  MySQL cipher names don't match go's crypto/tls package of course: https://cs.opensource.google/go/go/+/refs/tags/go1.18.4:src/crypto/tls/cipher_suites.go;l=54-72.
+// ssl cipher support TODO.  MySQL cipher names don't match go's crypto/tls
+// package of course:
+// https://cs.opensource.google/go/go/+/refs/tags/go1.18.4:src/crypto/tls/cipher_suites.go;l=54-72.
 
 // Apply the flag variables to the given cnf [client] section
 func applyFlags(cnf *ini.File) {
@@ -132,20 +132,29 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 		config.Passwd = cnfval
 	}
 
-	// Populate Net and Addr
-	if cnfval, ok := clientMap[`socket`]; ok {
-		config.Addr = cnfval
+	// Build network info
+	if socket, ok := clientMap[`socket`]; ok {
 		config.Net = `unix`
-	}
+		config.Addr = socket
+	} else {
+		config.Net = `tcp`
 
-	// Host will override socket (I think that's how mysql does it?)
-	if host, ok := clientMap[`host`]; ok {
-		port, ok := clientMap[`port`]
-		if !ok {
+		host, hostok := clientMap[`host`]
+		if !hostok {
+			host = `127.0.0.1`
+		}
+
+		port, portok := clientMap[`port`]
+		if !portok {
 			port = `3306`
 		}
 		config.Addr = fmt.Sprintf("%s:%s", host, port)
-		config.Net = `tcp`
+	}
+
+	// Default connection to 127.0.0.1:3306
+	if config.Net == "" {
+		config.Addr = `127.0.0.1:3306`
+
 	}
 
 	// SSL Stuff

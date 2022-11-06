@@ -34,7 +34,7 @@ func TestNewLiveLoaderFail(t *testing.T) {
 
 // - should be able to make a successful connection
 func TestNewLiveLoader(t *testing.T) {
-	_, err := NewTestLiveLoader("tcp(127.0.0.1:3306)/")
+	_, err := NewTestLiveLoader("root@tcp(127.0.0.1:3306)/")
 	if err != nil {
 		t.Error(err)
 	}
