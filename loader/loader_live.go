@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -18,17 +18,17 @@ const (
 // SHOW output via mysqladmin on a live server
 type LiveLoader struct {
 	interval time.Duration
-	dsn      string
+	config   *mysql.Config
 	db       *sql.DB
 }
 
 // Create a new SqlLoader
 // - dsn https://pkg.go.dev/github.com/go-sql-driver/mysql#Config
 // - i:  interval for GetSamples
-func NewLiveLoader(dsn string) *LiveLoader {
+func NewLiveLoader(config *mysql.Config) *LiveLoader {
 	ll := &LiveLoader{}
-	ll.dsn = dsn
-
+	ll.config = config
+	ll.config.Timeout, _ = time.ParseDuration(`5s`)
 	return ll
 }
 
@@ -37,11 +37,24 @@ func (l *LiveLoader) Initialize(interval time.Duration, sources []SourceName) er
 	l.interval = interval
 
 	// Open the db connection and confirm it works
-	db, err := sql.Open("mysql", l.dsn)
+	dsn := l.config.FormatDSN()
+	db, err := sql.Open("mysql", dsn)
+
+	l.config.Passwd = "******"
+	cleanDsn := l.config.FormatDSN()
+
 	if err != nil {
-		return err
+		return fmt.Errorf("%s\n%s", cleanDsn, err)
 	}
 	db.SetMaxOpenConns(1)
+
+	// Run a `select 1` to confirm we are connected
+	rows, err := db.Query(`select 1`)
+	if err != nil {
+		return fmt.Errorf("%s\n%s", cleanDsn, err)
+	}
+	defer rows.Close()
+
 	l.db = db
 
 	return nil

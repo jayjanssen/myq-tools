@@ -24,6 +24,13 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 		}
 
 		switch typeobj.Type {
+		case `String`:
+			c := StringCol{}
+			err := content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
 		case `Rate`:
 			c := RateCol{}
 			err = content.Decode(&c)
@@ -62,6 +69,20 @@ func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
 		case `SortedExpandedCounts`:
 			c := SortedExpandedCountsCol{}
 			err = content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
+		case `Switch`:
+			c := SwitchCol{}
+			err := content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
+		case `Subtract`:
+			c := SubtractCol{}
+			err := content.Decode(&c)
 			if err != nil {
 				return err
 			}

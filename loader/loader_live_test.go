@@ -3,20 +3,26 @@ package loader
 import (
 	"testing"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 var sources_live_test = []SourceName{`status`, `variables`}
 
-func NewTestLiveLoader(dsn string) (*LiveLoader, error) {
+func NewTestLiveLoader(config *mysql.Config) (*LiveLoader, error) {
 	i, _ := time.ParseDuration("1s")
-	db := NewLiveLoader(dsn)
+	db := NewLiveLoader(config)
 	err := db.Initialize(i, sources_live_test)
 
 	return db, err
 }
 
 func NewGoodLiveLoader(t testing.TB) *LiveLoader {
-	db, err := NewTestLiveLoader("root@tcp(127.0.0.1:3306)/")
+	config := mysql.NewConfig()
+	config.User = "root"
+	config.Net = "tcp"
+	config.Addr = "127.0.0.1:3306"
+	db, err := NewTestLiveLoader(config)
 	if err != nil {
 		t.Errorf("Connection error: %s", err)
 	}
@@ -26,7 +32,10 @@ func NewGoodLiveLoader(t testing.TB) *LiveLoader {
 // NewLiveLoader
 // - should return an error on a bad dsn
 func TestNewLiveLoaderFail(t *testing.T) {
-	_, err := NewTestLiveLoader("10.1.1.1")
+	config := mysql.NewConfig()
+	config.Net = "tcp"
+	config.Addr = "127.0.0.1:7777"
+	_, err := NewTestLiveLoader(config)
 	if err == nil {
 		t.Error("No error!")
 	}
@@ -34,9 +43,25 @@ func TestNewLiveLoaderFail(t *testing.T) {
 
 // - should be able to make a successful connection
 func TestNewLiveLoader(t *testing.T) {
-	_, err := NewTestLiveLoader("tcp(127.0.0.1:3306)/")
+	config := mysql.NewConfig()
+	config.User = "root"
+	config.Net = "tcp"
+	config.Addr = "127.0.0.1:3306"
+	_, err := NewTestLiveLoader(config)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+// - should return an error on a bad user
+func TestNewLiveLoaderUserFail(t *testing.T) {
+	config := mysql.NewConfig()
+	config.User = "bad_user"
+	config.Net = "tcp"
+	config.Addr = "127.0.0.1:3306"
+	_, err := NewTestLiveLoader(config)
+	if err == nil {
+		t.Error("No error!")
 	}
 }
 
