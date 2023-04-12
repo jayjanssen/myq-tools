@@ -465,6 +465,17 @@
           description: Log growth (log sequence number) per second
           key: status/innodb_lsn_current
           <<: {type: Rate, units: Memory, length: 5, precision: 0}
+    - name: Pages
+      description: Page ops
+      cols:
+        - name: read
+          description: Pages read
+          key: status/innodb_pages_read
+          <<: {type: Rate, units: Number, length: 4, precision: 0}
+        - name: wrte
+          description: Pages written
+          key: status/innodb_pages_written
+          <<: {type: Rate, units: Number, length: 4, precision: 0}
     - name: Data
       description: Data operations
       cols:
@@ -476,14 +487,12 @@
           description: Bytes written per second
           key: status/innodb_data_written
           <<: {type: Rate, units: Memory, length: 5, precision: 0}
-  cols:
-    - name: Hist
-      description: History list length
-      type: Gauge
-      key: status/innodb_history_list_length
-      units: Number
-      length: 5
-      precision: 0 
+  # cols:
+  #   - name: Hist
+  #     description: History list length
+  #     bigger: status/innodb_max_trx_id
+  #     smaller: status/innodb_oldest_view_low_limit_trx_id
+  #     <<: {type: Subtract, units: Number, length: 5, precision: 0}
 - name: innodb_flush
   description: Innodb flushing metrics
   groups:
@@ -571,7 +580,6 @@
           description: rows deleted
           key: status/innodb_rows_deleted
           <<: {type: Rate, units: Number, length: 5, precision: 1}
-
     - name: System Rows
       description: System row metrics
       cols:
@@ -597,6 +605,25 @@
         - name: del
           description: rows deleted
           key: status/innodb_system_rows_deleted
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+    - name: Pages
+      description: Page ops
+      cols:
+        - name: crted
+          description: Pages created
+          key: status/innodb_pages_created
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: read
+          description: Pages read
+          key: status/innodb_pages_read
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: read0
+          description: First Page read 
+          key: status/innodb_pages0_read
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: wrte
+          description: Pages written
+          key: status/innodb_pages_written
           <<: {type: Rate, units: Number, length: 5, precision: 1}
 - name: commands
   description: Sorted list of all command run in the interval
