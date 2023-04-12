@@ -8,10 +8,7 @@
         - name: cons
           description: Connections per second
           key: status/connections
-          type: Rate
-          units: Number
-          length: 4
-          precision: 0
+          <<: {type: Rate,units: Number, length: 4, precision: 0}
         - name: acns
           description: Aborted connections per second
           key: status/aborted_connects
@@ -457,51 +454,177 @@
       cols:
         - name: Chkpt
           description: Checkpoint age
-          type: Gauge
           key: status/innodb_checkpoint_age
-          units: Memory
-          length: 5
-          precision: 0 
-        - name: '%'
+          <<: {type: Gauge, units: Memory, length: 5, precision: 0}
+        - name: '%max'
           description: Percent of max checkpoint
-          type: Percent
           numerator: status/innodb_checkpoint_age
           denominator: status/innodb_checkpoint_max_age
-          units: Percent
-          length: 4
-          precision: 0 
+          <<: {type: Percent, units: Percent, length: 4, precision: 0}
         - name: lsn
           description: Log growth (log sequence number) per second
-          type: Rate
           key: status/innodb_lsn_current
-          units: Memory
-          length: 5
-          precision: 0 
+          <<: {type: Rate, units: Memory, length: 5, precision: 0}
+    - name: Pages
+      description: Page ops
+      cols:
+        - name: read
+          description: Pages read
+          key: status/innodb_pages_read
+          <<: {type: Rate, units: Number, length: 4, precision: 0}
+        - name: wrte
+          description: Pages written
+          key: status/innodb_pages_written
+          <<: {type: Rate, units: Number, length: 4, precision: 0}
     - name: Data
       description: Data operations
       cols:
         - name: read
           description: Bytes read per second
-          type: Rate
           key: status/innodb_data_read
-          units: Memory
-          length: 5
-          precision: 0 
-        - name: lsn
+          <<: {type: Rate, units: Memory, length: 5, precision: 0}
+        - name: write
           description: Bytes written per second
-          type: Rate
           key: status/innodb_data_written
-          units: Memory
-          length: 5
-          precision: 0 
-  cols:
-    - name: Hist
-      description: History list length
-      type: Gauge
-      key: status/innodb_history_list_length
-      units: Number
-      length: 5
-      precision: 0 
+          <<: {type: Rate, units: Memory, length: 5, precision: 0}
+  # cols:
+  #   - name: Hist
+  #     description: History list length
+  #     bigger: status/innodb_max_trx_id
+  #     smaller: status/innodb_oldest_view_low_limit_trx_id
+  #     <<: {type: Subtract, units: Number, length: 5, precision: 0}
+- name: innodb_flush
+  description: Innodb flushing metrics
+  groups:
+    - name: Flushing
+      description: Buffer Pool Flushing
+      cols:
+        - name: dirt
+          description: Buffer pool percent dirty
+          numerator: status/innodb_buffer_pool_pages_dirty
+          denominator: status/innodb_buffer_pool_pages_total
+          <<: {type: Percent, units: Percent, length: 5, precision: 1}    
+        - name: lruf
+          description: Pages flushed by LRU
+          key: status/innodb_buffer_pool_pages_lru_flushed
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: expf
+          description: Explicit flushes caused by LRU
+          bigger: status/innodb_buffer_pool_pages_flushed
+          smaller: status/innodb_buffer_pool_pages_lru_flushed
+          <<: {type: SubtractRate, units: Number, length: 5, precision: 1}
+    - name: Checkpoint
+      description: Redo log checkpointing
+      cols:
+        - name: age
+          description: Checkpoint age
+          key: status/innodb_checkpoint_age
+          <<: {type: Gauge, units: Memory, length: 5, precision: 0}
+        - name: '%max'
+          description: Percent of max checkpoint
+          numerator: status/innodb_checkpoint_age
+          denominator: status/innodb_checkpoint_max_age
+          <<: {type: Percent, units: Percent, length: 5, precision: 1}
+    - name: Writes
+      description: Page and data writes
+      cols:
+        - name: page
+          description: Pages written to disk
+          key: status/innodb_pages_written
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: data
+          description: Data writes
+          key: status/innodb_data_writes
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: bytes
+          description: Bytes written per second
+          key: status/innodb_data_written
+          <<: {type: Rate, units: Memory, length: 5, precision: 1}
+    - name: LSN
+      description: Redo log LSN growth
+      cols:
+        - name: curr
+          description: Log growth (log sequence number) per second
+          key: status/innodb_lsn_current
+          <<: {type: Rate, units: Memory, length: 5, precision: 2}
+        - name: chkpt
+          description: Checkpoint activity
+          key: status/innodb_lsn_last_checkpoint
+          <<: {type: Rate, units: Memory, length: 5, precision: 2}
+- name: innodb_rows
+  description: Innodb row metrics
+  groups:
+    - name: All Rows
+      description: All row metrics
+      cols:
+        - name: read
+          description: rows read
+          key: status/innodb_rows_read
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: dml
+          description: sum of insert, update, deletes (in following columns)
+          keys: 
+            - status/innodb_rows_inserted
+            - status/innodb_rows_updated
+            - status/innodb_rows_deleted
+          <<: {type: RateSum, units: Number, length: 5, precision: 1}
+        - name: ins
+          description: rows inserted
+          key: status/innodb_rows_inserted
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: upd
+          description: rows updated
+          key: status/innodb_rows_updated
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: del
+          description: rows deleted
+          key: status/innodb_rows_deleted
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+    - name: System Rows
+      description: System row metrics
+      cols:
+        - name: read
+          description: rows read
+          key: status/innodb_system_rows_read
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: dml
+          description: sum of insert, update, deletes (in following columns)
+          keys: 
+            - status/innodb_system_rows_inserted
+            - status/innodb_system_rows_updated
+            - status/innodb_system_rows_deleted
+          <<: {type: RateSum, units: Number, length: 5, precision: 1}
+        - name: ins
+          description: rows inserted
+          key: status/innodb_system_rows_inserted
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: upd
+          description: rows updated
+          key: status/innodb_system_rows_updated
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: del
+          description: rows deleted
+          key: status/innodb_system_rows_deleted
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+    - name: Pages
+      description: Page ops
+      cols:
+        - name: crted
+          description: Pages created
+          key: status/innodb_pages_created
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: read
+          description: Pages read
+          key: status/innodb_pages_read
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: read0
+          description: First Page read 
+          key: status/innodb_pages0_read
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
+        - name: wrte
+          description: Pages written
+          key: status/innodb_pages_written
+          <<: {type: Rate, units: Number, length: 5, precision: 1}
 - name: commands
   description: Sorted list of all command run in the interval
   cols:
