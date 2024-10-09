@@ -29,8 +29,8 @@ func TestRateSumCol(t *testing.T) {
 	}
 }
 
-func TestRateSumColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestRateSumCol()
+func TestRateSumColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestRateSumCol()
 }
 
 func TestRateSumColParse(t *testing.T) {
@@ -45,7 +45,7 @@ func TestRateSumColParse(t *testing.T) {
   precision: 0
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {

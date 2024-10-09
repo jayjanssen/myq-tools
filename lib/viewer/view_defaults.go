@@ -55,7 +55,7 @@ func ListViews() []string {
 }
 
 // Get the named Viewer, or return an error
-func GetViewer(name string) (StateViewer, error) {
+func GetViewer(name string) (Viewer, error) {
 	view, ok := views[name]
 	if !ok {
 		return nil, fmt.Errorf("view %s not found", name)

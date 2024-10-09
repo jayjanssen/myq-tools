@@ -21,8 +21,8 @@ func getTestPercentCol() PercentCol {
 	return rc
 }
 
-func TestPercentColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestPercentCol()
+func TestPercentColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestPercentCol()
 }
 
 func getTestPercentState(numerator, denominator string) loader.StateReader {

@@ -12,16 +12,16 @@ func getTestGroupCol() GroupCol {
 	gc.Description = "Connection related metrics"
 	gc.Type = "Group"
 
-	gc.Cols = make(StateViewerList, 2)
+	gc.Cols = make(ViewerList, 2)
 	gc.Cols[0] = getTestRateCol()
 	gc.Cols[1] = getTestGaugeCol()
 
 	return gc
 }
 
-func TestGroupColImplementsStateViewer(t *testing.T) {
+func TestGroupColImplementsViewer(t *testing.T) {
 	gc := getTestGroupCol()
-	var _ StateViewer = gc
+	var _ Viewer = gc
 }
 
 // Create a state reader to test with

@@ -38,5 +38,5 @@ func (c DiffCol) getDiff(sr loader.StateReader) (float64, error) {
 	}
 
 	// Return the calculated rate
-	return CalculateDiff(cur, prev), nil
+	return calculateDiff(cur, prev), nil
 }

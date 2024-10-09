@@ -27,8 +27,8 @@ func TestStringCol(t *testing.T) {
 	}
 }
 
-func TestStringColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestStringCol()
+func TestStringColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestStringCol()
 }
 
 func TestStringColParse(t *testing.T) {
@@ -40,7 +40,7 @@ func TestStringColParse(t *testing.T) {
   length: 1
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {

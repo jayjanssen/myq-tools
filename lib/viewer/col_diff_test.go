@@ -29,8 +29,8 @@ func TestDiffCol(t *testing.T) {
 	}
 }
 
-func TestDiffColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestDiffCol()
+func TestDiffColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestDiffCol()
 }
 
 func TestDiffColParse(t *testing.T) {
@@ -44,7 +44,7 @@ func TestDiffColParse(t *testing.T) {
   precision: 0 
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {

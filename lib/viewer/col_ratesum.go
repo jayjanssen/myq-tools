@@ -44,5 +44,5 @@ func (rsc RateSumCol) getRate(sr loader.StateReader) (float64, error) {
 	}
 
 	// Return the calculated rate
-	return CalculateRate(curSum, prevSum, sr.SecondsDiff()), nil
+	return calculateRate(curSum, prevSum, sr.SecondsDiff()), nil
 }

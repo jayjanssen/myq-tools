@@ -42,7 +42,7 @@ func (c defaultCol) GetHeader(sr loader.StateReader) []string {
 	return []string{FitString(c.Name, c.Length)}
 }
 
-// Blank line for this view
-func (c defaultCol) GetBlankLine() string {
+// Blank space for this col
+func (c defaultCol) GetBlank() string {
 	return FitString(` `, c.Length)
 }

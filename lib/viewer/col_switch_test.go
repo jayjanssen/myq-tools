@@ -36,8 +36,8 @@ func TestSwitchCol(t *testing.T) {
 	}
 }
 
-func TestSwitchColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestSwitchCol()
+func TestSwitchColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestSwitchCol()
 }
 
 func TestSwitchColParse(t *testing.T) {
@@ -57,7 +57,7 @@ func TestSwitchColParse(t *testing.T) {
     Joined: Jned
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {
