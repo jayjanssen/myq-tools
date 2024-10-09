@@ -6,7 +6,13 @@ install:
 	done
 
 test:
-	@for dir in $(shell ls -d lib/); do \
+	@for dir in $(shell ls -d lib); do \
 		cd $$dir && go test ./...; \
 		cd ..; \
+	done
+
+benchmark:
+	@for dir in $(shell ls -d lib/*); do \
+		pushd $$dir && go test -bench=. -benchmem ./...; \
+		popd; \
 	done
