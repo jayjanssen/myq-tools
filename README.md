@@ -11,6 +11,6 @@ Currently there is a single tool, 'myq_status'.  More tools may be added in the 
 
 ## Running development/latest version
 1. Clone this repo
-2. cd <repo>/cli/myq-status
+2. cd <repo>/myq-status
 3. go install
 
