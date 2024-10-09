@@ -1,49 +1,65 @@
 package viewer
 
 import (
-	_ "embed"
+	"embed"
 	"fmt"
-	"sort"
+	"io/fs"
 
 	"gopkg.in/yaml.v3"
 )
 
 var (
-	ViewNames []string
-	Views     map[string]View
+	viewNames []string
+	views     map[string]View
 )
 
-//go:embed view_defaults.yaml
-var defaultViewYaml string
+//go:embed views/*.yaml
+var viewFiles embed.FS
 
+// Load the default views from the embedded files
 func LoadDefaultViews() error {
-	return ParseViews(defaultViewYaml)
+	// get the list of files
+	fileNames, err := fs.Glob(viewFiles, "views/*.yaml")
+	if err != nil {
+		return err
+	}
+
+	// read and parse each file and add it to the Views map
+	views = make(map[string]View)
+	for _, fileName := range fileNames {
+		bytes, err := fs.ReadFile(viewFiles, fileName)
+		if err != nil {
+			return err
+		}
+
+		// Each file could have multiple views
+		var parsedViews []View
+		err = yaml.Unmarshal(bytes, &parsedViews)
+		if err != nil {
+			return err
+		}
+
+		// Add the parsed views to the global map
+		for _, view := range parsedViews {
+			viewNames = append(viewNames, view.Name)
+			views[view.Name] = view
+		}
+	}
+
+	return nil
 }
 
-// Get the name Viewer, or return an error
+// List the names of all the Views
+func ListViews() []string {
+	return viewNames
+}
+
+// Get the named Viewer, or return an error
 func GetViewer(name string) (StateViewer, error) {
-	view, ok := Views[name]
+	view, ok := views[name]
 	if !ok {
 		return nil, fmt.Errorf("view %s not found", name)
 	} else {
 		return view, nil
 	}
-}
-
-func ParseViews(yaml_str string) error {
-	var views []View
-	err := yaml.Unmarshal([]byte(yaml_str), &views)
-	if err != nil {
-		return err
-	}
-
-	Views = make(map[string]View)
-
-	// construct the Views map
-	for _, view := range views {
-		ViewNames = append(ViewNames, view.Name)
-		Views[view.Name] = view
-	}
-	sort.Strings(ViewNames)
-	return nil
 }
