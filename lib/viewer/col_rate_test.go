@@ -29,8 +29,8 @@ func TestRateCol(t *testing.T) {
 	}
 }
 
-func TestRateColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestRateCol()
+func TestRateColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestRateCol()
 }
 
 func TestRateColParse(t *testing.T) {
@@ -44,7 +44,7 @@ func TestRateColParse(t *testing.T) {
   precision: 0
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {
@@ -150,7 +150,7 @@ func TestRateColBadSourceKey(t *testing.T) {
   precision: 0
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err == nil {

@@ -3,19 +3,44 @@ package viewer
 import (
 	"fmt"
 
+	"github.com/jayjanssen/myq-tools/lib/loader"
 	"gopkg.in/yaml.v3"
 )
 
-// A list of things that implement StateViewer
-type StateViewerList []StateViewer
+// A Viewer represents the output of data from a State into a (usually) constrained width with a header and one or more lines of output per State
+type Viewer interface {
+	// Get name of the view
+	GetName() string
+
+	// Single line help for this viewer
+	GetShortHelp() string
+
+	// Detailed help for this viewer
+	GetDetailedHelp() []string
+
+	// A list of sources that this view requires
+	GetSources() ([]loader.SourceName, error)
+
+	// Header for this view, unclear if state is needed
+	GetHeader(loader.StateReader) []string
+
+	// Data for this view based on the state
+	GetData(loader.StateReader) []string
+
+	// Blank for this view when we need to pad extra lines
+	GetBlank() string
+}
+
+// A list of things that implement Viewer
+type ViewerList []Viewer
 
 type typesucker struct {
 	Type string `yaml:"type"`
 }
 
-// Convert StateViewerList entries into their individual types
-func (svl *StateViewerList) UnmarshalYAML(value *yaml.Node) error {
-	var newlist StateViewerList
+// Convert ViewerList entries into their individual types
+func (svl *ViewerList) UnmarshalYAML(value *yaml.Node) error {
+	var newlist ViewerList
 	for _, content := range value.Content {
 		typeobj := typesucker{}
 		err := content.Decode(&typeobj)

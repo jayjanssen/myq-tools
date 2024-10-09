@@ -36,7 +36,7 @@ func GetTermSize() (int, int) {
 // }
 
 // Calculate diff between two numbers, if negative, just return bigger
-func CalculateDiff(bigger, smaller float64) float64 {
+func calculateDiff(bigger, smaller float64) float64 {
 	if bigger < smaller {
 		// special case -- if c is < p, the number rolled over or was reset, so best effort answer here.
 		return bigger
@@ -46,8 +46,8 @@ func CalculateDiff(bigger, smaller float64) float64 {
 }
 
 // Calculate the rate of change between two values, given the time difference between them
-func CalculateRate(bigger, smaller, seconds float64) float64 {
-	diff := CalculateDiff(bigger, smaller)
+func calculateRate(bigger, smaller, seconds float64) float64 {
+	diff := calculateDiff(bigger, smaller)
 	if seconds <= 0 { // negative seconds is weird
 		return diff
 	} else {
@@ -67,7 +67,7 @@ func FitString(input string, length int) string {
 }
 
 // helper function to fit a plain string to our Length
-func FitStringLeft(input string, length int) string {
+func fitStringLeft(input string, length int) string {
 	if len(input) > int(length) {
 		return input[0:length] // First width characters
 	} else {
@@ -75,8 +75,8 @@ func FitStringLeft(input string, length int) string {
 	}
 }
 
-// Generate a combined set of lines for all given StateViewers, blank lines go on top of "shorter" outputs
-func pushColOutputDown(svs StateViewerList, getColOut func(sv StateViewer) []string) (result []string) {
+// Generate a combined set of lines for all given Viewers, blank lines go on top of "shorter" outputs
+func pushColOutputDown(svs ViewerList, getColOut func(sv Viewer) []string) (result []string) {
 	// Collect the string arrays from each column
 	colsOutput := make([][]string, len(svs))
 	maxLines := 0
@@ -101,7 +101,7 @@ func pushColOutputDown(svs StateViewerList, getColOut func(sv StateViewer) []str
 			// If staggeredI is negative, print a Blank, otherwise use the colOut
 			if staggeredI < 0 {
 				col := svs[colI]
-				lineStr += col.GetBlankLine()
+				lineStr += col.GetBlank()
 			} else {
 				lineStr += colOut[staggeredI]
 			}
@@ -115,8 +115,8 @@ func pushColOutputDown(svs StateViewerList, getColOut func(sv StateViewer) []str
 	return
 }
 
-// Generate a combined set of lines for all given StateViewers, blank lines go under "shorter" outputs
-func pushColOutputUp(svs StateViewerList, getColOut func(sv StateViewer) []string) (result []string) {
+// Generate a combined set of lines for all given Viewers, blank lines go under "shorter" outputs
+func pushColOutputUp(svs ViewerList, getColOut func(sv Viewer) []string) (result []string) {
 	// Collect the string arrays from each column
 	colsOutput := make([][]string, len(svs))
 	maxLines := 0
@@ -139,7 +139,7 @@ func pushColOutputUp(svs StateViewerList, getColOut func(sv StateViewer) []strin
 			if line > colLines-1 {
 				// No, print a blank
 				col := svs[colI]
-				lineStr += col.GetBlankLine()
+				lineStr += col.GetBlank()
 			} else {
 				lineStr += colOut[line]
 			}

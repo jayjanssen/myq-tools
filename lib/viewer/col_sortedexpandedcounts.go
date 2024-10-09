@@ -35,7 +35,7 @@ func (secc SortedExpandedCountsCol) GetData(sr loader.StateReader) (output []str
 			prev = prevssp.GetF(sk)
 		}
 
-		diff := CalculateDiff(curr, prev)
+		diff := calculateDiff(curr, prev)
 		// Skip those with no activity
 		if diff <= 0 {
 			continue

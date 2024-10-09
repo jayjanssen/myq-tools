@@ -16,9 +16,9 @@ func getTestView() View {
 	return view
 }
 
-func TestViewImplementsStateViewer(t *testing.T) {
+func TestViewImplementsViewer(t *testing.T) {
 	view := getTestView()
-	var _ StateViewer = view
+	var _ Viewer = view
 }
 
 // Create a state reader to test with

@@ -31,8 +31,8 @@ func TestSubtractCol(t *testing.T) {
 	}
 }
 
-func TestSubtractColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestSubtractCol()
+func TestSubtractColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestSubtractCol()
 }
 
 func TestSubtractColParse(t *testing.T) {
@@ -47,7 +47,7 @@ func TestSubtractColParse(t *testing.T) {
   precision: 0 
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {

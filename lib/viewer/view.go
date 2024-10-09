@@ -21,7 +21,7 @@ var timeCol SampleTimeCol = NewSampleTimeCol()
 // Get help for this view
 func (v View) GetDetailedHelp() (output []string) {
 	// Gather the svs
-	var svs StateViewerList
+	var svs ViewerList
 	for _, group := range v.Groups {
 		svs = append(svs, group)
 	}
@@ -47,8 +47,8 @@ func (v View) GetSources() ([]loader.SourceName, error) {
 
 // Header for this view, unclear if state is needed
 func (v View) GetHeader(sr loader.StateReader) []string {
-	// Collect all the StateViewers for this view
-	var svs StateViewerList
+	// Collect all the Viewers for this view
+	var svs ViewerList
 	svs = append(svs, timeCol)
 	for _, group := range v.Groups {
 		svs = append(svs, group)
@@ -56,7 +56,7 @@ func (v View) GetHeader(sr loader.StateReader) []string {
 	svs = append(svs, v.Cols...)
 
 	// Get the header output of all those svs
-	colOuts := pushColOutputDown(svs, func(sv StateViewer) []string {
+	colOuts := pushColOutputDown(svs, func(sv Viewer) []string {
 		return sv.GetHeader(sr)
 	})
 
@@ -70,8 +70,8 @@ func (v View) GetHeader(sr loader.StateReader) []string {
 
 // Data for this view based on the state
 func (v View) GetData(sr loader.StateReader) (result []string) {
-	// Collect all the StateViewers for this view
-	var svs StateViewerList
+	// Collect all the Viewers for this view
+	var svs ViewerList
 	svs = append(svs, timeCol)
 	for _, group := range v.Groups {
 		svs = append(svs, group)
@@ -79,7 +79,7 @@ func (v View) GetData(sr loader.StateReader) (result []string) {
 	svs = append(svs, v.Cols...)
 
 	// Get the data output of all those svs
-	return pushColOutputUp(svs, func(sv StateViewer) []string {
+	return pushColOutputUp(svs, func(sv Viewer) []string {
 		return sv.GetData(sr)
 	})
 }

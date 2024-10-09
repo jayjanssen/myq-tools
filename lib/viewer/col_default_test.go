@@ -113,9 +113,9 @@ func TestColGetHeader(t *testing.T) {
 
 }
 
-func TestColGetBlankLine(t *testing.T) {
+func TestColGetBlank(t *testing.T) {
 	col := getTestCol()
-	line := col.GetBlankLine()
+	line := col.GetBlank()
 	if line != `    ` {
 		t.Errorf(`unexpected blank line: '%s'`, line)
 	}

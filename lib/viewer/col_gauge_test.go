@@ -29,8 +29,8 @@ func TestGaugeCol(t *testing.T) {
 	}
 }
 
-func TestGaugeColImplementsStateViewer(t *testing.T) {
-	var _ StateViewer = getTestGaugeCol()
+func TestGaugeColImplementsViewer(t *testing.T) {
+	var _ Viewer = getTestGaugeCol()
 }
 
 func TestGaugeColParse(t *testing.T) {
@@ -44,7 +44,7 @@ func TestGaugeColParse(t *testing.T) {
   precision: 0
 `
 
-	var cols StateViewerList
+	var cols ViewerList
 	err := yaml.Unmarshal([]byte(yaml_str), &cols)
 
 	if err != nil {
