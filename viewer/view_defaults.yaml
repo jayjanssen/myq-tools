@@ -75,13 +75,14 @@
           units: Number
           length: 4
           precision: 0
-        - name: idle
-          description: Threads idle threads
-          key: status/threadpool_idle_threads
-          type: Gauge
+        - name: run
+          description: Threadpool threads running
+          type: Subtract
+          bigger: status/threadpool_threads
+          smaller: status/threadpool_idle_threads
           units: Number
           length: 4
-          precision: 0
+          precision: 0 
     - name: Tables
       description: Table metrics
       cols:
