@@ -12,11 +12,11 @@ func TestDefsParse(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(Views) < 1 {
+	if len(views) < 1 {
 		t.Fatal("No views parsed!")
 	}
 
-	cttf, ok := Views[`cttf`]
+	cttf, ok := views[`cttf`]
 	if !ok {
 		t.Fatalf("Could not get `cttf` view: %v", err)
 	}

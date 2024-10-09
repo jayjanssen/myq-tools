@@ -88,7 +88,7 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "\nViews:")
 
-		for _, name := range viewer.ViewNames {
+		for _, name := range viewer.ListViews() {
 			view, _ := viewer.GetViewer(name)
 			fmt.Fprintf(os.Stderr, "   %s\n", view.GetShortHelp())
 		}

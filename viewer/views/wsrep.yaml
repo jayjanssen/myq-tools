@@ -1,0 +1,157 @@
+- name: wsrep
+  description: Galera Wsrep statistics
+  cols:
+  groups:
+    - name: Cluster
+      description: Cluster-wide status (at least according to this node)
+      cols:
+        - name: P
+          description: Primary (P) or Non-primary (N)
+          key: status/wsrep_cluster_status
+          type: String
+          length: 1
+        - name: cnf
+          description: Cluster configuration id (increments every time a node joins/leaves the cluster)
+          key: status/wsrep_cluster_conf_id
+          type: String
+          length: 3
+          fromend: true
+        - name: '#'
+          type: Gauge
+          key: status/wsrep_cluster_size
+          units: Number
+          length: 2
+          precision: 0 
+    - name: Node
+      description: Node's specific state
+      cols:
+        - name: i
+          description: Index of node
+          type: Gauge
+          key: status/wsrep_local_index
+          units: Number
+          length: 2
+        - name: state
+          description: State of this node
+          type: Switch
+          key: status/wsrep_local_state_comment
+          length: 4
+          cases:
+            Joining: Jing
+            'Joining: preparing for State Transfer': 'J:Pr'
+            'Joining: requested State Transfer': 'J:Rq'
+            'Joining: receiving State Transfer': 'J:Rc'
+            'Joining: State Transfer request failed': 'J:RF'
+            'Joining: State Transfer failed': 'J:F'
+            Joined: Jned
+    - name: Outbound
+      description: Sent replication events
+      cols:
+        - name: msgs
+          description: Replicated messages (usually transactions) per second
+          type: Rate
+          key: status/wsrep_replicated
+          units: Number
+          length: 4
+          precision: 0 
+        - name: data
+          description: Replicated bytes per second
+          type: Rate
+          key: status/wsrep_replicated_bytes
+          units: Memory
+          length: 4
+          precision: 0 
+        - name: 'queue'
+          description: Outbound replication queue
+          type: Gauge
+          key: status/wsrep_local_send_queue
+          units: Number
+          length: 3
+          precision: 0    
+    - name: Inbound
+      description: Received replication events
+      cols:
+        - name: msgs
+          description: Received messages (usually transactions) per second
+          type: Rate
+          key: status/wsrep_received
+          units: Number
+          length: 4
+          precision: 0 
+        - name: data
+          description: Received bytes per second
+          type: Rate
+          key: status/wsrep_received_bytes
+          units: Memory
+          length: 4
+          precision: 0 
+        - name: 'queue'
+          description: Received replication queue
+          type: Gauge
+          key: status/wsrep_local_recv_queue
+          units: Number
+          length: 3
+          precision: 0    
+    - name: FlowC
+      description: Flow control stats
+      cols:
+        - name: paused
+          description: Flow control paused (could be from anywhere in the cluster)
+          type: Diff
+          key: status/wsrep_flow_control_paused_ns
+          units: Nanosecond
+          length: 5
+          precision: 0 
+        - name: snt
+          description: Flow control sent messages (could be starting or stopping FC)
+          type: Diff
+          key: status/wsrep_flow_control_sent
+          units: Number
+          length: 3
+          precision: 0 
+    - name: Conflcts
+      description: Galera replication conflicts (on this node)
+      cols:
+        - name: lcf
+          description: Local certification failures since last sample
+          type: Diff
+          key: status/wsrep_local_cert_failures
+          units: Number
+          length: 3
+          precision: 0 
+        - name: bfa
+          description: Brute force aborts since last sample
+          type: Diff
+          key: status/wsrep_local_bf_aborts
+          units: Number
+          length: 3
+          precision: 0 
+    - name: Gcache
+      description: Galera cache (gcache) information
+      cols:
+        - name: ist
+          description: Gcached transactions
+          type: Subtract
+          bigger: status/wsrep_last_committed
+          smaller: status/wsrep_local_cached_downto
+          units: Number
+          length: 5
+          precision: 0 
+        - name: idx
+          description: Certification index size (keys)
+          type: Gauge
+          key: status/wsrep_cert_index_size
+          units: Number
+          length: 4
+          precision: 0 
+    - name: Apply
+      description: Theoretical and actual apply efficiency
+      cols:
+        - name: '%ef'
+          description: Percent of threads being used
+          type: Percent
+          numerator: status/wsrep_apply_window
+          denominator: variables/wsrep_slave_threads
+          units: Percent
+          length: 4
+          precision: 0 
