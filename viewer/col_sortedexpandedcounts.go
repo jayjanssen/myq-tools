@@ -24,6 +24,7 @@ func (secc SortedExpandedCountsCol) GetData(sr loader.StateReader) (output []str
 	}
 
 	// Go through all the expandedKeys and compute their diffs
+	var total_diff float64
 	var all_diffs []float64
 	diff_variables := map[float64][]string{}
 	for _, sk := range secc.expandedKeys {
@@ -35,11 +36,11 @@ func (secc SortedExpandedCountsCol) GetData(sr loader.StateReader) (output []str
 		}
 
 		diff := CalculateDiff(curr, prev)
-
 		// Skip those with no activity
 		if diff <= 0 {
 			continue
 		}
+		total_diff += diff
 
 		// Create the [] slice for a rate we haven't seen yet
 		if _, ok := diff_variables[diff]; ok == false {
@@ -51,11 +52,16 @@ func (secc SortedExpandedCountsCol) GetData(sr loader.StateReader) (output []str
 		diff_variables[diff] = append(diff_variables[diff], sk.Key)
 	}
 
+	// output the total diff
+	numStr := FitString(secc.fitNumber(total_diff, 0), secc.Length)
+	line := fmt.Sprintf("%s %v", numStr, "total")
+	output = append(output, line)
+
 	// Sort all the rates so we can iterate through them from big to small
 	sort.Sort(sort.Reverse(sort.Float64Slice(all_diffs)))
 
 	for _, diff := range all_diffs {
-		numStr := FitString(secc.fitNumber(diff, 0), 10)
+		numStr := FitString(secc.fitNumber(diff, 0), secc.Length)
 		line := fmt.Sprintf("%s %v", numStr, diff_variables[diff])
 		output = append(output, line)
 	}

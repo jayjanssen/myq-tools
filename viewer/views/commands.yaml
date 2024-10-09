@@ -1,11 +1,18 @@
 - name: commands
   description: Sorted list of all command run in the interval
   cols:
-    - name: Counts
+    - name: query
+      descriptions: Queries per second
+      type: Rate
+      key: status/queries
+      units: Number
+      length: 5
+      precision: 0
+    - name: counts
       description: All commands tracked by the Com_* counters
       type: SortedExpandedCounts
       keys:
         - 'status/^com_*'
       units: Number
-      length: 10
+      length: 5
       precision: 0
