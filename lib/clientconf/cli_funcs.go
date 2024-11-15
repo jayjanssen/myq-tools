@@ -32,6 +32,7 @@ func SetMySQLFlags() {
 	flag.StringVar(&sslKeyFlag, "ssl-key", "", "mysql ssl key")
 	flag.StringVar(&sslCaFlag, "ssl-ca", "", "mysql ssl CA")
 
+	flag.BoolVar(&enableCleartextPlugin, "enable-cleartext-plugin", false, "mysql enable cleartext plugin")
 }
 
 // Creates a [https://pkg.go.dev/github.com/go-sql-driver/mysql#Config]('Config') option from the go-sql-driver/mysql from three sources:

@@ -81,6 +81,7 @@ var socketFlag string
 var sslCertFlag string
 var sslKeyFlag string
 var sslCaFlag string
+var enableCleartextPlugin bool
 
 // ssl cipher support TODO.  MySQL cipher names don't match go's crypto/tls
 // package of course:
@@ -113,6 +114,10 @@ func applyFlags(cnf *ini.File) {
 	if sslCaFlag != "" {
 		cnf.Section(`client`).NewKey(`ssl-ca`, sslCaFlag)
 	}
+	if enableCleartextPlugin {
+		cnf.Section(`client`).NewBooleanKey(`enable-cleartext-plugin`)
+	}
+
 }
 
 // Translate cnf to mysql.Config
@@ -155,7 +160,10 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	// Default connection to 127.0.0.1:3306
 	if config.Net == "" {
 		config.Addr = `127.0.0.1:3306`
+	}
 
+	if _, ok := clientMap[`enable-cleartext-plugin`]; ok {
+		config.AllowCleartextPasswords = true
 	}
 
 	// SSL Stuff
