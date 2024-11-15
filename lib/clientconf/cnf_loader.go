@@ -22,6 +22,11 @@ func getCnfFiles() []string {
 		`/etc/mysql/my.cnf`,
 	}
 
+	// Add the --defaults-file if it was given
+	if defaultsFile != "" {
+		files = append(files, defaultsFile)
+	}
+
 	home, err := os.UserHomeDir()
 	if err == nil {
 		homedirFiles := []string{
@@ -53,17 +58,12 @@ func initCnf() *ini.File {
 	return cnf
 }
 
-// Parse a file or string into the given cnf
-func appendCnf(cnf *ini.File, input interface{}) error {
-	return cnf.Append(input)
-}
-
 // Append each of the given files to the cnf
 func appendFiles(cnf *ini.File, files []string) error {
 	var errs *multierror.Error
 
 	for _, file := range files {
-		err := appendCnf(cnf, file)
+		err := cnf.Append(file)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
@@ -72,6 +72,7 @@ func appendFiles(cnf *ini.File, files []string) error {
 }
 
 // Command line flags
+var defaultsFile string
 var userFlag string
 var passwordFlag string
 var hostFlag string
