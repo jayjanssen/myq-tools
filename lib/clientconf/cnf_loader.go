@@ -81,6 +81,7 @@ var socketFlag string
 var sslCertFlag string
 var sslKeyFlag string
 var sslCaFlag string
+var sslMode string
 var enableCleartextPlugin bool
 
 // ssl cipher support TODO.  MySQL cipher names don't match go's crypto/tls
@@ -114,6 +115,10 @@ func applyFlags(cnf *ini.File) {
 	if sslCaFlag != "" {
 		cnf.Section(`client`).NewKey(`ssl-ca`, sslCaFlag)
 	}
+	if sslMode != "" {
+		cnf.Section(`client`).NewKey(`ssl-mode`, sslMode)
+	}
+
 	if enableCleartextPlugin {
 		cnf.Section(`client`).NewBooleanKey(`enable-cleartext-plugin`)
 	}
@@ -168,6 +173,17 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 
 	// SSL Stuff
 	var errs *multierror.Error
+	TLSConfig := &tls.Config{}
+	useTLS := false
+
+	// Handle SSL mode
+	if sslmode, ok := clientMap[`ssl-mode`]; ok {
+		switch sslmode {
+		case `VERIFY_CA`: // CA only
+			TLSConfig.InsecureSkipVerify = true
+			useTLS = true
+		}
+	}
 
 	// Handle CA
 	rootCertPool := x509.NewCertPool()
@@ -178,6 +194,9 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 		} else {
 			if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
 				errs = multierror.Append(errs, errors.New("failed to append PEM"))
+			} else {
+				TLSConfig.RootCAs = rootCertPool
+				useTLS = true
 			}
 		}
 	}
@@ -194,12 +213,14 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 			errs = multierror.Append(errs, fmt.Errorf(`ssl-cert/key error: %v`, err))
 		} else {
 			clientCert = append(clientCert, certs)
-			mysql.RegisterTLSConfig("custom", &tls.Config{
-				RootCAs:      rootCertPool,
-				Certificates: clientCert,
-			})
-			config.TLSConfig = `custom`
+			TLSConfig.Certificates = clientCert
+			useTLS = true
 		}
+	}
+
+	if useTLS {
+		mysql.RegisterTLSConfig("custom", TLSConfig)
+		config.TLSConfig = `custom`
 	}
 
 	return config, errs.ErrorOrNil()
