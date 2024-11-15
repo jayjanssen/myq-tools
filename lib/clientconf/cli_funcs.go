@@ -11,6 +11,8 @@ import (
 
 // Set the standard MySQL flags we expect
 func SetMySQLFlags() {
+	flag.StringVar(&defaultsFile, "defaults-file", "", "mysql defaults file")
+
 	flag.StringVar(&userFlag, "user", "", "mysql user, defaults to your username")
 	flag.StringVar(&userFlag, "u", "", "short for -user")
 
@@ -29,6 +31,7 @@ func SetMySQLFlags() {
 	flag.StringVar(&sslCertFlag, "ssl-cert", "", "mysql ssl cert")
 	flag.StringVar(&sslKeyFlag, "ssl-key", "", "mysql ssl key")
 	flag.StringVar(&sslCaFlag, "ssl-ca", "", "mysql ssl CA")
+
 }
 
 // Creates a [https://pkg.go.dev/github.com/go-sql-driver/mysql#Config]('Config') option from the go-sql-driver/mysql from three sources:
