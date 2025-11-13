@@ -127,3 +127,72 @@ func TestCnfToConfigSSL(t *testing.T) {
 	}
 
 }
+
+func TestLoosePrefix(t *testing.T) {
+	// Test that loose- prefixed keys are recognized
+	files := []string{
+		`./testcnf/.my.cnf.loose`,
+	}
+
+	cnf := initCnf()
+	err := appendFiles(cnf, files)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if !cnf.HasSection(`client`) {
+		t.Fatalf(`no [client] section found: %v`, cnf.SectionStrings())
+	}
+
+	clientMap := cnf.Section(`client`).KeysHash()
+
+	// Test that loose- prefixed keys are accessible via getConfigValue
+	if user, ok := getConfigValue(clientMap, `user`); !ok || user != `standarduser` {
+		t.Errorf(`expected standarduser from standard key, got: %s`, user)
+	}
+
+	if password, ok := getConfigValue(clientMap, `password`); !ok || password != `loosepass` {
+		t.Errorf(`expected loosepass from loose- prefix, got: %s`, password)
+	}
+
+	if host, ok := getConfigValue(clientMap, `host`); !ok || host != `loosehost.example.com` {
+		t.Errorf(`expected loosehost.example.com from loose- prefix, got: %s`, host)
+	}
+
+	if port, ok := getConfigValue(clientMap, `port`); !ok || port != `3307` {
+		t.Errorf(`expected 3307 from loose- prefix, got: %s`, port)
+	}
+
+	if sslmode, ok := getConfigValue(clientMap, `ssl-mode`); !ok || sslmode != `VERIFY_CA` {
+		t.Errorf(`expected VERIFY_CA from loose- prefix, got: %s`, sslmode)
+	}
+
+	if _, ok := getConfigValue(clientMap, `enable-cleartext-plugin`); !ok {
+		t.Errorf(`expected enable-cleartext-plugin to be found via loose- prefix`)
+	}
+
+	// Test cnfToConfig with loose- prefixed keys
+	config, err := cnfToConfig(cnf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Standard key should take precedence over loose-user
+	if config.User != `standarduser` {
+		t.Errorf(`expected standarduser, got: %s`, config.User)
+	}
+
+	// These should come from loose- prefixed keys
+	if config.Passwd != `loosepass` {
+		t.Errorf(`expected loosepass, got: %s`, config.Passwd)
+	}
+
+	expectedAddr := `loosehost.example.com:3307`
+	if config.Addr != expectedAddr {
+		t.Errorf(`expected %s, got: %s`, expectedAddr, config.Addr)
+	}
+
+	if !config.AllowCleartextPasswords {
+		t.Errorf(`expected AllowCleartextPasswords to be true`)
+	}
+}

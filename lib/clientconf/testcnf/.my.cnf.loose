@@ -1,0 +1,13 @@
+[client]
+# Test file with loose- prefix support
+loose-user=looseuser
+loose-password=loosepass
+loose-host=loosehost.example.com
+loose-port=3307
+
+# Test that standard keys take precedence
+user=standarduser
+
+# Test loose- with SSL options
+loose-ssl-mode=VERIFY_CA
+loose-enable-cleartext-plugin
