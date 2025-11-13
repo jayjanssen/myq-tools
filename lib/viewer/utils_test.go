@@ -2,7 +2,7 @@ package viewer
 
 import "testing"
 
-func TestcalculateDiff(t *testing.T) {
+func TestCalculateDiff(t *testing.T) {
 	diff := calculateDiff(200, 100)
 	if diff != 100 {
 		t.Errorf(`unexpected diff: %f`, diff)
@@ -14,7 +14,7 @@ func TestcalculateDiff(t *testing.T) {
 	}
 }
 
-func TestcalculateRate(t *testing.T) {
+func TestCalculateRate(t *testing.T) {
 	rate := calculateRate(200, 100, 5)
 	if rate != 20 {
 		t.Errorf(`unexpected rate: %f`, rate)
@@ -38,7 +38,7 @@ func TestFitString(t *testing.T) {
 	}
 }
 
-func TestfitStringLeft(t *testing.T) {
+func TestFitStringLeft(t *testing.T) {
 	out := fitStringLeft("fooey", 4)
 	if len(out) != 4 && out != "fooe" {
 		t.Errorf("truncated string improperly: '%s'", out)
