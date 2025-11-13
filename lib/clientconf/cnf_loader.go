@@ -125,6 +125,20 @@ func applyFlags(cnf *ini.File) {
 
 }
 
+// getConfigValue looks up a key in the clientMap, checking for both the standard
+// key name and the loose- prefixed version. The standard key takes precedence.
+// This implements MySQL's loose- prefix behavior where options prefixed with loose-
+// are processed normally but won't cause errors if unrecognized.
+func getConfigValue(clientMap map[string]string, key string) (string, bool) {
+	if val, ok := clientMap[key]; ok {
+		return val, true
+	}
+	if val, ok := clientMap[`loose-`+key]; ok {
+		return val, true
+	}
+	return "", false
+}
+
 // Translate cnf to mysql.Config
 func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	config := mysql.NewConfig()
@@ -136,26 +150,26 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	clientMap := cnf.Section(`client`).KeysHash()
 
 	// Basic credentials
-	if cnfval, ok := clientMap[`user`]; ok {
+	if cnfval, ok := getConfigValue(clientMap, `user`); ok {
 		config.User = cnfval
 	}
-	if cnfval, ok := clientMap[`password`]; ok {
+	if cnfval, ok := getConfigValue(clientMap, `password`); ok {
 		config.Passwd = cnfval
 	}
 
 	// Build network info
-	if socket, ok := clientMap[`socket`]; ok {
+	if socket, ok := getConfigValue(clientMap, `socket`); ok {
 		config.Net = `unix`
 		config.Addr = socket
 	} else {
 		config.Net = `tcp`
 
-		host, hostok := clientMap[`host`]
+		host, hostok := getConfigValue(clientMap, `host`)
 		if !hostok {
 			host = `127.0.0.1`
 		}
 
-		port, portok := clientMap[`port`]
+		port, portok := getConfigValue(clientMap, `port`)
 		if !portok {
 			port = `3306`
 		}
@@ -167,7 +181,7 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 		config.Addr = `127.0.0.1:3306`
 	}
 
-	if _, ok := clientMap[`enable-cleartext-plugin`]; ok {
+	if _, ok := getConfigValue(clientMap, `enable-cleartext-plugin`); ok {
 		config.AllowCleartextPasswords = true
 	}
 
@@ -177,7 +191,7 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	useTLS := false
 
 	// Handle SSL mode
-	if sslmode, ok := clientMap[`ssl-mode`]; ok {
+	if sslmode, ok := getConfigValue(clientMap, `ssl-mode`); ok {
 		switch sslmode {
 		case `VERIFY_CA`: // CA only
 			TLSConfig.InsecureSkipVerify = true
@@ -187,7 +201,7 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 
 	// Handle CA
 	rootCertPool := x509.NewCertPool()
-	if sslca, ok := clientMap[`ssl-ca`]; ok {
+	if sslca, ok := getConfigValue(clientMap, `ssl-ca`); ok {
 		pem, err := os.ReadFile(sslca)
 		if err != nil {
 			errs = multierror.Append(errs, fmt.Errorf(`ssl-ca error: %v`, err))
@@ -202,8 +216,8 @@ func cnfToConfig(cnf *ini.File) (*mysql.Config, error) {
 	}
 
 	// Handle cert/key
-	sslcert, certok := clientMap[`ssl-cert`]
-	sslkey, keyok := clientMap[`ssl-key`]
+	sslcert, certok := getConfigValue(clientMap, `ssl-cert`)
+	sslkey, keyok := getConfigValue(clientMap, `ssl-key`)
 	if (certok && !keyok) || (!certok && keyok) {
 		errs = multierror.Append(errs, errors.New("need both ssl-cert and ssl-key set"))
 	} else if certok && keyok {
