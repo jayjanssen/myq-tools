@@ -101,6 +101,14 @@ func TestLiveLoaderGetSample(t *testing.T) {
 			t.Errorf("Expected uptime > 10, got: %d", uptime)
 		}
 
+		// Com_select == Int
+		comSelect, err := curr.GetString(SourceKey{`status`, `com_select`})
+		if err != nil {
+			t.Error(err)
+		}
+
+		t.Log("Com_select:", comSelect)
+
 	case <-time.After(2 * time.Second):
 		t.Error("Sample missing")
 	}
