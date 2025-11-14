@@ -1,12 +1,13 @@
 module github.com/jayjanssen/myq-tools
 
-go 1.25
+go 1.24.0
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.40.0
 	gopkg.in/yaml.v3 v3.0.1
+	rsc.io/script v0.0.2
 )
 
 require (
@@ -62,12 +63,13 @@ require (
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/tools v0.14.0 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 
 require (
-	github.com/go-sql-driver/mysql v1.9.3
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	gopkg.in/ini.v1 v1.67.0
 )

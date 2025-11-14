@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	fileRegister       map[string]struct{}
+	fileRegister       map[string]bool
 	fileRegisterLock   sync.RWMutex
 	readerRegister     map[string]func() io.Reader
 	readerRegisterLock sync.RWMutex
@@ -37,10 +37,10 @@ func RegisterLocalFile(filePath string) {
 	fileRegisterLock.Lock()
 	// lazy map init
 	if fileRegister == nil {
-		fileRegister = make(map[string]struct{})
+		fileRegister = make(map[string]bool)
 	}
 
-	fileRegister[strings.Trim(filePath, `"`)] = struct{}{}
+	fileRegister[strings.Trim(filePath, `"`)] = true
 	fileRegisterLock.Unlock()
 }
 
@@ -95,6 +95,7 @@ const defaultPacketSize = 16 * 1024 // 16KB is small enough for disk readahead a
 
 func (mc *okHandler) handleInFileRequest(name string) (err error) {
 	var rdr io.Reader
+	var data []byte
 	packetSize := defaultPacketSize
 	if mc.maxWriteSize < packetSize {
 		packetSize = mc.maxWriteSize
@@ -123,9 +124,9 @@ func (mc *okHandler) handleInFileRequest(name string) (err error) {
 	} else { // File
 		name = strings.Trim(name, `"`)
 		fileRegisterLock.RLock()
-		_, exists := fileRegister[name]
+		fr := fileRegister[name]
 		fileRegisterLock.RUnlock()
-		if mc.cfg.AllowAllFiles || exists {
+		if mc.cfg.AllowAllFiles || fr {
 			var file *os.File
 			var fi os.FileInfo
 
@@ -146,11 +147,9 @@ func (mc *okHandler) handleInFileRequest(name string) (err error) {
 	}
 
 	// send content packets
-	var data []byte
-
 	// if packetSize == 0, the Reader contains no data
 	if err == nil && packetSize > 0 {
-		data = make([]byte, 4+packetSize)
+		data := make([]byte, 4+packetSize)
 		var n int
 		for err == nil {
 			n, err = rdr.Read(data[4:])
@@ -172,7 +171,6 @@ func (mc *okHandler) handleInFileRequest(name string) (err error) {
 	if ioErr := mc.conn().writePacket(data[:4]); ioErr != nil {
 		return ioErr
 	}
-	mc.conn().syncSequence()
 
 	// read OK packet
 	if err == nil {

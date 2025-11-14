@@ -112,8 +112,6 @@ func (mf *mysqlField) typeDatabaseName() string {
 		return "VARCHAR"
 	case fieldTypeYear:
 		return "YEAR"
-	case fieldTypeVector:
-		return "VECTOR"
 	default:
 		return ""
 	}
@@ -200,7 +198,7 @@ func (mf *mysqlField) scanType() reflect.Type {
 		return scanTypeNullFloat
 
 	case fieldTypeBit, fieldTypeTinyBLOB, fieldTypeMediumBLOB, fieldTypeLongBLOB,
-		fieldTypeBLOB, fieldTypeVarString, fieldTypeString, fieldTypeGeometry, fieldTypeVector:
+		fieldTypeBLOB, fieldTypeVarString, fieldTypeString, fieldTypeGeometry:
 		if mf.charSet == binaryCollationID {
 			return scanTypeBytes
 		}

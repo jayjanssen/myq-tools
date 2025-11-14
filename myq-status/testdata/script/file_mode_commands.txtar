@@ -1,0 +1,16 @@
+# Test file mode with commands view
+# The -file flag allows us to test without a live MySQL connection
+exec myq_status -file sample_status.txt commands
+stdout 'time'
+
+-- sample_status.txt --
++-----------------------------------------------+----------------------------------------------------+
+| Variable_name                                 | Value                                              |
++-----------------------------------------------+----------------------------------------------------+
+| Aborted_clients                               | 3                                                  |
+| uptime                                        | 12345                                              |
+| Com_select                                    | 49706085                                           |
+| Com_insert                                    | 2569052                                            |
+| Com_update                                    | 123456                                             |
+| Com_delete                                    | 216524                                             |
++-----------------------------------------------+----------------------------------------------------+

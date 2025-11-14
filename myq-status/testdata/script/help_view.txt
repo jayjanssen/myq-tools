@@ -1,0 +1,3 @@
+# Test that -help flag for a specific view shows detailed help
+exec myq_status -help commands
+stderr 'Sorted list of all command'
