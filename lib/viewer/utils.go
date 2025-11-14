@@ -8,15 +8,32 @@ import (
 	"strings"
 )
 
-// this needs some error handling and testing love
+// GetTermSize returns the terminal height and width
+// Returns default values (24, 80) if unable to detect terminal size
 func GetTermSize() (int, int) {
 	cmd := exec.Command("stty", "size")
 	cmd.Stdin = os.Stdin
-	out, _ := cmd.Output()
-	vals := strings.Split(strings.TrimSpace(string(out)), " ")
+	out, err := cmd.Output()
+	if err != nil {
+		// Default terminal size if unable to detect
+		return 24, 80
+	}
 
-	height, _ := strconv.ParseInt(vals[0], 10, 64)
-	width, _ := strconv.ParseInt(vals[1], 10, 64)
+	vals := strings.Split(strings.TrimSpace(string(out)), " ")
+	if len(vals) != 2 {
+		// Default terminal size if parsing fails
+		return 24, 80
+	}
+
+	height, err := strconv.ParseInt(vals[0], 10, 64)
+	if err != nil {
+		height = 24
+	}
+
+	width, err := strconv.ParseInt(vals[1], 10, 64)
+	if err != nil {
+		width = 80
+	}
 
 	return int(height), int(width)
 }
