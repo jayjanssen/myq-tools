@@ -11,8 +11,10 @@ import (
 
 const (
 	// The commands we send to the mysql cli
-	STATUS_QUERY    string = "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_status"
-	VARIABLES_QUERY string = "SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables"
+	// Note: Using SHOW GLOBAL STATUS instead of performance_schema.global_status
+	// because MySQL 8.0.16+ removed Com_* counters from performance_schema
+	STATUS_QUERY    string = "SHOW GLOBAL STATUS"
+	VARIABLES_QUERY string = "SHOW GLOBAL VARIABLES"
 )
 
 // SHOW output via mysqladmin on a live server
