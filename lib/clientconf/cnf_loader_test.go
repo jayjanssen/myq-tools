@@ -26,7 +26,7 @@ func TestAppendFiles(t *testing.T) {
 	cnf := initCnf()
 	err := appendFiles(cnf, files)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	if !cnf.HasSection(`client`) {
@@ -137,7 +137,7 @@ func TestLoosePrefix(t *testing.T) {
 	cnf := initCnf()
 	err := appendFiles(cnf, files)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	if !cnf.HasSection(`client`) {
