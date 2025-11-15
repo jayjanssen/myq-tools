@@ -1,0 +1,4 @@
+# Test that running without arguments shows usage
+! exec myq_status
+stderr 'Usage:'
+stderr 'myq_status \[flags\] <view>'

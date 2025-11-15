@@ -254,6 +254,9 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/tools v0.14.0
+## explicit; go 1.18
+golang.org/x/tools/txtar
 # google.golang.org/grpc v1.75.1
 ## explicit; go 1.23.0
 # google.golang.org/protobuf v1.36.10
@@ -264,3 +267,8 @@ gopkg.in/ini.v1
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
+# rsc.io/script v0.0.2
+## explicit; go 1.21
+rsc.io/script
+rsc.io/script/internal/diff
+rsc.io/script/scripttest

@@ -1,0 +1,3 @@
+# Test that intervals less than 1 second are rejected
+! exec myq_status -interval 500ms com
+stderr 'Error: interval must be >= 1s'

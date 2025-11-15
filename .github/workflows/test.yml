@@ -37,10 +37,10 @@ jobs:
         run: make test
 
       - name: Run tests with race detector
-        run: cd lib && go test -race ./...
+        run: make test-race
 
       - name: Run benchmarks (smoke test)
-        run: cd lib && go test -bench=. -benchtime=1x ./...
+        run: make benchmark-ci
 
   test-with-mysql-versions:
     name: Test with MySQL ${{ matrix.mysql-version }}

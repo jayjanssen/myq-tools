@@ -1,0 +1,4 @@
+# Test that an invalid view name shows an error
+! exec myq_status nonexistent_view_name
+stderr 'view nonexistent_view_name not found'
+stderr 'Usage:'
