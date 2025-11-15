@@ -1,6 +1,8 @@
 package clientconf
 
 import (
+	"fmt"
+	"os/user"
 	"testing"
 )
 
@@ -84,8 +86,16 @@ func TestCnfToConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.FormatDSN() != `jayj@tcp(127.0.0.1:3306)/` {
-		t.Errorf(`Unexpected dsn: %s`, config.FormatDSN())
+
+	// Get the current username to build expected DSN
+	currentUser, err := user.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedDSN := fmt.Sprintf("%s@tcp(127.0.0.1:3306)/", currentUser.Username)
+
+	if config.FormatDSN() != expectedDSN {
+		t.Errorf(`Unexpected dsn: %s (expected: %s)`, config.FormatDSN(), expectedDSN)
 	}
 
 	// Second round
