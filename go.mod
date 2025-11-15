@@ -1,6 +1,6 @@
 module github.com/jayjanssen/myq-tools
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
@@ -69,7 +69,7 @@ require (
 )
 
 require (
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	gopkg.in/ini.v1 v1.67.0
 )
