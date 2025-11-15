@@ -24,7 +24,7 @@ func NewGoodLiveLoader(t testing.TB) *LiveLoader {
 	config.Addr = "127.0.0.1:3306"
 	db, err := NewTestLiveLoader(config)
 	if err != nil {
-		t.Errorf("Connection error: %s", err)
+		t.Fatalf("Connection error: %s", err)
 	}
 	return db
 }
