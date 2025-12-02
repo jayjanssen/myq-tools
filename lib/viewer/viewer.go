@@ -3,11 +3,11 @@ package viewer
 import (
 	"fmt"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 	"gopkg.in/yaml.v3"
 )
 
-// A Viewer represents the output of data from a State into a (usually) constrained width with a header and one or more lines of output per State
+// A Viewer represents the output of data from metrics into a (usually) constrained width with a header and one or more lines of output
 type Viewer interface {
 	// Get name of the view
 	GetName() string
@@ -18,14 +18,14 @@ type Viewer interface {
 	// Detailed help for this viewer
 	GetDetailedHelp() []string
 
-	// A list of sources that this view requires
-	GetSources() ([]loader.SourceName, error)
+	// A list of domains that this view requires
+	GetDomains() []string
 
-	// Header for this view, unclear if state is needed
-	GetHeader(loader.StateReader) []string
+	// Header for this view
+	GetHeader(*myblip.MetricCache) []string
 
-	// Data for this view based on the state
-	GetData(loader.StateReader) []string
+	// Data for this view based on the metrics
+	GetData(*myblip.MetricCache) []string
 
 	// Blank for this view when we need to pad extra lines
 	GetBlank() string

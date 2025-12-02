@@ -1,0 +1,24 @@
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.swp
+*.tmp
+
+vendor/
+
+docs/public/
+docs/.hugo_build.lock
+
+# Ignore everything in bin/blip/ except main.go
+# because I often have test config and plan files.
+bin/blip/*
+!bin/blip/main.go
+
+examples/integrate/integrate
+examples/custom-sink/custom-sink
+examples/custom-receiver/custom-receiver
+examples/*/main

@@ -3,18 +3,18 @@ package viewer
 import (
 	"fmt"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type RateSumCol struct {
 	colNum       `yaml:",inline"`
-	Keys         []loader.SourceKey `yaml:"keys"`
-	expandedKeys []loader.SourceKey
+	Keys         []SourceKey `yaml:"keys"`
+	expandedKeys []SourceKey
 }
 
-func (rsc RateSumCol) GetData(sr loader.StateReader) []string {
+func (rsc RateSumCol) GetData(cache *myblip.MetricCache) []string {
 	var str string
-	raw, err := rsc.getRate(sr)
+	raw, err := rsc.getRate(cache)
 	if err != nil {
 		str = FitString(`-`, rsc.Length)
 	} else {
@@ -24,25 +24,29 @@ func (rsc RateSumCol) GetData(sr loader.StateReader) []string {
 	return []string{str}
 }
 
-func (rsc RateSumCol) getRate(sr loader.StateReader) (float64, error) {
-	// Calculate expanded Keys once, because it's expensive
+func (rsc RateSumCol) getRate(cache *myblip.MetricCache) (float64, error) {
+	// Calculate expanded Keys once if they contain patterns
+	// For now, just use the keys as-is (pattern expansion can be added later)
 	if len(rsc.expandedKeys) == 0 {
-		rsc.expandedKeys = sr.GetCurrent().ExpandSourceKeys(rsc.Keys)
+		rsc.expandedKeys = rsc.Keys
 	}
 
 	if len(rsc.expandedKeys) == 0 {
 		return 0, fmt.Errorf(`no keys found: %s`, rsc.Name)
 	}
 
-	// get cur, or else return an error
-	curSum := sr.GetCurrent().GetFloatSum(rsc.expandedKeys)
+	// Sum current values
+	var curSum float64
+	for _, key := range rsc.expandedKeys {
+		curSum += cache.GetMetricValue(key.Domain, key.Metric)
+	}
 
-	// prev will be 0.0 if there is an error fetching it
+	// Sum previous values
 	var prevSum float64
-	if prevssp := sr.GetPrevious(); prevssp != nil {
-		prevSum = prevssp.GetFloatSum(rsc.expandedKeys)
+	for _, key := range rsc.expandedKeys {
+		prevSum += cache.GetPrevMetricValue(key.Domain, key.Metric)
 	}
 
 	// Return the calculated rate
-	return calculateRate(curSum, prevSum, sr.SecondsDiff()), nil
+	return calculateRate(curSum, prevSum, cache.SecondsDiff()), nil
 }

@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // A view is made up of Groups of Cols
@@ -37,16 +37,34 @@ func (v View) GetDetailedHelp() (output []string) {
 	return
 }
 
-// A list of sources that this view requires
-func (v View) GetSources() ([]loader.SourceName, error) {
-	return []loader.SourceName{}, nil
-	// return []*loader.Source{
-	// 	&loader.Source{},
-	// }, nil
+// A list of domains that this view requires
+func (v View) GetDomains() []string {
+	domains := make(map[string]bool)
+
+	// Collect domains from groups
+	for _, group := range v.Groups {
+		for _, d := range group.GetDomains() {
+			domains[d] = true
+		}
+	}
+
+	// Collect domains from cols
+	for _, col := range v.Cols {
+		for _, d := range col.GetDomains() {
+			domains[d] = true
+		}
+	}
+
+	// Convert to slice
+	result := make([]string, 0, len(domains))
+	for d := range domains {
+		result = append(result, d)
+	}
+	return result
 }
 
-// Header for this view, unclear if state is needed
-func (v View) GetHeader(sr loader.StateReader) []string {
+// Header for this view
+func (v View) GetHeader(cache *myblip.MetricCache) []string {
 	// Collect all the Viewers for this view
 	var svs ViewerList
 	svs = append(svs, timeCol)
@@ -57,7 +75,7 @@ func (v View) GetHeader(sr loader.StateReader) []string {
 
 	// Get the header output of all those svs
 	colOuts := pushColOutputDown(svs, func(sv Viewer) []string {
-		return sv.GetHeader(sr)
+		return sv.GetHeader(cache)
 	})
 
 	// Get the length of this view based on the length of the first colOut
@@ -68,8 +86,8 @@ func (v View) GetHeader(sr loader.StateReader) []string {
 	return colOuts
 }
 
-// Data for this view based on the state
-func (v View) GetData(sr loader.StateReader) (result []string) {
+// Data for this view based on the metrics
+func (v View) GetData(cache *myblip.MetricCache) (result []string) {
 	// Collect all the Viewers for this view
 	var svs ViewerList
 	svs = append(svs, timeCol)
@@ -80,6 +98,6 @@ func (v View) GetData(sr loader.StateReader) (result []string) {
 
 	// Get the data output of all those svs
 	return pushColOutputUp(svs, func(sv Viewer) []string {
-		return sv.GetData(sr)
+		return sv.GetData(cache)
 	})
 }

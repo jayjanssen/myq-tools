@@ -1,6 +1,6 @@
 package viewer
 
-import "github.com/jayjanssen/myq-tools/lib/loader"
+import myblip "github.com/jayjanssen/myq-tools/lib/blip"
 
 type SampleTimeCol struct {
 	defaultCol
@@ -14,7 +14,7 @@ func NewSampleTimeCol() SampleTimeCol {
 	return tc
 }
 
-// Asks the StateReader for what time to print
-func (c SampleTimeCol) GetData(sr loader.StateReader) []string {
-	return []string{FitString(sr.GetTimeString(), c.Length)}
+// Asks the MetricCache for what time to print
+func (c SampleTimeCol) GetData(cache *myblip.MetricCache) []string {
+	return []string{FitString(cache.GetTimeString(), c.Length)}
 }
