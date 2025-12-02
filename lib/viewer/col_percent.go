@@ -1,19 +1,19 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type PercentCol struct {
 	colNum      `yaml:",inline"`
-	Numerator   loader.SourceKey `yaml:"numerator"`
-	Denominator loader.SourceKey `yaml:"denominator"`
+	Numerator   SourceKey `yaml:"numerator"`
+	Denominator SourceKey `yaml:"denominator"`
 }
 
-// Data for this view based on the state
-func (c PercentCol) GetData(sr loader.StateReader) []string {
+// Data for this view based on the metrics
+func (c PercentCol) GetData(cache *myblip.MetricCache) []string {
 	var str string
-	raw, err := c.getPercent(sr)
+	raw, err := c.getPercent(cache)
 	if err != nil {
 		str = FitString(`-`, c.Length)
 	} else {
@@ -23,19 +23,18 @@ func (c PercentCol) GetData(sr loader.StateReader) []string {
 	return []string{str}
 }
 
-// Calculates the rate for the given StateReader, returns an error if there's a data problem.
-func (c PercentCol) getPercent(sr loader.StateReader) (float64, error) {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
-	numerator, err := currssp.GetFloat(c.Numerator)
-	if err != nil {
-		return 0, err
-	}
-	denominator, err := currssp.GetFloat(c.Denominator)
-	if err != nil {
-		return 0, err
+// Calculates the percentage for the given MetricCache, returns an error if there's a data problem.
+func (c PercentCol) getPercent(cache *myblip.MetricCache) (float64, error) {
+	// Get numerator
+	numerator := cache.GetMetricValue(c.Numerator.Domain, c.Numerator.Metric)
+
+	// Get denominator
+	denominator := cache.GetMetricValue(c.Denominator.Domain, c.Denominator.Metric)
+
+	if denominator == 0 {
+		return 0, nil
 	}
 
-	// Return the calculated rate
+	// Return the calculated percentage
 	return (numerator / denominator) * 100, nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"math"
@@ -10,8 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cashapp/blip"
+	_ "github.com/go-sql-driver/mysql"
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 	"github.com/jayjanssen/myq-tools/lib/clientconf"
-	"github.com/jayjanssen/myq-tools/lib/loader"
 	"github.com/jayjanssen/myq-tools/lib/viewer"
 )
 
@@ -62,7 +65,6 @@ func main() {
 			pprof.StopCPUProfile()
 			os.Exit(OK)
 		}()
-
 	}
 
 	if *version {
@@ -125,32 +127,58 @@ func main() {
 		os.Exit(OK)
 	}
 
-	// The Loader and Timecol we will use
-	var load loader.Loader
+	// Create metrics channel based on mode (live or file)
+	var metricsChan <-chan *blip.Metrics
 
 	if *statusfile == "" {
-		// No file given, this is a live collection and we use timestamps
-		config, err := clientconf.GenerateConfig()
+		// Live mode: connect to MySQL using blip
+		mysqlConfig, err := clientconf.GenerateConfig()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v", err)
+			fmt.Fprintf(os.Stderr, "Error generating config: %v\n", err)
+			os.Exit(LOADER_ERROR)
 		}
-		load = loader.NewLiveLoader(config)
+
+		// Convert to blip config
+		blipCfg, err := myblip.ConfigFromMySQL(mysqlConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error converting config: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+
+		// Open database connection
+		dsn, err := myblip.MakeDSN(blipCfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating DSN: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+
+		db, err := sql.Open("mysql", dsn)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error connecting to MySQL: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+		defer db.Close()
+
+		// Create and initialize collector
+		collector := myblip.NewCollector(blipCfg, db)
+		err = collector.Prepare(*interval)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error preparing collector: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+		defer collector.Stop()
+
+		metricsChan = collector.GetMetrics()
 	} else {
-		// File given, load it (and the optional varfile)
-		load = loader.NewFileLoader(*statusfile, *varfile)
-	}
+		// File mode: parse mysqladmin output
+		parser := myblip.NewFileParser(*statusfile, *varfile)
+		err = parser.Initialize(*interval)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error initializing file parser: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
 
-	sources, err := view.GetSources()
-	if err != nil {
-		fmt.Fprint(os.Stderr, err)
-		os.Exit(SOURCES_ERROR)
-	}
-
-	// Initialize the loader
-	err = load.Initialize(*interval, sources)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(LOADER_ERROR)
+		metricsChan = parser.GetMetrics()
 	}
 
 	// How big is our terminal?
@@ -173,18 +201,29 @@ func main() {
 		fmt.Println(s)
 	}
 
-	// Main loop through loader States
-	for state := range load.GetStateChannel() {
+	// Create metric cache
+	cache := myblip.NewMetricCache()
+
+	// Main loop through metrics
+	for metrics := range metricsChan {
+		// Update cache with new metrics
+		cache.Update(metrics)
+
+		// Skip first iteration if we don't have previous data yet
+		if !cache.HasPrevious() {
+			continue
+		}
+
 		// Reprint a header whenever lines == 0
 		if linesSinceHeader == 0 {
-			for _, headerLn := range view.GetHeader(state) {
+			for _, headerLn := range view.GetHeader(cache) {
 				printOutput(headerLn)
 				linesSinceHeader += 1
 			}
 		}
 
 		// Output data
-		for _, dataLn := range view.GetData(state) {
+		for _, dataLn := range view.GetData(cache) {
 			printOutput(dataLn)
 			linesSinceHeader += 1
 		}

@@ -3,17 +3,16 @@ package viewer
 import (
 	"fmt"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // A defaultCol contains base attributes and methods shared by all Cols
 type defaultCol struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Type        string `yaml:"type"`
-	Length      int    `yaml:"length"`
-
-	Sources []loader.SourceName
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Type        string   `yaml:"type"`
+	Length      int      `yaml:"length"`
+	Domains     []string // List of domains this column needs
 }
 
 func (c defaultCol) GetName() string {
@@ -32,13 +31,13 @@ func (c defaultCol) GetDetailedHelp() []string {
 	return result
 }
 
-// A list of sources that this view requires
-func (c defaultCol) GetSources() ([]loader.SourceName, error) {
-	return c.Sources, nil
+// A list of domains that this view requires
+func (c defaultCol) GetDomains() []string {
+	return c.Domains
 }
 
-// Header for this view, unclear if state is needed
-func (c defaultCol) GetHeader(sr loader.StateReader) []string {
+// Header for this view
+func (c defaultCol) GetHeader(cache *myblip.MetricCache) []string {
 	return []string{FitString(c.Name, c.Length)}
 }
 

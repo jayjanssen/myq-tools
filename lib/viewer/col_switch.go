@@ -1,22 +1,24 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"fmt"
+
+	myblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type SwitchCol struct {
 	defaultCol `yaml:",inline"`
-	Key        loader.SourceKey  `yaml:"key"`
+	Key        SourceKey         `yaml:"key"`
 	Cases      map[string]string `yaml:"cases"`
 }
 
-// Data for this view based on the state
-func (c SwitchCol) GetData(sr loader.StateReader) []string {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
-
-	str, err := currssp.GetString(c.Key)
-	if err != nil {
+// Data for this view based on the metrics
+func (c SwitchCol) GetData(cache *myblip.MetricCache) []string {
+	// Try to get the metric value as a string
+	var str string
+	if metric, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric); ok {
+		str = fmt.Sprintf("%.0f", metric.Value)
+	} else {
 		str = `-`
 	}
 
