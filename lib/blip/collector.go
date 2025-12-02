@@ -36,7 +36,8 @@ func (c *Collector) Prepare(interval time.Duration) error {
 	c.interval = interval
 	c.levelName = "default"
 
-	// Create a simple plan with all available domains
+	// Create a simple plan with status.global and var.global
+	// These are the core domains that myq-tools traditionally used
 	c.plan = blip.Plan{
 		Name:   "myq-tools-plan",
 		Source: "myq-tools",
@@ -47,49 +48,11 @@ func (c *Collector) Prepare(interval time.Duration) error {
 				Collect: map[string]blip.Domain{
 					"status.global": {
 						Name:    "status.global",
-						Metrics: []string{}, // Empty means collect all
 						Options: map[string]string{"all": "yes"},
 					},
 					"var.global": {
 						Name:    "var.global",
-						Metrics: []string{}, // Empty means collect all
 						Options: map[string]string{"all": "yes"},
-					},
-					"innodb": {
-						Name: "innodb",
-					},
-					"innodb.buffer-pool": {
-						Name: "innodb.buffer-pool",
-					},
-					"repl": {
-						Name: "repl",
-					},
-					"repl.lag": {
-						Name: "repl.lag",
-					},
-					"size.database": {
-						Name: "size.database",
-					},
-					"size.table": {
-						Name: "size.table",
-					},
-					"size.binlog": {
-						Name: "size.binlog",
-					},
-					"trx": {
-						Name: "trx",
-					},
-					"autoinc": {
-						Name: "autoinc",
-					},
-					"tls": {
-						Name: "tls",
-					},
-					"wait.io.table": {
-						Name: "wait.io.table",
-					},
-					"stmt.current": {
-						Name: "stmt.current",
 					},
 				},
 			},
