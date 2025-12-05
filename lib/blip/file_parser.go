@@ -21,6 +21,20 @@ const (
 	TABULAR
 )
 
+// Known gauge metrics (rest are assumed to be cumulative counters)
+// This is a package-level variable to avoid repeated allocation
+var gaugeMetrics = map[string]bool{
+	"threads_running":                true,
+	"threads_connected":              true,
+	"prepared_stmt_count":            true,
+	"innodb_buffer_pool_pages_dirty": true,
+	"innodb_buffer_pool_pages_free":  true,
+	"innodb_buffer_pool_pages_total": true,
+	"innodb_row_lock_current_waits":  true,
+	"innodb_os_log_pending_writes":   true,
+	"max_used_connections":           true,
+}
+
 // FileParser reads mysqladmin ext output and converts to blip.Metrics
 type FileParser struct {
 	scanner    *bufio.Scanner
@@ -236,22 +250,9 @@ func (f *FileParser) GetMetrics() <-chan *blip.Metrics {
 
 // convertToBlipMetrics converts parsed mysqladmin data to blip.Metrics
 func (f *FileParser) convertToBlipMetrics(data map[string]string, interval uint, startTime time.Time) *blip.Metrics {
-	// Convert all string values to MetricValues
-	statusMetrics := []blip.MetricValue{}
-	varMetrics := []blip.MetricValue{}
-
-	// Known gauge metrics (rest are assumed to be cumulative counters)
-	gauges := map[string]bool{
-		"threads_running":                true,
-		"threads_connected":              true,
-		"prepared_stmt_count":            true,
-		"innodb_buffer_pool_pages_dirty": true,
-		"innodb_buffer_pool_pages_free":  true,
-		"innodb_buffer_pool_pages_total": true,
-		"innodb_row_lock_current_waits":  true,
-		"innodb_os_log_pending_writes":   true,
-		"max_used_connections":           true,
-	}
+	// Pre-allocate slices with capacity based on input size
+	statusMetrics := make([]blip.MetricValue, 0, len(data))
+	varMetrics := make([]blip.MetricValue, 0)
 
 	for key, valStr := range data {
 		// Try to convert to float64
@@ -262,7 +263,7 @@ func (f *FileParser) convertToBlipMetrics(data map[string]string, interval uint,
 		}
 
 		metricType := blip.CUMULATIVE_COUNTER
-		if gauges[key] {
+		if gaugeMetrics[key] {
 			metricType = blip.GAUGE
 		}
 

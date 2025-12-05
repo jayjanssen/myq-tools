@@ -1,7 +1,9 @@
 package blip
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -476,4 +478,502 @@ func TestOutputTypeDetection(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Real-world data tests using files ported from main branch
+
+func TestGetMetrics_SingleBatch(t *testing.T) {
+	testFile := filepath.Join("testdata", "mysql.single")
+	parser := NewFileParser(testFile, "")
+
+	err := parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	metricsChan := parser.GetMetrics()
+
+	// Should get exactly one metrics object
+	metrics, ok := <-metricsChan
+	if !ok {
+		t.Fatal("Expected to receive metrics, channel closed")
+	}
+
+	if metrics == nil {
+		t.Fatal("Received nil metrics")
+	}
+
+	statusMetrics, ok := metrics.Values["status.global"]
+	if !ok {
+		t.Fatal("Expected status.global domain")
+	}
+
+	// mysql.single should have 400+ status variables
+	if len(statusMetrics) < 100 {
+		t.Errorf("Expected at least 100 metrics, got %d", len(statusMetrics))
+	}
+
+	// Verify we got exactly one sample
+	_, ok = <-metricsChan
+	if ok {
+		t.Error("Expected only one sample from mysql.single")
+	}
+}
+
+func TestGetMetrics_SingleTabular(t *testing.T) {
+	testFile := filepath.Join("testdata", "mysqladmin.single")
+	parser := NewFileParser(testFile, "")
+
+	err := parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	metricsChan := parser.GetMetrics()
+
+	// Should get exactly one metrics object
+	metrics, ok := <-metricsChan
+	if !ok {
+		t.Fatal("Expected to receive metrics, channel closed")
+	}
+
+	if metrics == nil {
+		t.Fatal("Received nil metrics")
+	}
+
+	statusMetrics, ok := metrics.Values["status.global"]
+	if !ok {
+		t.Fatal("Expected status.global domain")
+	}
+
+	// mysqladmin.single should have many status variables
+	if len(statusMetrics) < 100 {
+		t.Errorf("Expected at least 100 metrics, got %d", len(statusMetrics))
+	}
+
+	// Verify we got exactly one sample
+	_, ok = <-metricsChan
+	if ok {
+		t.Error("Expected only one sample from mysqladmin.single")
+	}
+}
+
+func TestGetMetrics_Variables(t *testing.T) {
+	tests := []struct {
+		name     string
+		file     string
+		minCount int
+	}{
+		{"batch format", "variables", 50},
+		{"tabular format", "variables.tab", 50},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testFile := filepath.Join("testdata", tt.file)
+			parser := NewFileParser(testFile, "")
+
+			err := parser.Initialize(1 * time.Second)
+			if err != nil {
+				t.Fatalf("Initialize failed: %v", err)
+			}
+
+			metricsChan := parser.GetMetrics()
+
+			metrics, ok := <-metricsChan
+			if !ok {
+				t.Fatal("Expected to receive metrics, channel closed")
+			}
+
+			if metrics == nil {
+				t.Fatal("Received nil metrics")
+			}
+
+			statusMetrics, ok := metrics.Values["status.global"]
+			if !ok {
+				t.Fatal("Expected status.global domain")
+			}
+
+			if len(statusMetrics) < tt.minCount {
+				t.Errorf("Expected at least %d metrics, got %d", tt.minCount, len(statusMetrics))
+			}
+		})
+	}
+}
+
+func TestGetMetrics_LotsOfSamples(t *testing.T) {
+	testFile := filepath.Join("testdata", "mysql.lots")
+	parser := NewFileParser(testFile, "")
+
+	err := parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	metricsChan := parser.GetMetrics()
+
+	count := 0
+	var prevUptime float64
+	for metrics := range metricsChan {
+		if metrics == nil {
+			t.Error("Received nil metrics")
+			continue
+		}
+
+		statusMetrics, ok := metrics.Values["status.global"]
+		if !ok {
+			t.Error("Expected status.global domain")
+			continue
+		}
+
+		// Should have many metrics per sample
+		if len(statusMetrics) < 100 {
+			t.Errorf("Sample %d: Expected at least 100 metrics, got %d", count, len(statusMetrics))
+		}
+
+		// Find uptime and verify it's increasing
+		for _, mv := range statusMetrics {
+			if mv.Name == "uptime" {
+				if prevUptime > 0 && mv.Value <= prevUptime {
+					t.Errorf("Sample %d: Uptime not increasing: prev=%f, current=%f", count, prevUptime, mv.Value)
+				}
+				prevUptime = mv.Value
+				break
+			}
+		}
+
+		count++
+	}
+
+	// mysql.lots has 215 samples
+	if count < 200 {
+		t.Errorf("Expected at least 200 samples, got %d", count)
+	}
+	t.Logf("Parsed %d samples from mysql.lots", count)
+}
+
+func TestGetMetrics_LotsOfSamplesTabular(t *testing.T) {
+	testFile := filepath.Join("testdata", "mysqladmin.lots")
+	parser := NewFileParser(testFile, "")
+
+	err := parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	metricsChan := parser.GetMetrics()
+
+	count := 0
+	for metrics := range metricsChan {
+		if metrics == nil {
+			t.Error("Received nil metrics")
+			continue
+		}
+
+		statusMetrics, ok := metrics.Values["status.global"]
+		if !ok {
+			t.Error("Expected status.global domain")
+			continue
+		}
+
+		// Should have many metrics per sample
+		if len(statusMetrics) < 100 {
+			t.Errorf("Sample %d: Expected at least 100 metrics, got %d", count, len(statusMetrics))
+		}
+
+		count++
+	}
+
+	// mysqladmin.lots has 220 samples
+	if count < 200 {
+		t.Errorf("Expected at least 200 samples, got %d", count)
+	}
+	t.Logf("Parsed %d samples from mysqladmin.lots", count)
+}
+
+func TestGetMetrics_TokuDB(t *testing.T) {
+	testFile := filepath.Join("testdata", "mysql.toku")
+	parser := NewFileParser(testFile, "")
+
+	err := parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	metricsChan := parser.GetMetrics()
+
+	foundTokuMetrics := false
+	for metrics := range metricsChan {
+		if metrics == nil {
+			continue
+		}
+
+		statusMetrics, ok := metrics.Values["status.global"]
+		if !ok {
+			continue
+		}
+
+		// Look for TokuDB-specific metrics
+		for _, mv := range statusMetrics {
+			if strings.HasPrefix(mv.Name, "tokudb_") {
+				foundTokuMetrics = true
+				break
+			}
+		}
+
+		if foundTokuMetrics {
+			break
+		}
+	}
+
+	if !foundTokuMetrics {
+		t.Error("Expected to find TokuDB metrics (tokudb_*)")
+	}
+}
+
+func TestGetMetrics_IntervalFiltering(t *testing.T) {
+	testFile := filepath.Join("testdata", "mysqladmin.byfives")
+
+	// Test with 1 second interval (should get most samples)
+	parser1s := NewFileParser(testFile, "")
+	err := parser1s.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	count1s := 0
+	for range parser1s.GetMetrics() {
+		count1s++
+	}
+
+	// Test with 5 second interval (should skip some samples based on uptime)
+	parser5s := NewFileParser(testFile, "")
+	err = parser5s.Initialize(5 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	count5s := 0
+	for range parser5s.GetMetrics() {
+		count5s++
+	}
+
+	// With 5s interval, we should get fewer or equal samples than with 1s
+	if count5s > count1s {
+		t.Errorf("Expected fewer samples with 5s interval (%d) than 1s interval (%d)", count5s, count1s)
+	}
+
+	t.Logf("Samples: 1s interval=%d, 5s interval=%d", count1s, count5s)
+}
+
+func TestGetMetrics_TwoSamples(t *testing.T) {
+	tests := []struct {
+		name string
+		file string
+	}{
+		{"batch format", "mysql.two"},
+		{"tabular format", "mysqladmin.two"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testFile := filepath.Join("testdata", tt.file)
+			parser := NewFileParser(testFile, "")
+
+			err := parser.Initialize(1 * time.Second)
+			if err != nil {
+				t.Fatalf("Initialize failed: %v", err)
+			}
+
+			metricsChan := parser.GetMetrics()
+
+			count := 0
+			var uptimes []float64
+			for metrics := range metricsChan {
+				if metrics == nil {
+					continue
+				}
+
+				statusMetrics, ok := metrics.Values["status.global"]
+				if !ok {
+					t.Error("Expected status.global domain")
+					continue
+				}
+
+				// Find uptime
+				for _, mv := range statusMetrics {
+					if mv.Name == "uptime" {
+						uptimes = append(uptimes, mv.Value)
+						break
+					}
+				}
+
+				count++
+			}
+
+			if count != 2 {
+				t.Errorf("Expected exactly 2 samples, got %d", count)
+			}
+
+			if len(uptimes) == 2 && uptimes[0] >= uptimes[1] {
+				t.Errorf("Expected uptime to increase: %f -> %f", uptimes[0], uptimes[1])
+			}
+		})
+	}
+}
+
+func TestGetMetrics_ErrorFile(t *testing.T) {
+	// mysqladmin.err contains error cases - parser should handle gracefully
+	testFile := filepath.Join("testdata", "mysqladmin.err")
+	parser := NewFileParser(testFile, "")
+
+	err := parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	metricsChan := parser.GetMetrics()
+
+	// Should handle errors gracefully and potentially return some valid data
+	count := 0
+	for metrics := range metricsChan {
+		if metrics != nil {
+			count++
+		}
+	}
+
+	// Just verify we didn't panic - error file may or may not produce samples
+	t.Logf("Parsed %d samples from error file (graceful handling)", count)
+}
+
+// Benchmark tests
+
+// Helper function for benchmarks
+func benchmarkFile(b *testing.B, fileName string, interval time.Duration) {
+	for i := 0; i < b.N; i++ {
+		parser := NewFileParser(fileName, "")
+		err := parser.Initialize(interval)
+		if err != nil {
+			b.Fatalf("Initialize failed: %v", err)
+		}
+
+		metricsChan := parser.GetMetrics()
+		for range metricsChan {
+			// Drain the channel
+		}
+	}
+}
+
+// Benchmark parsing a single batch format sample
+func BenchmarkParseSample_Single(b *testing.B) {
+	testFile := filepath.Join("testdata", "mysql.single")
+	benchmarkFile(b, testFile, 1*time.Second)
+}
+
+// Benchmark parsing a single tabular format sample
+func BenchmarkParseSample_SingleTabular(b *testing.B) {
+	testFile := filepath.Join("testdata", "mysqladmin.single")
+	benchmarkFile(b, testFile, 1*time.Second)
+}
+
+// Benchmark parsing variables in batch format
+func BenchmarkParseVariablesBatch(b *testing.B) {
+	testFile := filepath.Join("testdata", "variables")
+	benchmarkFile(b, testFile, 1*time.Second)
+}
+
+// Benchmark parsing variables in tabular format
+func BenchmarkParseVariablesTabular(b *testing.B) {
+	testFile := filepath.Join("testdata", "variables.tab")
+	benchmarkFile(b, testFile, 1*time.Second)
+}
+
+// Benchmark parsing many samples in batch format (215 samples)
+func BenchmarkGetMetrics_LargeBatch(b *testing.B) {
+	testFile := filepath.Join("testdata", "mysql.lots")
+	benchmarkFile(b, testFile, 1*time.Second)
+}
+
+// Benchmark parsing many samples in tabular format (220 samples)
+func BenchmarkGetMetrics_LargeTabular(b *testing.B) {
+	testFile := filepath.Join("testdata", "mysqladmin.lots")
+	benchmarkFile(b, testFile, 1*time.Second)
+}
+
+// Benchmark parsing with interval filtering (should skip some samples)
+func BenchmarkGetMetrics_WithIntervalFiltering(b *testing.B) {
+	testFile := filepath.Join("testdata", "mysqladmin.lots")
+	benchmarkFile(b, testFile, 1*time.Minute)
+}
+
+// Benchmark the parseSample function directly
+func BenchmarkParseSample_BatchFormat(b *testing.B) {
+	parser := NewFileParser("", "")
+	parser.outputtype = BATCH
+
+	// Sample data with ~100 metrics
+	data := []byte("com_select\t100\nthreads_running\t5\nuptime\t3600\nquestions\t1000\n" +
+		"com_insert\t50\ncom_update\t25\ncom_delete\t10\ncom_commit\t75\n" +
+		"innodb_buffer_pool_reads\t1000\ninnodb_buffer_pool_read_requests\t50000\n" +
+		"innodb_rows_read\t10000\ninnodb_rows_inserted\t500\ninnodb_rows_updated\t250\n")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := parser.parseSample(data)
+		if err != nil {
+			b.Fatalf("parseSample failed: %v", err)
+		}
+	}
+}
+
+// Benchmark the parseSample function with tabular format
+func BenchmarkParseSample_TabularFormat(b *testing.B) {
+	parser := NewFileParser("", "")
+	parser.outputtype = TABULAR
+
+	data := []byte(`| com_select                | 100  |
+| threads_running           | 5    |
+| uptime                    | 3600 |
+| questions                 | 1000 |
+| com_insert                | 50   |
+| com_update                | 25   |
+| com_delete                | 10   |
+| innodb_buffer_pool_reads  | 1000 |
+`)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := parser.parseSample(data)
+		if err != nil {
+			b.Fatalf("parseSample failed: %v", err)
+		}
+	}
+}
+
+// Benchmark metric conversion with many metrics
+func BenchmarkConvertToBlipMetrics(b *testing.B) {
+	parser := NewFileParser("test.txt", "")
+	startTime := time.Now()
+
+	// Create a map with 400+ metrics (realistic for MySQL)
+	data := make(map[string]string)
+	for i := 0; i < 400; i++ {
+		data[fmt.Sprintf("metric_%d", i)] = fmt.Sprintf("%d", i*100)
+	}
+
+	// Add some known gauge metrics
+	data["threads_running"] = "5"
+	data["threads_connected"] = "10"
+	data["innodb_buffer_pool_pages_dirty"] = "100"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = parser.convertToBlipMetrics(data, uint(i), startTime)
+	}
+}
+
+// Benchmark two-sample file to test overhead
+func BenchmarkGetMetrics_TwoSamples(b *testing.B) {
+	testFile := filepath.Join("testdata", "mysql.two")
+	benchmarkFile(b, testFile, 1*time.Second)
 }
