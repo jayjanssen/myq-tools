@@ -1,7 +1,7 @@
 package viewer
 
 import (
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type SubtractCol struct {
@@ -16,7 +16,7 @@ func (c SubtractCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c SubtractCol) GetData(cache *myblip.MetricCache) []string {
+func (c SubtractCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 	raw, err := c.getSubtract(cache)
 	if err != nil {
@@ -29,7 +29,7 @@ func (c SubtractCol) GetData(cache *myblip.MetricCache) []string {
 }
 
 // Calculates the subtraction for the given MetricCache, returns an error if there's a data problem.
-func (c SubtractCol) getSubtract(cache *myblip.MetricCache) (float64, error) {
+func (c SubtractCol) getSubtract(cache *blip.MetricCache) (float64, error) {
 	// Get values
 	bigger := cache.GetMetricValue(c.Bigger.Domain, c.Bigger.Metric)
 	smaller := cache.GetMetricValue(c.Smaller.Domain, c.Smaller.Metric)

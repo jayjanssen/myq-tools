@@ -5,8 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cashapp/blip"
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type SortedExpandedCountsCol struct {
@@ -19,7 +18,7 @@ func (secc SortedExpandedCountsCol) GetRequiredMetrics() []SourceKey {
 	return secc.Keys
 }
 
-func (secc SortedExpandedCountsCol) GetData(cache *myblip.MetricCache) (output []string) {
+func (secc SortedExpandedCountsCol) GetData(cache *blip.MetricCache) (output []string) {
 	// For each key, find matching metrics using pattern
 	// This is a simplified version - full pattern matching can be added later
 	var allMetrics []blip.MetricValue

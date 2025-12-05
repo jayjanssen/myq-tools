@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // A defaultCol contains base attributes and methods shared by all Cols
@@ -57,7 +57,7 @@ func (c defaultCol) GetMetricsByDomain() map[string][]string {
 }
 
 // Header for this view
-func (c defaultCol) GetHeader(cache *myblip.MetricCache) []string {
+func (c defaultCol) GetHeader(cache *blip.MetricCache) []string {
 	return []string{FitString(c.Name, c.Length)}
 }
 

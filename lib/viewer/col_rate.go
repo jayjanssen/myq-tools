@@ -1,7 +1,7 @@
 package viewer
 
 import (
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type RateCol struct {
@@ -15,7 +15,7 @@ func (c RateCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c RateCol) GetData(cache *myblip.MetricCache) []string {
+func (c RateCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 	raw, err := c.getRate(cache)
 	if err != nil {
@@ -28,7 +28,7 @@ func (c RateCol) GetData(cache *myblip.MetricCache) []string {
 }
 
 // Calculates the rate for the given MetricCache, returns an error if there's a data problem.
-func (c RateCol) getRate(cache *myblip.MetricCache) (float64, error) {
+func (c RateCol) getRate(cache *blip.MetricCache) (float64, error) {
 	// Get current value
 	cur, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric)
 	if !ok {

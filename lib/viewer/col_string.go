@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type StringCol struct {
@@ -18,7 +18,7 @@ func (c StringCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c StringCol) GetData(cache *myblip.MetricCache) []string {
+func (c StringCol) GetData(cache *blip.MetricCache) []string {
 	// Try to get string representation of the metric
 	var str string
 	if metric, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric); ok {

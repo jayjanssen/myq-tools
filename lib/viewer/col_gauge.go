@@ -1,7 +1,7 @@
 package viewer
 
 import (
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type GaugeCol struct {
@@ -15,7 +15,7 @@ func (c GaugeCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c GaugeCol) GetData(cache *myblip.MetricCache) []string {
+func (c GaugeCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 
 	// Try getting the metric value

@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // A view is made up of Groups of Cols
@@ -115,7 +115,7 @@ func (v View) GetMetricsByDomain() map[string][]string {
 }
 
 // Header for this view
-func (v View) GetHeader(cache *myblip.MetricCache) []string {
+func (v View) GetHeader(cache *blip.MetricCache) []string {
 	// Collect all the Viewers for this view
 	var svs ViewerList
 	svs = append(svs, timeCol)
@@ -138,7 +138,7 @@ func (v View) GetHeader(cache *myblip.MetricCache) []string {
 }
 
 // Data for this view based on the metrics
-func (v View) GetData(cache *myblip.MetricCache) (result []string) {
+func (v View) GetData(cache *blip.MetricCache) (result []string) {
 	// Collect all the Viewers for this view
 	var svs ViewerList
 	svs = append(svs, timeCol)
