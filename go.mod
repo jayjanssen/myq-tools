@@ -3,7 +3,7 @@ module github.com/jayjanssen/myq-tools
 go 1.25
 
 require (
-	github.com/cashapp/blip v0.0.0-00010101000000-000000000000
+	github.com/cashapp/blip v1.2.2-0.20250730152341-7673cad1d3f8
 	github.com/hashicorp/go-multierror v1.1.1
 	gopkg.in/yaml.v3 v3.0.1
 	rsc.io/script v0.0.2
@@ -68,7 +68,7 @@ require (
 	go.uber.org/zap v1.25.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -79,5 +79,3 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	gopkg.in/ini.v1 v1.67.0
 )
-
-replace github.com/cashapp/blip => ../blip
