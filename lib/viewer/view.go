@@ -63,6 +63,57 @@ func (v View) GetDomains() []string {
 	return result
 }
 
+// GetMetricsByDomain returns a map of domain to list of metric names required by this view
+func (v View) GetMetricsByDomain() map[string][]string {
+	metricsByDomain := make(map[string]map[string]bool)
+
+	// Helper function to add metrics from a source key
+	addMetric := func(key SourceKey) {
+		// Skip empty keys
+		if key.Domain == "" || key.Metric == "" {
+			return
+		}
+
+		// Check if this is a pattern (contains * or ^)
+		// Patterns need special handling - for now we'll need to use "all" mode
+		// TODO: handle patterns by expanding them at runtime
+		if key.Metric == "" {
+			return
+		}
+
+		if metricsByDomain[key.Domain] == nil {
+			metricsByDomain[key.Domain] = make(map[string]bool)
+		}
+		metricsByDomain[key.Domain][key.Metric] = true
+	}
+
+	// Collect from groups
+	for _, group := range v.Groups {
+		for _, metricKey := range group.GetRequiredMetrics() {
+			addMetric(metricKey)
+		}
+	}
+
+	// Collect from cols
+	for _, col := range v.Cols {
+		for _, metricKey := range col.GetRequiredMetrics() {
+			addMetric(metricKey)
+		}
+	}
+
+	// Convert to map of domain -> []string
+	result := make(map[string][]string)
+	for domain, metricsMap := range metricsByDomain {
+		metrics := make([]string, 0, len(metricsMap))
+		for metric := range metricsMap {
+			metrics = append(metrics, metric)
+		}
+		result[domain] = metrics
+	}
+
+	return result
+}
+
 // Header for this view
 func (v View) GetHeader(cache *myblip.MetricCache) []string {
 	// Collect all the Viewers for this view

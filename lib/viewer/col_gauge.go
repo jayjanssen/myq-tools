@@ -9,6 +9,11 @@ type GaugeCol struct {
 	Key    SourceKey `yaml:"key"`
 }
 
+// A list of source keys that this column requires
+func (c GaugeCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
 // Data for this view based on the metrics
 func (c GaugeCol) GetData(cache *myblip.MetricCache) []string {
 	var str string

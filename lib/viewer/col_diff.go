@@ -9,6 +9,11 @@ type DiffCol struct {
 	Key    SourceKey `yaml:"key"`
 }
 
+// A list of source keys that this column requires
+func (c DiffCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
 // Data for this view based on the metrics
 func (c DiffCol) GetData(cache *myblip.MetricCache) []string {
 	var str string

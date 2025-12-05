@@ -10,6 +10,11 @@ type PercentCol struct {
 	Denominator SourceKey `yaml:"denominator"`
 }
 
+// A list of source keys that this column requires
+func (c PercentCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Numerator, c.Denominator}
+}
+
 // Data for this view based on the metrics
 func (c PercentCol) GetData(cache *myblip.MetricCache) []string {
 	var str string

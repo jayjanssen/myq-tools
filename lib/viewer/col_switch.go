@@ -12,6 +12,11 @@ type SwitchCol struct {
 	Cases      map[string]string `yaml:"cases"`
 }
 
+// A list of source keys that this column requires
+func (c SwitchCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
 // Data for this view based on the metrics
 func (c SwitchCol) GetData(cache *myblip.MetricCache) []string {
 	// Try to get the metric value as a string

@@ -14,6 +14,11 @@ type SortedExpandedCountsCol struct {
 	Keys   []SourceKey `yaml:"keys"`
 }
 
+// A list of source keys that this column requires
+func (secc SortedExpandedCountsCol) GetRequiredMetrics() []SourceKey {
+	return secc.Keys
+}
+
 func (secc SortedExpandedCountsCol) GetData(cache *myblip.MetricCache) (output []string) {
 	// For each key, find matching metrics using pattern
 	// This is a simplified version - full pattern matching can be added later

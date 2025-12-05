@@ -10,6 +10,11 @@ type SubtractCol struct {
 	Smaller SourceKey `yaml:"smaller"`
 }
 
+// A list of source keys that this column requires
+func (c SubtractCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Bigger, c.Smaller}
+}
+
 // Data for this view based on the metrics
 func (c SubtractCol) GetData(cache *myblip.MetricCache) []string {
 	var str string
