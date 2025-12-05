@@ -15,12 +15,14 @@ import (
 
 // Collector wraps blip's monitor.Engine to collect metrics
 type Collector struct {
-	cfg       blip.ConfigMonitor
-	db        *sql.DB
-	engine    *monitor.Engine
-	plan      blip.Plan
-	interval  time.Duration
-	levelName string
+	cfg             blip.ConfigMonitor
+	db              *sql.DB
+	engine          *monitor.Engine
+	plan            blip.Plan
+	interval        time.Duration
+	levelName       string
+	startTime       time.Time
+	collectionCount uint
 }
 
 // NewCollector creates a new blip-based collector
@@ -34,8 +36,15 @@ func NewCollector(cfg blip.ConfigMonitor, db *sql.DB) *Collector {
 
 // Prepare initializes the collector with a plan for the specified metrics
 func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][]string) error {
+	// Validate interval is at least 500ms to ensure positive context timeout
+	if interval < 500*time.Millisecond {
+		return fmt.Errorf("interval must be at least 500ms, got %s", interval)
+	}
+
 	c.interval = interval
 	c.levelName = "default"
+	c.startTime = time.Now()
+	c.collectionCount = 0
 
 	// Build the collect map dynamically based on required metrics
 	collectMap := make(map[string]blip.Domain)
@@ -106,13 +115,16 @@ func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][
 
 // Collect collects metrics from all domains and returns them
 func (c *Collector) Collect() ([]*blip.Metrics, error) {
-	// Create a context with timeout (engine max runtime)
+	// Create a context with timeout (leave 500ms buffer for cleanup)
 	ctx, cancel := context.WithTimeout(context.Background(), c.interval-500*time.Millisecond)
 	defer cancel()
 
 	// Collect metrics for this interval
 	startTime := time.Now()
-	interval := uint(time.Since(time.Time{}) / c.interval) // Simple interval counter
+
+	// Increment collection counter for this cycle
+	c.collectionCount++
+	interval := c.collectionCount
 
 	metrics, err := c.engine.Collect(ctx, interval, c.levelName, startTime)
 	if err != nil && len(metrics) == 0 {
