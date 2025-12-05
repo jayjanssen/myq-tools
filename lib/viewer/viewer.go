@@ -118,6 +118,13 @@ func (svl *ViewerList) UnmarshalYAML(value *yaml.Node) error {
 				return err
 			}
 			newlist = append(newlist, c)
+		case `Duration`:
+			c := DurationCol{}
+			err := content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
 		default:
 			return fmt.Errorf("invalid column type: %s", typeobj.Type)
 		}
