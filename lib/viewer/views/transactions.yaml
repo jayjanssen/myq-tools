@@ -1,0 +1,68 @@
+- name: transactions
+  description: Transaction activity and locking metrics
+  groups:
+    - name: Commands
+      description: Transaction control statements
+      cols:
+        - name: begin
+          description: BEGIN statements per second
+          type: Rate
+          key: status/com_begin
+          units: Number
+          length: 5
+          precision: 0
+        - name: commit
+          description: COMMIT statements per second
+          type: Rate
+          key: status/com_commit
+          units: Number
+          length: 5
+          precision: 0
+        - name: rollback
+          description: ROLLBACK statements per second
+          type: Rate
+          key: status/com_rollback
+          units: Number
+          length: 5
+          precision: 0
+    - name: Handler
+      description: Internal handler operations
+      cols:
+        - name: hcommit
+          description: Handler commits per second
+          type: Rate
+          key: status/handler_commit
+          units: Number
+          length: 5
+          precision: 0
+        - name: hrollbk
+          description: Handler rollbacks per second
+          type: Rate
+          key: status/handler_rollback
+          units: Number
+          length: 5
+          precision: 0
+    - name: Locking
+      description: Lock-related metrics
+      cols:
+        - name: lockwait
+          description: Row lock waits per second
+          type: Rate
+          key: status/innodb_row_lock_waits
+          units: Number
+          length: 5
+          precision: 0
+        - name: locktime
+          description: Average lock wait time (ms)
+          type: Gauge
+          key: status/innodb_row_lock_time
+          units: Microsecond
+          length: 5
+          precision: 0
+  cols:
+    - name: oldest
+      description: Oldest transaction age (seconds)
+      type: Duration
+      key: trx/oldest
+      length: 6
+

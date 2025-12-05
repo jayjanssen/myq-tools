@@ -1,18 +1,23 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type DiffCol struct {
 	colNum `yaml:",inline"`
-	Key    loader.SourceKey `yaml:"key"`
+	Key    SourceKey `yaml:"key"`
 }
 
-// Data for this view based on the state
-func (c DiffCol) GetData(sr loader.StateReader) []string {
+// A list of source keys that this column requires
+func (c DiffCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
+// Data for this view based on the metrics
+func (c DiffCol) GetData(cache *blip.MetricCache) []string {
 	var str string
-	raw, err := c.getDiff(sr)
+	raw, err := c.getDiff(cache)
 	if err != nil {
 		str = FitString(`-`, c.Length)
 	} else {
@@ -22,21 +27,14 @@ func (c DiffCol) GetData(sr loader.StateReader) []string {
 	return []string{str}
 }
 
-// Calculates the rate for the given StateReader, returns an error if there's a data problem.
-func (c DiffCol) getDiff(sr loader.StateReader) (float64, error) {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
-	cur, err := currssp.GetFloat(c.Key)
-	if err != nil {
-		return 0, err
-	}
+// Calculates the diff for the given MetricCache, returns an error if there's a data problem.
+func (c DiffCol) getDiff(cache *blip.MetricCache) (float64, error) {
+	// Get current value
+	cur := cache.GetMetricValue(c.Key.Domain, c.Key.Metric)
 
-	// prev will be 0.0 if there is an error fetching it
-	var prev float64
-	if prevssp := sr.GetPrevious(); prevssp != nil {
-		prev = prevssp.GetF(c.Key)
-	}
+	// Get previous value
+	prev := cache.GetPrevMetricValue(c.Key.Domain, c.Key.Metric)
 
-	// Return the calculated rate
+	// Return the calculated diff
 	return calculateDiff(cur, prev), nil
 }

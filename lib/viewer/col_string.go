@@ -1,22 +1,29 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"fmt"
+
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type StringCol struct {
 	defaultCol `yaml:",inline"`
-	Key        loader.SourceKey `yaml:"key"`
-	Fromend    bool             `yaml:"fromend"`
+	Key        SourceKey `yaml:"key"`
+	Fromend    bool      `yaml:"fromend"`
 }
 
-// Data for this view based on the state
-func (c StringCol) GetData(sr loader.StateReader) []string {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
+// A list of source keys that this column requires
+func (c StringCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
 
-	str, err := currssp.GetString(c.Key)
-	if err != nil {
+// Data for this view based on the metrics
+func (c StringCol) GetData(cache *blip.MetricCache) []string {
+	// Try to get string representation of the metric
+	var str string
+	if metric, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric); ok {
+		str = fmt.Sprintf("%.0f", metric.Value) // Convert numeric to string
+	} else {
 		str = `-`
 	}
 

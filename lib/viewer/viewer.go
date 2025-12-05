@@ -3,11 +3,11 @@ package viewer
 import (
 	"fmt"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 	"gopkg.in/yaml.v3"
 )
 
-// A Viewer represents the output of data from a State into a (usually) constrained width with a header and one or more lines of output per State
+// A Viewer represents the output of data from metrics into a (usually) constrained width with a header and one or more lines of output
 type Viewer interface {
 	// Get name of the view
 	GetName() string
@@ -18,14 +18,20 @@ type Viewer interface {
 	// Detailed help for this viewer
 	GetDetailedHelp() []string
 
-	// A list of sources that this view requires
-	GetSources() ([]loader.SourceName, error)
+	// A list of domains that this view requires
+	GetDomains() []string
 
-	// Header for this view, unclear if state is needed
-	GetHeader(loader.StateReader) []string
+	// A list of source keys (domain/metric pairs) that this viewer requires
+	GetRequiredMetrics() []SourceKey
 
-	// Data for this view based on the state
-	GetData(loader.StateReader) []string
+	// A map of domain to list of metric names required by this viewer
+	GetMetricsByDomain() map[string][]string
+
+	// Header for this view
+	GetHeader(*blip.MetricCache) []string
+
+	// Data for this view based on the metrics
+	GetData(*blip.MetricCache) []string
 
 	// Blank for this view when we need to pad extra lines
 	GetBlank() string
@@ -107,6 +113,13 @@ func (svl *ViewerList) UnmarshalYAML(value *yaml.Node) error {
 			newlist = append(newlist, c)
 		case `Subtract`:
 			c := SubtractCol{}
+			err := content.Decode(&c)
+			if err != nil {
+				return err
+			}
+			newlist = append(newlist, c)
+		case `Duration`:
+			c := DurationCol{}
 			err := content.Decode(&c)
 			if err != nil {
 				return err

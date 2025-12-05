@@ -1,19 +1,26 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"fmt"
+
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type PercentCol struct {
 	colNum      `yaml:",inline"`
-	Numerator   loader.SourceKey `yaml:"numerator"`
-	Denominator loader.SourceKey `yaml:"denominator"`
+	Numerator   SourceKey `yaml:"numerator"`
+	Denominator SourceKey `yaml:"denominator"`
 }
 
-// Data for this view based on the state
-func (c PercentCol) GetData(sr loader.StateReader) []string {
+// A list of source keys that this column requires
+func (c PercentCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Numerator, c.Denominator}
+}
+
+// Data for this view based on the metrics
+func (c PercentCol) GetData(cache *blip.MetricCache) []string {
 	var str string
-	raw, err := c.getPercent(sr)
+	raw, err := c.getPercent(cache)
 	if err != nil {
 		str = FitString(`-`, c.Length)
 	} else {
@@ -23,19 +30,25 @@ func (c PercentCol) GetData(sr loader.StateReader) []string {
 	return []string{str}
 }
 
-// Calculates the rate for the given StateReader, returns an error if there's a data problem.
-func (c PercentCol) getPercent(sr loader.StateReader) (float64, error) {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
-	numerator, err := currssp.GetFloat(c.Numerator)
-	if err != nil {
-		return 0, err
-	}
-	denominator, err := currssp.GetFloat(c.Denominator)
-	if err != nil {
-		return 0, err
+// Calculates the percentage for the given MetricCache, returns an error if there's a data problem.
+func (c PercentCol) getPercent(cache *blip.MetricCache) (float64, error) {
+	// Get numerator - check if it exists
+	numMetric, numOk := cache.GetMetric(c.Numerator.Domain, c.Numerator.Metric)
+	if !numOk {
+		return 0, fmt.Errorf("numerator metric not found: %s/%s", c.Numerator.Domain, c.Numerator.Metric)
 	}
 
-	// Return the calculated rate
-	return (numerator / denominator) * 100, nil
+	// Get denominator - check if it exists
+	denomMetric, denomOk := cache.GetMetric(c.Denominator.Domain, c.Denominator.Metric)
+	if !denomOk {
+		return 0, fmt.Errorf("denominator metric not found: %s/%s", c.Denominator.Domain, c.Denominator.Metric)
+	}
+
+	// Check for zero denominator
+	if denomMetric.Value == 0 {
+		return 0, fmt.Errorf("denominator is zero")
+	}
+
+	// Return the calculated percentage
+	return (numMetric.Value / denomMetric.Value) * 100, nil
 }

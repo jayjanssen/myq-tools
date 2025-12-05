@@ -1,19 +1,24 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type SubtractCol struct {
 	colNum  `yaml:",inline"`
-	Bigger  loader.SourceKey `yaml:"bigger"`
-	Smaller loader.SourceKey `yaml:"smaller"`
+	Bigger  SourceKey `yaml:"bigger"`
+	Smaller SourceKey `yaml:"smaller"`
 }
 
-// Data for this view based on the state
-func (c SubtractCol) GetData(sr loader.StateReader) []string {
+// A list of source keys that this column requires
+func (c SubtractCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Bigger, c.Smaller}
+}
+
+// Data for this view based on the metrics
+func (c SubtractCol) GetData(cache *blip.MetricCache) []string {
 	var str string
-	raw, err := c.getSubtract(sr)
+	raw, err := c.getSubtract(cache)
 	if err != nil {
 		str = FitString(`-`, c.Length)
 	} else {
@@ -23,19 +28,12 @@ func (c SubtractCol) GetData(sr loader.StateReader) []string {
 	return []string{str}
 }
 
-// Calculates the rate for the given StateReader, returns an error if there's a data problem.
-func (c SubtractCol) getSubtract(sr loader.StateReader) (float64, error) {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
-	bigger, err := currssp.GetFloat(c.Bigger)
-	if err != nil {
-		return 0, err
-	}
-	smaller, err := currssp.GetFloat(c.Smaller)
-	if err != nil {
-		return 0, err
-	}
+// Calculates the subtraction for the given MetricCache, returns an error if there's a data problem.
+func (c SubtractCol) getSubtract(cache *blip.MetricCache) (float64, error) {
+	// Get values
+	bigger := cache.GetMetricValue(c.Bigger.Domain, c.Bigger.Metric)
+	smaller := cache.GetMetricValue(c.Smaller.Domain, c.Smaller.Metric)
 
-	// Return the calculated rate
+	// Return the calculated subtraction
 	return (bigger - smaller), nil
 }
