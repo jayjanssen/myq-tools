@@ -130,8 +130,9 @@ func (c *Collector) Stop() {
 	}
 }
 
-// GetMetrics starts a ticker and returns a channel of metrics
-func (c *Collector) GetMetrics() <-chan *blip.Metrics {
+// GetMetrics starts a ticker and returns a channel of metrics.
+// The goroutine will stop when the context is cancelled.
+func (c *Collector) GetMetrics(ctx context.Context) <-chan *blip.Metrics {
 	ch := make(chan *blip.Metrics, 1)
 
 	ticker := time.NewTicker(c.interval)
@@ -141,6 +142,8 @@ func (c *Collector) GetMetrics() <-chan *blip.Metrics {
 
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-ticker.C:
 				metricsSlice, err := c.Collect()
 				if err != nil {
@@ -150,7 +153,11 @@ func (c *Collector) GetMetrics() <-chan *blip.Metrics {
 
 				// Send all collected metrics to channel
 				for _, m := range metricsSlice {
-					ch <- m
+					select {
+					case ch <- m:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		}

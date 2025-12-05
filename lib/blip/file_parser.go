@@ -24,6 +24,7 @@ const (
 // FileParser reads mysqladmin ext output and converts to blip.Metrics
 type FileParser struct {
 	scanner    *bufio.Scanner
+	file       *os.File
 	outputtype showoutputtype
 	fileName   string
 	interval   time.Duration
@@ -48,9 +49,13 @@ func (f *FileParser) Initialize(interval time.Duration) error {
 	if err != nil {
 		return fmt.Errorf("cannot open status file %s: %w", f.statusFile, err)
 	}
+	f.file = r // Store the file handle for later closing
+	// Note: File will be kept open for GetMetrics to read from
+	// It will be closed when the scanner finishes or when GetMetrics is done
 
 	// Check the interval
 	if interval.Seconds() < 1 {
+		r.Close() // Close file before returning error
 		return fmt.Errorf("interval cannot be less than 1s (%s)", interval.String())
 	}
 
@@ -59,22 +64,33 @@ func (f *FileParser) Initialize(interval time.Duration) error {
 
 	// Scan back for the Uptime in the given record and return true if it can be skipped
 	skip_interval := func(record []byte) (skippable bool) {
-		upt_pos := bytes.Index(record, uptime_str) + len(uptime_str) // After the Uptime
-		if upt_pos >= 0 {
-			// Find the next newline
-			upt_nl := bytes.IndexByte(record[upt_pos:], '\n') + upt_pos
-			// Trim extra chars
-			uptime_str := string(bytes.TrimSpace(bytes.Trim(record[upt_pos:upt_nl], `| `)))
-			// Parse the str to float
-			current_uptime, _ := strconv.ParseFloat(uptime_str, 64)
-
-			// if current and previous uptimes differ less than the interval, skip
-			if prev_uptime > 0 && current_uptime-prev_uptime < interval.Seconds() {
-				return true
-			}
-
-			prev_uptime = current_uptime
+		upt_idx := bytes.Index(record, uptime_str)
+		if upt_idx < 0 {
+			// Uptime not found in record
+			return false
 		}
+
+		upt_pos := upt_idx + len(uptime_str) // After the Uptime
+
+		// Find the next newline
+		nl_idx := bytes.IndexByte(record[upt_pos:], '\n')
+		if nl_idx < 0 {
+			// No newline found, can't parse uptime
+			return false
+		}
+		upt_nl := nl_idx + upt_pos
+
+		// Trim extra chars
+		uptime_str := string(bytes.TrimSpace(bytes.Trim(record[upt_pos:upt_nl], `| `)))
+		// Parse the str to float
+		current_uptime, _ := strconv.ParseFloat(uptime_str, 64)
+
+		// if current and previous uptimes differ less than the interval, skip
+		if prev_uptime > 0 && current_uptime-prev_uptime < interval.Seconds() {
+			return true
+		}
+
+		prev_uptime = current_uptime
 		return false
 	}
 
@@ -98,6 +114,11 @@ func (f *FileParser) Initialize(interval time.Duration) error {
 		// Find a new record
 		if end := bytes.Index(data, recordmatch); end >= 0 {
 			nl := bytes.IndexByte(data[end:], '\n') // Find the subsequent newline
+
+			// If no newline found, we need more data
+			if nl < 0 {
+				return 0, nil, nil
+			}
 
 			// if our record match is at position 0, we skip this line and start from the next
 			if end == 0 {
@@ -176,6 +197,11 @@ func (f *FileParser) GetMetrics() <-chan *blip.Metrics {
 
 	go func() {
 		defer close(ch)
+		defer func() {
+			if f.file != nil {
+				f.file.Close()
+			}
+		}()
 
 		var intervalNum uint = 0
 		startTime := time.Now()

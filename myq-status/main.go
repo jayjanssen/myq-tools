@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -49,21 +50,27 @@ func main() {
 
 	flag.Parse()
 
+	// Create context for cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Set up signal handling for graceful shutdown
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		cancel() // Cancel context to signal goroutines to stop
+		// Give goroutines a moment to clean up
+		time.Sleep(100 * time.Millisecond)
+		os.Exit(OK)
+	}()
+
 	// Enable profiling if set
 	if *profile != "" {
 		fmt.Println("Starting profiling to:", *profile)
 		f, _ := os.Create(*profile)
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
-
-		// Need to trap interrupts in order for the profile to flush
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		go func() {
-			<-sigs
-			pprof.StopCPUProfile()
-			os.Exit(OK)
-		}()
 	}
 
 	if *version {
@@ -170,7 +177,7 @@ func main() {
 		}
 		defer collector.Stop()
 
-		metricsChan = collector.GetMetrics()
+		metricsChan = collector.GetMetrics(ctx)
 	} else {
 		// File mode: parse mysqladmin output
 		parser := blip.NewFileParser(*statusfile, *varfile)
