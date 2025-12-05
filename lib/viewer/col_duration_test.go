@@ -56,7 +56,7 @@ func TestCompactDuration(t *testing.T) {
 		{90 * time.Second, 3, "2m"},                                   // round up to 2m
 		{2*time.Hour + 30*time.Minute + 1*time.Second, 10, "2h30m1s"}, // full size
 		{2*time.Hour + 30*time.Minute + 1*time.Second, 6, "2h30m"},    // not enough room for seconds
-		{2*time.Hour + 30*time.Minute + 1*time.Second, 3, "3h"},       // not enough room for secondzs
+		{2*time.Hour + 30*time.Minute + 1*time.Second, 3, "3h"},       // not enough room for seconds
 		{25 * time.Hour, 6, "1d1h"},
 		{8 * 24 * time.Hour, 6, "1w1d"},
 	}
