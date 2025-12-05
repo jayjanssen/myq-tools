@@ -1,7 +1,7 @@
 package viewer
 
 import (
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type PercentCol struct {
@@ -16,7 +16,7 @@ func (c PercentCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c PercentCol) GetData(cache *myblip.MetricCache) []string {
+func (c PercentCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 	raw, err := c.getPercent(cache)
 	if err != nil {
@@ -29,7 +29,7 @@ func (c PercentCol) GetData(cache *myblip.MetricCache) []string {
 }
 
 // Calculates the percentage for the given MetricCache, returns an error if there's a data problem.
-func (c PercentCol) getPercent(cache *myblip.MetricCache) (float64, error) {
+func (c PercentCol) getPercent(cache *blip.MetricCache) (float64, error) {
 	// Get numerator
 	numerator := cache.GetMetricValue(c.Numerator.Domain, c.Numerator.Metric)
 

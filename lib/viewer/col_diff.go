@@ -1,7 +1,7 @@
 package viewer
 
 import (
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type DiffCol struct {
@@ -15,7 +15,7 @@ func (c DiffCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c DiffCol) GetData(cache *myblip.MetricCache) []string {
+func (c DiffCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 	raw, err := c.getDiff(cache)
 	if err != nil {
@@ -28,7 +28,7 @@ func (c DiffCol) GetData(cache *myblip.MetricCache) []string {
 }
 
 // Calculates the diff for the given MetricCache, returns an error if there's a data problem.
-func (c DiffCol) getDiff(cache *myblip.MetricCache) (float64, error) {
+func (c DiffCol) getDiff(cache *blip.MetricCache) (float64, error) {
 	// Get current value
 	cur := cache.GetMetricValue(c.Key.Domain, c.Key.Metric)
 

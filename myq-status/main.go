@@ -11,9 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cashapp/blip"
 	_ "github.com/go-sql-driver/mysql"
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 	"github.com/jayjanssen/myq-tools/lib/clientconf"
 	"github.com/jayjanssen/myq-tools/lib/viewer"
 )
@@ -142,14 +141,14 @@ func main() {
 		}
 
 		// Convert to blip config
-		blipCfg, err := myblip.ConfigFromMySQL(mysqlConfig)
+		blipCfg, err := blip.ConfigFromMySQL(mysqlConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error converting config: %v\n", err)
 			os.Exit(LOADER_ERROR)
 		}
 
 		// Open database connection
-		dsn, err := myblip.MakeDSN(blipCfg)
+		dsn, err := blip.MakeDSN(blipCfg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating DSN: %v\n", err)
 			os.Exit(LOADER_ERROR)
@@ -163,7 +162,7 @@ func main() {
 		defer db.Close()
 
 		// Create and initialize collector
-		collector := myblip.NewCollector(blipCfg, db)
+		collector := blip.NewCollector(blipCfg, db)
 		err = collector.Prepare(*interval, metricsByDomain)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error preparing collector: %v\n", err)
@@ -174,7 +173,7 @@ func main() {
 		metricsChan = collector.GetMetrics()
 	} else {
 		// File mode: parse mysqladmin output
-		parser := myblip.NewFileParser(*statusfile, *varfile)
+		parser := blip.NewFileParser(*statusfile, *varfile)
 		err = parser.Initialize(*interval)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error initializing file parser: %v\n", err)
@@ -205,7 +204,7 @@ func main() {
 	}
 
 	// Create metric cache
-	cache := myblip.NewMetricCache()
+	cache := blip.NewMetricCache()
 
 	// Main loop through metrics
 	for metrics := range metricsChan {

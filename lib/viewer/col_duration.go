@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // DurationCol displays a time duration in human-readable format
@@ -21,7 +21,7 @@ func (c DurationCol) GetRequiredMetrics() []SourceKey {
 }
 
 // Data for this view based on the metrics
-func (c DurationCol) GetData(cache *myblip.MetricCache) []string {
+func (c DurationCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 
 	// Try getting the metric value

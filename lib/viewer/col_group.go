@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // A GroupCol is a list of (related) cols
@@ -63,7 +63,7 @@ func (gc GroupCol) GetDetailedHelp() (output []string) {
 }
 
 // Header for this Group, the name of the Group is first, then the headers of each individual col
-func (gc GroupCol) GetHeader(cache *myblip.MetricCache) (result []string) {
+func (gc GroupCol) GetHeader(cache *blip.MetricCache) (result []string) {
 	getColOut := func(sv Viewer) []string {
 		return sv.GetHeader(cache)
 	}
@@ -78,7 +78,7 @@ func (gc GroupCol) GetHeader(cache *myblip.MetricCache) (result []string) {
 	return
 }
 
-func (gc GroupCol) GetData(cache *myblip.MetricCache) []string {
+func (gc GroupCol) GetData(cache *blip.MetricCache) []string {
 	getColOut := func(sv Viewer) []string {
 		return sv.GetData(cache)
 	}

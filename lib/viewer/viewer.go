@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,10 +28,10 @@ type Viewer interface {
 	GetMetricsByDomain() map[string][]string
 
 	// Header for this view
-	GetHeader(*myblip.MetricCache) []string
+	GetHeader(*blip.MetricCache) []string
 
 	// Data for this view based on the metrics
-	GetData(*myblip.MetricCache) []string
+	GetData(*blip.MetricCache) []string
 
 	// Blank for this view when we need to pad extra lines
 	GetBlank() string

@@ -3,7 +3,7 @@ package viewer
 import (
 	"fmt"
 
-	myblip "github.com/jayjanssen/myq-tools/lib/blip"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type RateSumCol struct {
@@ -17,7 +17,7 @@ func (rsc RateSumCol) GetRequiredMetrics() []SourceKey {
 	return rsc.Keys
 }
 
-func (rsc RateSumCol) GetData(cache *myblip.MetricCache) []string {
+func (rsc RateSumCol) GetData(cache *blip.MetricCache) []string {
 	var str string
 	raw, err := rsc.getRate(cache)
 	if err != nil {
@@ -29,7 +29,7 @@ func (rsc RateSumCol) GetData(cache *myblip.MetricCache) []string {
 	return []string{str}
 }
 
-func (rsc RateSumCol) getRate(cache *myblip.MetricCache) (float64, error) {
+func (rsc RateSumCol) getRate(cache *blip.MetricCache) (float64, error) {
 	// Calculate expanded Keys once if they contain patterns
 	// For now, just use the keys as-is (pattern expansion can be added later)
 	if len(rsc.expandedKeys) == 0 {
