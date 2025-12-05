@@ -1,6 +1,8 @@
 package viewer
 
 import (
+	"fmt"
+
 	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
@@ -29,10 +31,10 @@ func (c RateCol) GetData(cache *blip.MetricCache) []string {
 
 // Calculates the rate for the given MetricCache, returns an error if there's a data problem.
 func (c RateCol) getRate(cache *blip.MetricCache) (float64, error) {
-	// Get current value
+	// Get current value - must exist
 	cur, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric)
 	if !ok {
-		return 0, nil // No data available
+		return 0, fmt.Errorf("metric not found: %s/%s", c.Key.Domain, c.Key.Metric)
 	}
 
 	// Get previous value (0 if not available)
