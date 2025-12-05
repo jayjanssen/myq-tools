@@ -131,15 +131,20 @@ func (mc *MetricCache) FindMetrics(domain, pattern string) []blip.MetricValue {
 
 // matchPattern does simple glob-style pattern matching
 func matchPattern(name, pattern string) bool {
-	// Simple implementation: just check if pattern (without ^) is a prefix
-	// Could be enhanced with proper regex
+	// Handle caret - treat as "starts with"
 	if len(pattern) > 0 && pattern[0] == '^' {
 		pattern = pattern[1:]
+		// Caret implies prefix match
+		return len(name) >= len(pattern) && name[:len(pattern)] == pattern
 	}
+
+	// Handle wildcard suffix
 	if len(pattern) > 0 && pattern[len(pattern)-1] == '*' {
 		pattern = pattern[:len(pattern)-1]
 		return len(name) >= len(pattern) && name[:len(pattern)] == pattern
 	}
+
+	// Exact match
 	return name == pattern
 }
 

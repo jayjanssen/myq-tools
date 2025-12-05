@@ -1,0 +1,17 @@
+Com_select	100
+Threads_running	1
+Uptime	3600
+MYQTOOLSEND
+Com_select	150
+Threads_running	2
+Uptime	3601
+MYQTOOLSEND
+Com_select	200
+Threads_running	1
+Uptime	3602
+MYQTOOLSEND
+Com_select	250
+Threads_running	3
+Uptime	3605
+MYQTOOLSEND
+
