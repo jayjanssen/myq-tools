@@ -127,6 +127,9 @@ func main() {
 		os.Exit(OK)
 	}
 
+	// Extract required metrics from the view
+	metricsByDomain := view.GetMetricsByDomain()
+
 	// Create metrics channel based on mode (live or file)
 	var metricsChan <-chan *blip.Metrics
 
@@ -161,7 +164,7 @@ func main() {
 
 		// Create and initialize collector
 		collector := myblip.NewCollector(blipCfg, db)
-		err = collector.Prepare(*interval)
+		err = collector.Prepare(*interval, metricsByDomain)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error preparing collector: %v\n", err)
 			os.Exit(LOADER_ERROR)
@@ -208,11 +211,6 @@ func main() {
 	for metrics := range metricsChan {
 		// Update cache with new metrics
 		cache.Update(metrics)
-
-		// Skip first iteration if we don't have previous data yet
-		if !cache.HasPrevious() {
-			continue
-		}
 
 		// Reprint a header whenever lines == 0
 		if linesSinceHeader == 0 {

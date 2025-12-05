@@ -36,6 +36,26 @@ func (c defaultCol) GetDomains() []string {
 	return c.Domains
 }
 
+// A list of source keys that this column requires
+func (c defaultCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{} // default implementation returns empty
+}
+
+// A map of domain to list of metric names (default implementation)
+func (c defaultCol) GetMetricsByDomain() map[string][]string {
+	result := make(map[string][]string)
+	for _, key := range c.GetRequiredMetrics() {
+		if key.Domain == "" || key.Metric == "" {
+			continue
+		}
+		if result[key.Domain] == nil {
+			result[key.Domain] = []string{}
+		}
+		result[key.Domain] = append(result[key.Domain], key.Metric)
+	}
+	return result
+}
+
 // Header for this view
 func (c defaultCol) GetHeader(cache *myblip.MetricCache) []string {
 	return []string{FitString(c.Name, c.Length)}

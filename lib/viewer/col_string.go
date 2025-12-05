@@ -12,6 +12,11 @@ type StringCol struct {
 	Fromend    bool      `yaml:"fromend"`
 }
 
+// A list of source keys that this column requires
+func (c StringCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
 // Data for this view based on the metrics
 func (c StringCol) GetData(cache *myblip.MetricCache) []string {
 	// Try to get string representation of the metric

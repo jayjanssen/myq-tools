@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cashapp/blip"
@@ -31,30 +32,61 @@ func NewCollector(cfg blip.ConfigMonitor, db *sql.DB) *Collector {
 	}
 }
 
-// Prepare initializes the collector with a plan containing all blip domains
-func (c *Collector) Prepare(interval time.Duration) error {
+// Prepare initializes the collector with a plan for the specified metrics
+func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][]string) error {
 	c.interval = interval
 	c.levelName = "default"
 
-	// Create a simple plan with status.global and var.global
-	// These are the core domains that myq-tools traditionally used
+	// Build the collect map dynamically based on required metrics
+	collectMap := make(map[string]blip.Domain)
+
+	for domain, metrics := range metricsByDomain {
+		// Check if this domain contains any patterns (wildcards)
+		hasPattern := false
+		for _, metric := range metrics {
+			if strings.Contains(metric, "*") || strings.HasPrefix(metric, "^") {
+				hasPattern = true
+				break
+			}
+		}
+
+		// If there are patterns, we need to collect all metrics for that domain
+		// because Blip doesn't support pattern matching in the Metrics array
+		if hasPattern {
+			collectMap[domain] = blip.Domain{
+				Name:    domain,
+				Options: map[string]string{"all": "yes"},
+			}
+		} else {
+			// Collect only specific metrics
+			collectMap[domain] = blip.Domain{
+				Name:    domain,
+				Metrics: metrics,
+				// Don't set "all" option, or set it to "no" - absence means "no"
+			}
+		}
+	}
+
+	// If no domains specified, fall back to collecting all status and variables
+	if len(collectMap) == 0 {
+		collectMap["status.global"] = blip.Domain{
+			Name:    "status.global",
+			Options: map[string]string{"all": "yes"},
+		}
+		collectMap["var.global"] = blip.Domain{
+			Name:    "var.global",
+			Options: map[string]string{"all": "yes"},
+		}
+	}
+
 	c.plan = blip.Plan{
 		Name:   "myq-tools-plan",
 		Source: "myq-tools",
 		Levels: map[string]blip.Level{
 			c.levelName: {
-				Name: c.levelName,
-				Freq: interval.String(),
-				Collect: map[string]blip.Domain{
-					"status.global": {
-						Name:    "status.global",
-						Options: map[string]string{"all": "yes"},
-					},
-					"var.global": {
-						Name:    "var.global",
-						Options: map[string]string{"all": "yes"},
-					},
-				},
+				Name:    c.levelName,
+				Freq:    interval.String(),
+				Collect: collectMap,
 			},
 		},
 	}

@@ -9,6 +9,11 @@ type RateCol struct {
 	Key    SourceKey `yaml:"key"`
 }
 
+// A list of source keys that this column requires
+func (c RateCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
 // Data for this view based on the metrics
 func (c RateCol) GetData(cache *myblip.MetricCache) []string {
 	var str string

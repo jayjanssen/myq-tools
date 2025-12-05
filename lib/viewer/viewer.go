@@ -21,6 +21,12 @@ type Viewer interface {
 	// A list of domains that this view requires
 	GetDomains() []string
 
+	// A list of source keys (domain/metric pairs) that this viewer requires
+	GetRequiredMetrics() []SourceKey
+
+	// A map of domain to list of metric names required by this viewer
+	GetMetricsByDomain() map[string][]string
+
 	// Header for this view
 	GetHeader(*myblip.MetricCache) []string
 

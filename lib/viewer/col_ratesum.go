@@ -12,6 +12,11 @@ type RateSumCol struct {
 	expandedKeys []SourceKey
 }
 
+// A list of source keys that this column requires
+func (rsc RateSumCol) GetRequiredMetrics() []SourceKey {
+	return rsc.Keys
+}
+
 func (rsc RateSumCol) GetData(cache *myblip.MetricCache) []string {
 	var str string
 	raw, err := rsc.getRate(cache)
