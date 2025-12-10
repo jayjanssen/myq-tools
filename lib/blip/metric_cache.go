@@ -2,23 +2,28 @@ package blip
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cashapp/blip"
 )
 
 // MetricCache stores current and previous metrics for easy lookup
 type MetricCache struct {
-	current   *blip.Metrics
-	previous  *blip.Metrics
-	index     map[string]map[string]*blip.MetricValue // domain -> name -> value
-	prevIndex map[string]map[string]*blip.MetricValue // domain -> name -> value
+	current       *blip.Metrics
+	previous      *blip.Metrics
+	index         map[string]map[string]*blip.MetricValue // domain -> name -> value
+	prevIndex     map[string]map[string]*blip.MetricValue // domain -> name -> value
+	isLiveMode    bool                                    // true for live MySQL connection, false for file replay
+	firstUptime   int64                                   // uptime of first sample (for calculating relative time in file mode)
+	uptimeTracked bool                                    // whether we've captured the first uptime yet
 }
 
 // NewMetricCache creates a new metric cache
-func NewMetricCache() *MetricCache {
+func NewMetricCache(isLiveMode bool) *MetricCache {
 	return &MetricCache{
-		index:     make(map[string]map[string]*blip.MetricValue),
-		prevIndex: make(map[string]map[string]*blip.MetricValue),
+		index:      make(map[string]map[string]*blip.MetricValue),
+		prevIndex:  make(map[string]map[string]*blip.MetricValue),
+		isLiveMode: isLiveMode,
 	}
 }
 
@@ -41,6 +46,11 @@ func (mc *MetricCache) Update(metrics *blip.Metrics) {
 				mc.index[domain][mv.Name] = mv
 			}
 		}
+	}
+
+	// Track the first uptime for file mode duration calculation
+	if !mc.isLiveMode && mc.HasCurrent() && mc.firstUptime == 0 {
+		mc.firstUptime = mc.GetUptime()
 	}
 }
 
@@ -93,7 +103,17 @@ func (mc *MetricCache) GetTimeString() string {
 	if mc.current == nil {
 		return ""
 	}
-	return mc.current.Begin.Format("15:04:05")
+
+	if mc.isLiveMode {
+		// Live mode: show current time as HH:MM:SS
+		return mc.current.Begin.Format("15:04:05")
+	} else {
+		// File mode: show duration based on uptime difference from first sample
+		currentUptime := mc.GetUptime()
+		elapsedSeconds := currentUptime - mc.firstUptime
+		duration := time.Duration(elapsedSeconds) * time.Second
+		return duration.String()
+	}
 }
 
 // HasCurrent returns true if there's current data

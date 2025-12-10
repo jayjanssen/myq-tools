@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewMetricCache(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	if cache == nil {
 		t.Fatal("NewMetricCache returned nil")
@@ -28,7 +28,7 @@ func TestNewMetricCache(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	// Create first metrics
 	metrics1 := &blip.Metrics{
@@ -84,7 +84,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdate_NilMetrics(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	// Update with nil should not panic
 	cache.Update(nil)
@@ -95,7 +95,7 @@ func TestUpdate_NilMetrics(t *testing.T) {
 }
 
 func TestGetMetric(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	metrics := &blip.Metrics{
 		Begin: time.Now(),
@@ -132,7 +132,7 @@ func TestGetMetric(t *testing.T) {
 }
 
 func TestGetPrevMetric(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	metrics1 := &blip.Metrics{
 		Begin: time.Now(),
@@ -171,7 +171,7 @@ func TestGetPrevMetric(t *testing.T) {
 }
 
 func TestGetMetricValue(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	metrics := &blip.Metrics{
 		Begin: time.Now(),
@@ -199,7 +199,7 @@ func TestGetMetricValue(t *testing.T) {
 }
 
 func TestSecondsDiff(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	start := time.Now()
 	metrics1 := &blip.Metrics{
@@ -232,7 +232,7 @@ func TestSecondsDiff(t *testing.T) {
 }
 
 func TestHasCurrent_HasPrevious(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	// Initially empty
 	if cache.HasCurrent() {
@@ -266,7 +266,7 @@ func TestHasCurrent_HasPrevious(t *testing.T) {
 }
 
 func TestFindMetrics(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	metrics := &blip.Metrics{
 		Begin: time.Now(),
@@ -346,7 +346,7 @@ func TestMatchPattern(t *testing.T) {
 }
 
 func TestDomainExists(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	metrics := &blip.Metrics{
 		Begin: time.Now(),
@@ -378,7 +378,7 @@ func TestDomainExists(t *testing.T) {
 }
 
 func TestGetAllDomains(t *testing.T) {
-	cache := NewMetricCache()
+	cache := NewMetricCache(true)
 
 	// Empty cache
 	domains := cache.GetAllDomains()
@@ -424,5 +424,187 @@ func TestGetAllDomains(t *testing.T) {
 	}
 	if !domainMap["innodb"] {
 		t.Error("Expected innodb in domains list")
+	}
+}
+
+func TestGetTimeString_LiveMode(t *testing.T) {
+	cache := NewMetricCache(true) // Live mode
+
+	testTime := time.Date(2024, 1, 1, 14, 30, 45, 0, time.UTC)
+	metrics := &blip.Metrics{
+		Begin: testTime,
+		End:   testTime.Add(time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 100, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics)
+
+	timeStr := cache.GetTimeString()
+	expected := "14:30:45"
+	if timeStr != expected {
+		t.Errorf("Expected time string %q, got %q", expected, timeStr)
+	}
+}
+
+func TestGetTimeString_FileMode(t *testing.T) {
+	cache := NewMetricCache(false) // File mode
+
+	startTime := time.Date(2024, 1, 1, 14, 30, 0, 0, time.UTC)
+
+	// First sample with uptime=100s
+	metrics1 := &blip.Metrics{
+		Begin: startTime,
+		End:   startTime.Add(time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 100, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "uptime", Value: 100, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics1)
+	timeStr := cache.GetTimeString()
+	if timeStr != "0s" {
+		t.Errorf("Expected time string %q for first sample, got %q", "0s", timeStr)
+	}
+
+	// Second sample with uptime=101s (1 second later)
+	metrics2 := &blip.Metrics{
+		Begin: startTime.Add(1 * time.Second),
+		End:   startTime.Add(2 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 200, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "uptime", Value: 101, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics2)
+	timeStr = cache.GetTimeString()
+	if timeStr != "1s" {
+		t.Errorf("Expected time string %q for second sample, got %q", "1s", timeStr)
+	}
+
+	// Third sample with uptime=165s (65 seconds after first = 1m5s)
+	metrics3 := &blip.Metrics{
+		Begin: startTime.Add(65 * time.Second),
+		End:   startTime.Add(66 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 300, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "uptime", Value: 165, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics3)
+	timeStr = cache.GetTimeString()
+	if timeStr != "1m5s" {
+		t.Errorf("Expected time string %q for third sample, got %q", "1m5s", timeStr)
+	}
+
+	// Fourth sample with uptime=200s (100 seconds after first = 1m40s)
+	metrics4 := &blip.Metrics{
+		Begin: startTime.Add(100 * time.Second),
+		End:   startTime.Add(101 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 400, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "uptime", Value: 200, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics4)
+	timeStr = cache.GetTimeString()
+	if timeStr != "1m40s" {
+		t.Errorf("Expected time string %q for fourth sample, got %q", "1m40s", timeStr)
+	}
+}
+
+func TestGetTimeString_FileMode_NonSequentialUptime(t *testing.T) {
+	cache := NewMetricCache(false) // File mode
+
+	startTime := time.Date(2024, 1, 1, 14, 30, 0, 0, time.UTC)
+
+	// First sample with uptime=1000s
+	metrics1 := &blip.Metrics{
+		Begin: startTime,
+		End:   startTime.Add(time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 1000, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics1)
+	timeStr := cache.GetTimeString()
+	if timeStr != "0s" {
+		t.Errorf("Expected time string %q for first sample, got %q", "0s", timeStr)
+	}
+
+	// Second sample with uptime=1005s (5 seconds later, not 1 second)
+	metrics2 := &blip.Metrics{
+		Begin: startTime.Add(5 * time.Second),
+		End:   startTime.Add(6 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 1005, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics2)
+	timeStr = cache.GetTimeString()
+	if timeStr != "5s" {
+		t.Errorf("Expected time string %q for second sample (uptime-based), got %q", "5s", timeStr)
+	}
+
+	// Third sample with uptime=1070s (70 seconds after first = 1m10s)
+	metrics3 := &blip.Metrics{
+		Begin: startTime.Add(70 * time.Second),
+		End:   startTime.Add(71 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 1070, Type: blip.GAUGE},
+			},
+		},
+	}
+
+	cache.Update(metrics3)
+	timeStr = cache.GetTimeString()
+	if timeStr != "1m10s" {
+		t.Errorf("Expected time string %q for third sample (uptime-based), got %q", "1m10s", timeStr)
+	}
+}
+
+func TestGetTimeString_FileMode_NoUptime(t *testing.T) {
+	cache := NewMetricCache(false) // File mode
+
+	startTime := time.Date(2024, 1, 1, 14, 30, 0, 0, time.UTC)
+
+	// Sample without uptime metric
+	metrics1 := &blip.Metrics{
+		Begin: startTime,
+		End:   startTime.Add(time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 100, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics1)
+	timeStr := cache.GetTimeString()
+	// When uptime is missing, both current and first uptime are 0, so difference is 0
+	if timeStr != "0s" {
+		t.Errorf("Expected time string %q when uptime is missing, got %q", "0s", timeStr)
 	}
 }

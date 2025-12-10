@@ -139,6 +139,7 @@ func main() {
 	// Create metrics channel based on mode (live or file)
 	var metricsChan <-chan *blip.Metrics
 
+	var cache *blip.MetricCache
 	if *statusfile == "" {
 		// Live mode: connect to MySQL using blip
 		mysqlConfig, err := clientconf.GenerateConfig()
@@ -178,6 +179,7 @@ func main() {
 		defer collector.Stop()
 
 		metricsChan = collector.GetMetrics(ctx)
+		cache = blip.NewMetricCache(true)
 	} else {
 		// File mode: parse mysqladmin output
 		parser := blip.NewFileParser(*statusfile, *varfile)
@@ -188,6 +190,7 @@ func main() {
 		}
 
 		metricsChan = parser.GetMetrics()
+		cache = blip.NewMetricCache(false)
 	}
 
 	// How big is our terminal?
@@ -209,9 +212,6 @@ func main() {
 		}
 		fmt.Println(s)
 	}
-
-	// Create metric cache
-	cache := blip.NewMetricCache()
 
 	// Main loop through metrics
 	for metrics := range metricsChan {
