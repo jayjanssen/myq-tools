@@ -1,3 +1,6 @@
 # Test that -version flag works and shows version info
 exec myq_status -version
-stdout 'myq-tools'
+cmp stdout version.txt
+
+-- version.txt --
+myq-tools  ()

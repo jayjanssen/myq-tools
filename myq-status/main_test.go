@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,10 +26,12 @@ func TestScripts(t *testing.T) {
 	// Add the binary directory to PATH
 	env := append(os.Environ(), "PATH="+filepath.Dir(binary)+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	// Run all script tests in testdata/script (both .txt and .txtar files)
-	pattern := filepath.Join("testdata", "script", "*.txt")
-	scripttest.Test(t, context.Background(), engine, env, pattern)
+	// Run all script tests in testdata/*/*.* (both .txt and .txtar files)
+	txtPattern := filepath.Join("testdata", "*", "*")
+	txtFiles, _ := filepath.Glob(txtPattern)
 
-	pattern = filepath.Join("testdata", "script", "*.txtar")
-	scripttest.Test(t, context.Background(), engine, env, pattern)
+	if len(txtFiles) > 0 {
+		scripttest.Test(t, t.Context(), engine, env, txtPattern)
+	}
+
 }
