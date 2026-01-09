@@ -585,6 +585,62 @@ func TestGetTimeString_FileMode_NonSequentialUptime(t *testing.T) {
 	}
 }
 
+func TestGetTimeString_FileMode_FirstUptimeZero(t *testing.T) {
+	// Test case: First sample has uptime = 0 (server just started)
+	// Subsequent samples should not overwrite firstUptime
+	cache := NewMetricCache(false)
+
+	// First sample with uptime = 0
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 0, Type: blip.GAUGE},
+			},
+		},
+	})
+
+	firstTime := cache.GetTimeString()
+	if firstTime != "0s" {
+		t.Errorf("Expected '0s' for first sample with uptime=0, got '%s'", firstTime)
+	}
+
+	// Second sample with uptime = 5
+	cache.Update(&blip.Metrics{
+		Begin: time.Now().Add(1 * time.Second),
+		End:   time.Now().Add(1 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 5, Type: blip.GAUGE},
+			},
+		},
+	})
+
+	secondTime := cache.GetTimeString()
+	// Should show 5s elapsed (5 - 0), not reset to 0s
+	if secondTime != "5s" {
+		t.Errorf("Expected '5s' for second sample (5-0), got '%s'", secondTime)
+	}
+
+	// Third sample with uptime = 10
+	cache.Update(&blip.Metrics{
+		Begin: time.Now().Add(2 * time.Second),
+		End:   time.Now().Add(2 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 10, Type: blip.GAUGE},
+			},
+		},
+	})
+
+	thirdTime := cache.GetTimeString()
+	// Should show 10s elapsed (10 - 0), not reset
+	if thirdTime != "10s" {
+		t.Errorf("Expected '10s' for third sample (10-0), got '%s'", thirdTime)
+	}
+}
+
 func TestGetTimeString_FileMode_NoUptime(t *testing.T) {
 	cache := NewMetricCache(false) // File mode
 

@@ -49,8 +49,9 @@ func (mc *MetricCache) Update(metrics *blip.Metrics) {
 	}
 
 	// Track the first uptime for file mode duration calculation
-	if !mc.isLiveMode && mc.HasCurrent() && mc.firstUptime == 0 {
+	if !mc.isLiveMode && mc.HasCurrent() && !mc.uptimeTracked {
 		mc.firstUptime = mc.GetUptime()
+		mc.uptimeTracked = true
 	}
 }
 
