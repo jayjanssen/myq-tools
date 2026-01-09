@@ -64,39 +64,6 @@ func TestPrepare_IntervalValidation(t *testing.T) {
 	// So we can't fully test this without a DB, but we verified the rejection cases above
 }
 
-func TestPrepare_WithWildcards(t *testing.T) {
-	t.Skip("Requires real database connection - this tests plan building logic")
-
-	cfg := blip.ConfigMonitor{
-		MonitorId: "test",
-		Hostname:  "localhost:3306",
-	}
-
-	collector := NewCollector(cfg, nil)
-
-	metricsByDomain := map[string][]string{
-		"status.global": {"com_*", "threads_running"},
-		"var.global":    {"max_connections"},
-	}
-
-	// Note: This requires a real database connection
-	// The test validates plan building logic
-	collector.Prepare(1*time.Second, metricsByDomain)
-
-	// Verify plan was created
-	if collector.plan.Name != "myq-tools-plan" {
-		t.Errorf("Expected plan name 'myq-tools-plan', got '%s'", collector.plan.Name)
-	}
-}
-
-func TestPrepare_SpecificMetrics(t *testing.T) {
-	t.Skip("Requires real database connection - integration test")
-}
-
-func TestPrepare_EmptyDomains(t *testing.T) {
-	t.Skip("Requires real database connection - integration test")
-}
-
 func TestStop(t *testing.T) {
 	cfg := blip.ConfigMonitor{
 		MonitorId: "test",
@@ -110,10 +77,6 @@ func TestStop(t *testing.T) {
 
 	// Calling Stop multiple times should be safe
 	collector.Stop()
-}
-
-func TestGetMetrics_Cancellation(t *testing.T) {
-	t.Skip("Requires real database connection - integration test")
 }
 
 func TestListDomains(t *testing.T) {
@@ -135,12 +98,4 @@ func TestListDomains(t *testing.T) {
 			t.Errorf("Expected domain '%s' to be in list", expected)
 		}
 	}
-}
-
-func TestPrepare_WildcardDetection(t *testing.T) {
-	t.Skip("Requires real database connection - integration test")
-}
-
-func TestCollector_IntervalStorage(t *testing.T) {
-	t.Skip("Requires real database connection - integration test")
 }

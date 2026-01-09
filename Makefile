@@ -23,6 +23,10 @@ test-verbose:
 test-coverage:
 	go test -cover ./...
 
+# Run integration tests (requires MySQL)
+test-integration:
+	go test -tags=integration ./...
+
 # Run benchmarks
 benchmark:
 	go test -bench=. -benchmem ./...
