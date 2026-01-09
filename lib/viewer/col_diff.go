@@ -1,6 +1,8 @@
 package viewer
 
 import (
+	"fmt"
+
 	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
@@ -29,12 +31,18 @@ func (c DiffCol) GetData(cache *blip.MetricCache) []string {
 
 // Calculates the diff for the given MetricCache, returns an error if there's a data problem.
 func (c DiffCol) getDiff(cache *blip.MetricCache) (float64, error) {
-	// Get current value
-	cur := cache.GetMetricValue(c.Key.Domain, c.Key.Metric)
+	// Get current value - must exist
+	curMetric, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric)
+	if !ok {
+		return 0, fmt.Errorf("metric not found: %s/%s", c.Key.Domain, c.Key.Metric)
+	}
 
-	// Get previous value
-	prev := cache.GetPrevMetricValue(c.Key.Domain, c.Key.Metric)
+	// Get previous value (0 if not available)
+	var prev float64
+	if prevMetric, ok := cache.GetPrevMetric(c.Key.Domain, c.Key.Metric); ok {
+		prev = prevMetric.Value
+	}
 
 	// Return the calculated diff
-	return calculateDiff(cur, prev), nil
+	return calculateDiff(curMetric.Value, prev), nil
 }

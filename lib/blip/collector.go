@@ -36,9 +36,10 @@ func NewCollector(cfg blip.ConfigMonitor, db *sql.DB) *Collector {
 
 // Prepare initializes the collector with a plan for the specified metrics
 func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][]string) error {
-	// Validate interval is at least 500ms to ensure positive context timeout
-	if interval < 500*time.Millisecond {
-		return fmt.Errorf("interval must be at least 500ms, got %s", interval)
+	// Validate interval is greater than 500ms to ensure positive context timeout
+	// (Collect subtracts 500ms for cleanup buffer, so interval must be > 500ms)
+	if interval <= 500*time.Millisecond {
+		return fmt.Errorf("interval must be greater than 500ms, got %s", interval)
 	}
 
 	c.interval = interval

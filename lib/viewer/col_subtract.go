@@ -1,6 +1,8 @@
 package viewer
 
 import (
+	"fmt"
+
 	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
@@ -30,10 +32,18 @@ func (c SubtractCol) GetData(cache *blip.MetricCache) []string {
 
 // Calculates the subtraction for the given MetricCache, returns an error if there's a data problem.
 func (c SubtractCol) getSubtract(cache *blip.MetricCache) (float64, error) {
-	// Get values
-	bigger := cache.GetMetricValue(c.Bigger.Domain, c.Bigger.Metric)
-	smaller := cache.GetMetricValue(c.Smaller.Domain, c.Smaller.Metric)
+	// Get bigger value - must exist
+	biggerMetric, ok := cache.GetMetric(c.Bigger.Domain, c.Bigger.Metric)
+	if !ok {
+		return 0, fmt.Errorf("metric not found: %s/%s", c.Bigger.Domain, c.Bigger.Metric)
+	}
+
+	// Get smaller value - must exist
+	smallerMetric, ok := cache.GetMetric(c.Smaller.Domain, c.Smaller.Metric)
+	if !ok {
+		return 0, fmt.Errorf("metric not found: %s/%s", c.Smaller.Domain, c.Smaller.Metric)
+	}
 
 	// Return the calculated subtraction
-	return (bigger - smaller), nil
+	return (biggerMetric.Value - smallerMetric.Value), nil
 }
