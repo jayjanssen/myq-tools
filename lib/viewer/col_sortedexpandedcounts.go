@@ -20,19 +20,26 @@ func (secc SortedExpandedCountsCol) GetRequiredMetrics() []SourceKey {
 
 func (secc SortedExpandedCountsCol) GetData(cache *blip.MetricCache) (output []string) {
 	// For each key, find matching metrics using pattern
-	// This is a simplified version - full pattern matching can be added later
-	var allMetrics []blip.MetricValue
+	// Track metrics with their domains for proper prev metric lookup
+	type metricWithDomain struct {
+		metric blip.MetricValue
+		domain string
+	}
+	var allMetrics []metricWithDomain
+
 	for _, key := range secc.Keys {
 		// Check if this is a pattern (ends with *)
 		pattern := key.Metric
-		if strings.HasSuffix(pattern, "*") {
+		if strings.HasSuffix(pattern, "*") || strings.HasPrefix(pattern, "^") {
 			// Find all metrics matching the pattern
 			metrics := cache.FindMetrics(key.Domain, pattern)
-			allMetrics = append(allMetrics, metrics...)
+			for _, metric := range metrics {
+				allMetrics = append(allMetrics, metricWithDomain{metric: metric, domain: key.Domain})
+			}
 		} else {
 			// Single metric
 			if metric, ok := cache.GetMetric(key.Domain, key.Metric); ok {
-				allMetrics = append(allMetrics, metric)
+				allMetrics = append(allMetrics, metricWithDomain{metric: metric, domain: key.Domain})
 			}
 		}
 	}
@@ -46,10 +53,11 @@ func (secc SortedExpandedCountsCol) GetData(cache *blip.MetricCache) (output []s
 	var allDiffs []float64
 	diffVariables := map[float64][]string{}
 
-	for _, metric := range allMetrics {
+	for _, mwd := range allMetrics {
+		metric := mwd.metric
 		curr := metric.Value
 		var prev float64
-		if prevMetric, ok := cache.GetPrevMetric(metric.Name, metric.Name); ok {
+		if prevMetric, ok := cache.GetPrevMetric(mwd.domain, metric.Name); ok {
 			prev = prevMetric.Value
 		}
 

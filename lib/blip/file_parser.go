@@ -44,6 +44,7 @@ type FileParser struct {
 	interval   time.Duration
 	statusFile string
 	varFile    string
+	varData    []blip.MetricValue // Cached parsed variables from varfile
 }
 
 // NewFileParser creates a new file parser for mysqladmin output
@@ -57,6 +58,15 @@ func NewFileParser(statusFile, varFile string) *FileParser {
 // Initialize prepares the file parser
 func (f *FileParser) Initialize(interval time.Duration) error {
 	f.interval = interval
+
+	// Parse varfile if provided
+	if f.varFile != "" {
+		varMetrics, err := f.parseVarFile()
+		if err != nil {
+			return fmt.Errorf("error parsing varfile %s: %w", f.varFile, err)
+		}
+		f.varData = varMetrics
+	}
 
 	// Open the status file
 	r, err := os.OpenFile(f.statusFile, os.O_RDONLY, 0)
@@ -181,7 +191,29 @@ func (f *FileParser) parseSample(data []byte) (map[string]string, error) {
 			// Get the position of the divider if we don't have it already
 			if divideridx == 0 {
 				divideridx = bytes.Index(line, []byte(` | `))
-			} else if len(line) < divideridx {
+				// If divider not found, skip this line
+				if divideridx < 0 {
+					continue
+				}
+			} else {
+				// For subsequent lines, verify the divider still exists
+				// (in case format changes mid-file)
+				currentDivider := bytes.Index(line, []byte(` | `))
+				if currentDivider < 0 {
+					// This line doesn't have the divider, skip it
+					continue
+				}
+				// Use the current divider position (may differ from first line)
+				divideridx = currentDivider
+			}
+
+			// Validate divideridx is positive before using it
+			if divideridx <= 0 {
+				continue
+			}
+
+			// Check if line is long enough
+			if len(line) < divideridx {
 				// line truncated, probably EOF
 				continue
 			}
@@ -203,6 +235,93 @@ func (f *FileParser) parseSample(data []byte) (map[string]string, error) {
 	}
 
 	return result, nil
+}
+
+// parseVarFile parses the SHOW GLOBAL VARIABLES output file
+// Returns a slice of MetricValue for var.global domain
+func (f *FileParser) parseVarFile() ([]blip.MetricValue, error) {
+	if f.varFile == "" {
+		return nil, nil
+	}
+
+	file, err := os.Open(f.varFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open varfile: %w", err)
+	}
+	defer file.Close()
+
+	var varMetrics []blip.MetricValue
+	scanner := bufio.NewScanner(file)
+	firstLine := true
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Skip header line
+		if firstLine {
+			firstLine = false
+			// Check if it's a header (Variable_name or | Variable_name)
+			if strings.HasPrefix(line, "Variable_name") || strings.Contains(line, "Variable_name") {
+				continue
+			}
+		}
+
+		// Parse tab-separated format: Variable_name\tValue
+		// Or tabular format: | Variable_name | Value |
+		var key, value string
+
+		if strings.HasPrefix(line, "|") {
+			// Tabular format: | Variable_name | Value |
+			parts := strings.Split(line, "|")
+			if len(parts) >= 3 {
+				key = strings.TrimSpace(parts[1])
+				value = strings.TrimSpace(parts[2])
+			} else {
+				continue
+			}
+		} else {
+			// Tab-separated format
+			parts := strings.SplitN(line, "\t", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			key = strings.TrimSpace(parts[0])
+			value = strings.TrimSpace(parts[1])
+		}
+
+		if key == "" {
+			continue
+		}
+
+		key = strings.ToLower(key)
+
+		// Try to convert to float64
+		val, err := strconv.ParseFloat(value, 64)
+
+		mv := blip.MetricValue{
+			Name: key,
+			Type: blip.GAUGE, // Variables are typically gauges (configuration values)
+		}
+
+		if err != nil {
+			// Not a numeric value, store as string in Meta and set Value to 0
+			mv.Value = 0
+			mv.Meta = map[string]string{
+				"string_value": value,
+			}
+		} else {
+			// Numeric value
+			mv.Value = val
+		}
+
+		varMetrics = append(varMetrics, mv)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading varfile: %w", err)
+	}
+
+	return varMetrics, nil
 }
 
 // GetMetrics returns a channel that produces blip.Metrics from the file
@@ -252,7 +371,11 @@ func (f *FileParser) GetMetrics() <-chan *blip.Metrics {
 func (f *FileParser) convertToBlipMetrics(data map[string]string, interval uint, startTime time.Time) *blip.Metrics {
 	// Pre-allocate slices with capacity based on input size
 	statusMetrics := make([]blip.MetricValue, 0, len(data))
-	varMetrics := make([]blip.MetricValue, 0)
+	// Use cached varfile data if available
+	varMetrics := f.varData
+	if varMetrics == nil {
+		varMetrics = make([]blip.MetricValue, 0)
+	}
 
 	for key, valStr := range data {
 		// Try to convert to float64

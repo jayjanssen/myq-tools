@@ -4,8 +4,26 @@ cmp stdout expected.txt
 
 -- expected.txt --
     time query count
-      0s 65.2m      
-      1s  1835      
+      0s 65.2m 64.9m total
+               49.7m [com_select]
+               4000k [com_begin]
+               4000k [com_commit]
+               3662k [com_update]
+               2569k [com_insert]
+                304k [com_set_option]
+                283k [com_show_tables]
+                217k [com_delete]
+               72591 [com_show_status]
+               32253 [com_admin_commands]
+                4753 [com_show_variables]
+                 701 [com_rollback]
+      1s  1835  1827 total
+                1398 [com_select]
+                 110 [com_begin com_commit]
+                  99 [com_insert]
+                  94 [com_update]
+                   5 [com_set_option com_show_tables]
+                   3 [com_show_status com_delete]
 -- mysqladmin.two --
 +---------------------------------------+------------+
 | Variable_name                         | Value      |

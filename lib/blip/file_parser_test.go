@@ -122,6 +122,39 @@ func TestParseSample_Tabular(t *testing.T) {
 	}
 }
 
+func TestParseSample_Tabular_MissingDivider(t *testing.T) {
+	parser := NewFileParser("", "")
+	parser.outputtype = TABULAR
+
+	// Test case: line without the " | " divider pattern
+	// This should skip the line instead of using negative indexing
+	data := []byte(`| com_select        | 100  |
+| malformed_line_without_divider
+| threads_running   | 5    |
+`)
+
+	result, err := parser.parseSample(data)
+	if err != nil {
+		t.Fatalf("parseSample failed: %v", err)
+	}
+
+	// Should only parse the two valid lines
+	if len(result) != 2 {
+		t.Errorf("Expected 2 metrics (malformed line should be skipped), got %d", len(result))
+	}
+
+	if result["com_select"] != "100" {
+		t.Errorf("Expected com_select=100, got %s", result["com_select"])
+	}
+	if result["threads_running"] != "5" {
+		t.Errorf("Expected threads_running=5, got %s", result["threads_running"])
+	}
+	// Malformed line should not be in result
+	if _, ok := result["malformed_line_without_divider"]; ok {
+		t.Error("Malformed line should not be parsed")
+	}
+}
+
 func TestParseSample_EmptyInput(t *testing.T) {
 	parser := NewFileParser("", "")
 	parser.outputtype = BATCH
