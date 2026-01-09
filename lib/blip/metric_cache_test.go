@@ -231,6 +231,109 @@ func TestSecondsDiff(t *testing.T) {
 	}
 }
 
+func TestSecondsDiff_FileMode_UptimeBased(t *testing.T) {
+	// Bug 2 fix: In file mode, SecondsDiff should use uptime differences,
+	// not timestamp differences, to handle irregular sample intervals correctly
+	cache := NewMetricCache(false) // File mode
+
+	startTime := time.Date(2024, 1, 1, 14, 30, 0, 0, time.UTC)
+
+	// First sample: uptime=100s, synthetic timestamp increments by 5s
+	metrics1 := &blip.Metrics{
+		Begin: startTime,
+		End:   startTime.Add(5 * time.Second), // Configured interval is 5s
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 100, Type: blip.GAUGE},
+				{Name: "questions", Value: 1000, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics1)
+
+	// Second sample: uptime=110s (actual diff is 10s), but synthetic timestamp increments by 5s
+	// This simulates a case where actual sample interval differs from configured interval
+	metrics2 := &blip.Metrics{
+		Begin: startTime.Add(5 * time.Second),
+		End:   startTime.Add(10 * time.Second), // Synthetic timestamp: +5s
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 110, Type: blip.GAUGE}, // Actual uptime diff: +10s
+				{Name: "questions", Value: 2000, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics2)
+
+	diff := cache.SecondsDiff()
+	// Should use uptime difference (10s), not timestamp difference (5s)
+	if diff != 10.0 {
+		t.Errorf("Expected 10.0 seconds diff (uptime-based), got %v", diff)
+	}
+
+	// Third sample: uptime=115s (actual diff is 5s), synthetic timestamp increments by 5s
+	metrics3 := &blip.Metrics{
+		Begin: startTime.Add(10 * time.Second),
+		End:   startTime.Add(15 * time.Second), // Synthetic timestamp: +5s
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 115, Type: blip.GAUGE}, // Actual uptime diff: +5s
+				{Name: "questions", Value: 2500, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics3)
+
+	diff = cache.SecondsDiff()
+	// Should use uptime difference (5s), not timestamp difference (5s)
+	// In this case they match, but the logic should still use uptime
+	if diff != 5.0 {
+		t.Errorf("Expected 5.0 seconds diff (uptime-based), got %v", diff)
+	}
+}
+
+func TestSecondsDiff_FileMode_MissingUptime(t *testing.T) {
+	// Test fallback to timestamp difference when uptime is missing
+	cache := NewMetricCache(false) // File mode
+
+	startTime := time.Date(2024, 1, 1, 14, 30, 0, 0, time.UTC)
+
+	// First sample without uptime
+	metrics1 := &blip.Metrics{
+		Begin: startTime,
+		End:   startTime.Add(5 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 1000, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics1)
+
+	// Second sample without uptime
+	metrics2 := &blip.Metrics{
+		Begin: startTime.Add(5 * time.Second),
+		End:   startTime.Add(10 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 2000, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics2)
+
+	diff := cache.SecondsDiff()
+	// Should fallback to timestamp difference (5s) when uptime is missing
+	if diff != 5.0 {
+		t.Errorf("Expected 5.0 seconds diff (timestamp fallback), got %v", diff)
+	}
+}
+
 func TestHasCurrent_HasPrevious(t *testing.T) {
 	cache := NewMetricCache(true)
 

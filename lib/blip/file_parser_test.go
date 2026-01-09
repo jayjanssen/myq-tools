@@ -2,6 +2,7 @@ package blip
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -631,6 +632,72 @@ func TestGetMetrics_Variables(t *testing.T) {
 				t.Errorf("Expected at least %d metrics, got %d", tt.minCount, len(statusMetrics))
 			}
 		})
+	}
+}
+
+func TestParseVarFile_BorderLineHeader(t *testing.T) {
+	// Create a temporary directory for test files
+	tmpDir := t.TempDir()
+
+	// Create a dummy status file (required by Initialize)
+	statusFile := filepath.Join(tmpDir, "status.txt")
+	err := os.WriteFile(statusFile, []byte("Uptime\t1000\n"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create status file: %v", err)
+	}
+
+	// Create a varfile with border lines before header
+	varFile := filepath.Join(tmpDir, "vars.tab")
+	content := `+------------------+------------------+
+| Variable_name    | Value            |
++------------------+------------------+
+| test_var1        | 123              |
+| test_var2        | 456              |
++------------------+------------------+`
+
+	err = os.WriteFile(varFile, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create varfile: %v", err)
+	}
+
+	parser := NewFileParser(statusFile, varFile)
+	err = parser.Initialize(1 * time.Second)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	// Check that varData was parsed correctly
+	if parser.varData == nil {
+		t.Fatal("Expected varData to be populated")
+	}
+
+	if len(parser.varData) != 2 {
+		t.Errorf("Expected 2 variables, got %d", len(parser.varData))
+	}
+
+	// Verify that "variable_name" is NOT in the parsed data (header should be skipped)
+	for _, mv := range parser.varData {
+		if mv.Name == "variable_name" {
+			t.Errorf("Found spurious 'variable_name' metric - header was not properly skipped")
+		}
+	}
+
+	// Verify correct variables are present
+	var foundVar1, foundVar2 bool
+	for _, mv := range parser.varData {
+		if mv.Name == "test_var1" && mv.Value == 123 {
+			foundVar1 = true
+		}
+		if mv.Name == "test_var2" && mv.Value == 456 {
+			foundVar2 = true
+		}
+	}
+
+	if !foundVar1 {
+		t.Error("test_var1 not found in parsed data")
+	}
+	if !foundVar2 {
+		t.Error("test_var2 not found in parsed data")
 	}
 }
 

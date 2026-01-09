@@ -87,8 +87,11 @@ func (secc SortedExpandedCountsCol) GetData(cache *blip.MetricCache) (output []s
 	sort.Sort(sort.Reverse(sort.Float64Slice(allDiffs)))
 
 	for _, diff := range allDiffs {
+		// Sort metric names alphabetically for consistent output when counts are equal
+		metricNames := diffVariables[diff]
+		sort.Strings(metricNames)
 		numStr := FitString(secc.fitNumber(diff, 0), secc.Length)
-		line := fmt.Sprintf("%s %v", numStr, diffVariables[diff])
+		line := fmt.Sprintf("%s %v", numStr, metricNames)
 		output = append(output, line)
 	}
 	return

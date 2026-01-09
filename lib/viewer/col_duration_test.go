@@ -76,3 +76,48 @@ func TestCompactDuration(t *testing.T) {
 		})
 	}
 }
+
+func TestDurationRoundingThresholds(t *testing.T) {
+	tests := []struct {
+		name     string
+		seconds  float64
+		length   int
+		expected string
+		desc     string
+	}{
+		// Bug 1 fix: When dropping hours, threshold should be 12 (half of 24), not 30
+		// 1 day 13 hours = 37 hours total = 1d13h
+		// When truncated to 1 unit, should round up to 2d (since 13h >= 12h threshold)
+		{"1d13h rounds to 2d", 37 * 3600, 3, "2d", "dropping hours: 13h >= 12h threshold"},
+		// 1 day 11 hours = 35 hours total = 1d11h
+		// When truncated to 1 unit, should NOT round up (since 11h < 12h threshold)
+		{"1d11h stays 1d", 35 * 3600, 3, "1d", "dropping hours: 11h < 12h threshold"},
+
+		// Bug 1 fix: When dropping days, threshold should be 4 (half of 7), not 12
+		// 1 week 4 days = 11 days total = 1w4d
+		// When truncated to 1 unit, should round up to 2w (since 4d >= 4d threshold)
+		{"1w4d rounds to 2w", 11 * 24 * 3600, 3, "2w", "dropping days: 4d >= 4d threshold"},
+		// 1 week 3 days = 10 days total = 1w3d
+		// When truncated to 1 unit, should NOT round up (since 3d < 4d threshold)
+		{"1w3d stays 1w", 10 * 24 * 3600, 3, "1w", "dropping days: 3d < 4d threshold"},
+		// 1 week 3 days 13 hours = 10 days 13 hours total = 1w3d13h
+		// When truncated to 1 unit, should NOT round up (since 3d < 4d threshold, even though 13h >= 12h)
+		// The first dropped unit is days, not hours, so we check days threshold
+		{"1w3d13h stays 1w", (10 * 24 * 3600) + (13 * 3600), 3, "1w", "dropping days: 3d < 4d threshold"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			col := DurationCol{
+				defaultCol: defaultCol{
+					Length: tt.length,
+				},
+			}
+			result := col.formatDuration(tt.seconds)
+			if result != tt.expected {
+				t.Errorf("formatDuration(%v) with length %d = %q, want %q (%s)",
+					tt.seconds, tt.length, result, tt.expected, tt.desc)
+			}
+		})
+	}
+}

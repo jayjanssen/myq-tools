@@ -252,18 +252,21 @@ func (f *FileParser) parseVarFile() ([]blip.MetricValue, error) {
 
 	var varMetrics []blip.MetricValue
 	scanner := bufio.NewScanner(file)
-	firstLine := true
+	headerSeen := false
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
 
-		// Skip header line
-		if firstLine {
-			firstLine = false
-			// Check if it's a header (Variable_name or | Variable_name)
-			if strings.HasPrefix(line, "Variable_name") || strings.Contains(line, "Variable_name") {
-				continue
-			}
+		// Skip border lines (lines starting with +)
+		if strings.HasPrefix(trimmedLine, "+") {
+			continue
+		}
+
+		// Skip header line (check for Variable_name on any line, not just first)
+		if !headerSeen && strings.Contains(line, "Variable_name") {
+			headerSeen = true
+			continue
 		}
 
 		// Parse tab-separated format: Variable_name\tValue

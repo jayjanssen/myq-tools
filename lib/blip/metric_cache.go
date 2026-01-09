@@ -92,11 +92,31 @@ func (mc *MetricCache) GetPrevMetricValue(domain, name string) float64 {
 }
 
 // SecondsDiff returns the time difference between current and previous samples
+// For file replay mode, uses uptime differences (more accurate when samples are irregular)
+// For live mode, uses timestamp differences
 func (mc *MetricCache) SecondsDiff() float64 {
 	if mc.current == nil || mc.previous == nil {
 		return 0
 	}
-	return mc.current.End.Sub(mc.previous.End).Seconds()
+
+	if mc.isLiveMode {
+		// Live mode: use timestamp differences
+		return mc.current.End.Sub(mc.previous.End).Seconds()
+	} else {
+		// File mode: use uptime differences for accurate rate calculations
+		// This handles cases where actual sample intervals differ from configured interval
+		currentUptime := mc.GetUptime()
+		prevUptime := int64(0)
+		if mv, ok := mc.GetPrevMetric("status.global", "uptime"); ok {
+			prevUptime = int64(mv.Value)
+		}
+		uptimeDiff := currentUptime - prevUptime
+		if uptimeDiff <= 0 {
+			// Fallback to timestamp difference if uptime is missing or invalid
+			return mc.current.End.Sub(mc.previous.End).Seconds()
+		}
+		return float64(uptimeDiff)
+	}
 }
 
 // GetTimeString returns a timestamp string for display

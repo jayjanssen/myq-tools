@@ -23,7 +23,7 @@ cmp stdout expected.txt
                   99 [com_insert]
                   94 [com_update]
                    5 [com_set_option com_show_tables]
-                   3 [com_show_status com_delete]
+                   3 [com_delete com_show_status]
 -- mysqladmin.two --
 +---------------------------------------+------------+
 | Variable_name                         | Value      |

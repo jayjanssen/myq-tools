@@ -177,9 +177,11 @@ func (c DurationCol) buildDurationString(parts []struct {
 	if hasRemainingUnits && applyRounding {
 		firstDropped := allNonZeroParts[selectedCount]
 		// Determine the threshold for rounding based on the unit
-		threshold := int64(30) // default for most units (half of 60)
-		if firstDropped.unit == "d" {
+		threshold := int64(30) // default for minutes and seconds (half of 60)
+		if firstDropped.unit == "h" {
 			threshold = 12 // half of 24 hours
+		} else if firstDropped.unit == "d" {
+			threshold = 4 // half of 7 days (rounded up)
 		} else if firstDropped.unit == "w" {
 			threshold = 4 // half of 7 days (rounded up)
 		}
