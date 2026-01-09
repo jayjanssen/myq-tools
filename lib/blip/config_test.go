@@ -253,3 +253,37 @@ func TestRoundTrip(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeDSN_PreservesAllowCleartextPasswords(t *testing.T) {
+	// Test that AllowCleartextPasswords from original config is preserved
+	originalCfg := mysql.NewConfig()
+	originalCfg.AllowCleartextPasswords = true
+	originalCfg.Net = "tcp"
+	originalCfg.Addr = "localhost:3306"
+	originalCfg.User = "testuser"
+	originalCfg.Passwd = "testpass"
+
+	blipCfg := blip.ConfigMonitor{
+		Hostname: "localhost:3306",
+		Username: "testuser",
+		Password: "testpass",
+	}
+
+	dsn, err := MakeDSN(blipCfg, originalCfg)
+	if err != nil {
+		t.Fatalf("MakeDSN failed: %v", err)
+	}
+
+	// Parse the DSN to verify AllowCleartextPasswords is preserved
+	parsed, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		t.Fatalf("ParseDSN failed: %v", err)
+	}
+
+	if !parsed.AllowCleartextPasswords {
+		t.Errorf("Expected AllowCleartextPasswords to be true, got false")
+	}
+	if parsed.Passwd != "testpass" {
+		t.Errorf("Expected Passwd 'testpass', got '%s'", parsed.Passwd)
+	}
+}

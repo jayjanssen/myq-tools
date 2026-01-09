@@ -156,7 +156,8 @@ func main() {
 		}
 
 		// Open database connection
-		dsn, err := blip.MakeDSN(blipCfg)
+		// Pass the original mysqlConfig to preserve TLS settings and AllowCleartextPasswords
+		dsn, err := blip.MakeDSN(blipCfg, mysqlConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating DSN: %v\n", err)
 			os.Exit(LOADER_ERROR)

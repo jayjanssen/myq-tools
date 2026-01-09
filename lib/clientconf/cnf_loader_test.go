@@ -2,6 +2,7 @@ package clientconf
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"testing"
 )
@@ -204,5 +205,67 @@ func TestLoosePrefix(t *testing.T) {
 
 	if !config.AllowCleartextPasswords {
 		t.Errorf(`expected AllowCleartextPasswords to be true`)
+	}
+}
+
+func TestEmptyPassword(t *testing.T) {
+	// Test that empty password values don't override valid passwords
+	// and that empty passwords aren't set (which would cause "using password: NO")
+
+	// Create a temporary cnf file with an empty password
+	tmpFile := "/tmp/test_empty_password.cnf"
+	content := `[client]
+user=testuser
+password=
+host=localhost
+`
+	err := os.WriteFile(tmpFile, []byte(content), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile)
+
+	cnf := initCnf()
+	err = appendFiles(cnf, []string{tmpFile})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config, err := cnfToConfig(cnf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Empty password should not be set (config.Passwd should be empty/default)
+	// This prevents MySQL from interpreting it as "no password"
+	if config.Passwd != "" {
+		t.Errorf(`expected empty password not to be set, but got: %q`, config.Passwd)
+	}
+
+	// Now test with a valid password
+	content2 := `[client]
+user=testuser
+password=validpass
+host=localhost
+`
+	err = os.WriteFile(tmpFile, []byte(content2), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cnf2 := initCnf()
+	err = appendFiles(cnf2, []string{tmpFile})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config2, err := cnfToConfig(cnf2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Valid password should be set
+	if config2.Passwd != "validpass" {
+		t.Errorf(`expected password "validpass", got: %q`, config2.Passwd)
 	}
 }

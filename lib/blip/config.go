@@ -39,8 +39,20 @@ func ConfigFromMySQL(mysqlCfg *mysql.Config) (blip.ConfigMonitor, error) {
 }
 
 // MakeDSN creates a DSN from a blip ConfigMonitor for use with sql.Open
-func MakeDSN(cfg blip.ConfigMonitor) (string, error) {
+// It accepts an optional original mysql.Config to preserve settings like TLS and AllowCleartextPasswords
+func MakeDSN(cfg blip.ConfigMonitor, originalCfg ...*mysql.Config) (string, error) {
 	mysqlCfg := mysql.NewConfig()
+
+	// If original config is provided, preserve important settings like TLS and AllowCleartextPasswords
+	if len(originalCfg) > 0 && originalCfg[0] != nil {
+		orig := originalCfg[0]
+		mysqlCfg.AllowCleartextPasswords = orig.AllowCleartextPasswords
+		mysqlCfg.TLSConfig = orig.TLSConfig
+		// Preserve other important settings that might affect password handling
+		mysqlCfg.AllowNativePasswords = orig.AllowNativePasswords
+		mysqlCfg.AllowOldPasswords = orig.AllowOldPasswords
+		mysqlCfg.AllowFallbackToPlaintext = orig.AllowFallbackToPlaintext
+	}
 
 	if cfg.Socket != "" {
 		mysqlCfg.Net = "unix"
