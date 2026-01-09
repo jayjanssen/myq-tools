@@ -1,6 +1,7 @@
 package blip
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -765,5 +766,74 @@ func TestGetTimeString_FileMode_NoUptime(t *testing.T) {
 	// When uptime is missing, both current and first uptime are 0, so difference is 0
 	if timeStr != "0s" {
 		t.Errorf("Expected time string %q when uptime is missing, got %q", "0s", timeStr)
+	}
+}
+
+func TestGetTimeString_FileMode_MissingUptimeAfterPrevious(t *testing.T) {
+	// Test case: Sample is missing uptime after previous samples had it
+	// This would cause negative elapsedSeconds if not handled
+	cache := NewMetricCache(false) // File mode
+
+	startTime := time.Date(2024, 1, 1, 14, 30, 0, 0, time.UTC)
+
+	// First sample with uptime=1000s
+	metrics1 := &blip.Metrics{
+		Begin: startTime,
+		End:   startTime.Add(time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 1000, Type: blip.GAUGE},
+				{Name: "questions", Value: 100, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics1)
+	timeStr := cache.GetTimeString()
+	if timeStr != "0s" {
+		t.Errorf("Expected time string %q for first sample, got %q", "0s", timeStr)
+	}
+
+	// Second sample with uptime=1005s
+	metrics2 := &blip.Metrics{
+		Begin: startTime.Add(5 * time.Second),
+		End:   startTime.Add(6 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "uptime", Value: 1005, Type: blip.GAUGE},
+				{Name: "questions", Value: 200, Type: blip.CUMULATIVE_COUNTER},
+			},
+		},
+	}
+
+	cache.Update(metrics2)
+	timeStr = cache.GetTimeString()
+	if timeStr != "5s" {
+		t.Errorf("Expected time string %q for second sample, got %q", "5s", timeStr)
+	}
+
+	// Third sample WITHOUT uptime (missing metric)
+	// This would cause currentUptime=0, firstUptime=1000, elapsedSeconds=-1000
+	// Should fallback to timestamp-based display instead of showing negative duration
+	metrics3 := &blip.Metrics{
+		Begin: startTime.Add(10 * time.Second),
+		End:   startTime.Add(11 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "questions", Value: 300, Type: blip.CUMULATIVE_COUNTER},
+				// uptime is missing!
+			},
+		},
+	}
+
+	cache.Update(metrics3)
+	timeStr = cache.GetTimeString()
+	// Should use timestamp difference (5s between metrics2 and metrics3) instead of negative duration
+	if timeStr != "5s" {
+		t.Errorf("Expected time string %q (timestamp-based fallback), got %q", "5s", timeStr)
+	}
+	// Ensure it's not a negative duration
+	if strings.HasPrefix(timeStr, "-") {
+		t.Errorf("Time string should not be negative, got %q", timeStr)
 	}
 }

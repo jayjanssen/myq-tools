@@ -77,9 +77,6 @@ func (v View) GetMetricsByDomain() map[string][]string {
 		// Check if this is a pattern (contains * or ^)
 		// Patterns need special handling - for now we'll need to use "all" mode
 		// TODO: handle patterns by expanding them at runtime
-		if key.Metric == "" {
-			return
-		}
 
 		if metricsByDomain[key.Domain] == nil {
 			metricsByDomain[key.Domain] = make(map[string]bool)

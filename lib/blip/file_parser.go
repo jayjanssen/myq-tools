@@ -195,24 +195,25 @@ func (f *FileParser) parseSample(data []byte) (map[string]string, error) {
 				if divideridx < 0 {
 					continue
 				}
+				// Validate divideridx is positive
+				if divideridx <= 0 {
+					continue
+				}
 			} else {
-				// For subsequent lines, verify the divider still exists
-				// (in case format changes mid-file)
+				// For subsequent lines, verify the divider still exists at the same position
+				// In well-formed tabular output, all lines should have the same divider position.
+				// We use the first divider position consistently for predictable parsing.
 				currentDivider := bytes.Index(line, []byte(` | `))
 				if currentDivider < 0 {
 					// This line doesn't have the divider, skip it
 					continue
 				}
-				// Use the current divider position (may differ from first line)
-				divideridx = currentDivider
+				// Note: We don't update divideridx here - we use the first divider position
+				// consistently. If the divider position differs, it may indicate malformed data,
+				// but we still parse using the original position for consistency.
 			}
 
-			// Validate divideridx is positive before using it
-			if divideridx <= 0 {
-				continue
-			}
-
-			// Check if line is long enough
+			// Check if line is long enough for the divider position
 			if len(line) < divideridx {
 				// line truncated, probably EOF
 				continue

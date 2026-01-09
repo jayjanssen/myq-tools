@@ -13,6 +13,11 @@ import (
 	"github.com/cashapp/blip/monitor"
 )
 
+// minIntervalBuffer is the minimum buffer time needed for cleanup operations
+// when calculating context timeout in Collect(). The interval must be greater
+// than this value to ensure a positive timeout.
+const minIntervalBuffer = 500 * time.Millisecond
+
 // Collector wraps blip's monitor.Engine to collect metrics
 type Collector struct {
 	cfg             blip.ConfigMonitor
@@ -36,10 +41,10 @@ func NewCollector(cfg blip.ConfigMonitor, db *sql.DB) *Collector {
 
 // Prepare initializes the collector with a plan for the specified metrics
 func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][]string) error {
-	// Validate interval is greater than 500ms to ensure positive context timeout
-	// (Collect subtracts 500ms for cleanup buffer, so interval must be > 500ms)
-	if interval <= 500*time.Millisecond {
-		return fmt.Errorf("interval must be greater than 500ms, got %s", interval)
+	// Validate interval is greater than minIntervalBuffer to ensure positive context timeout
+	// (Collect subtracts minIntervalBuffer for cleanup buffer, so interval must be > minIntervalBuffer)
+	if interval <= minIntervalBuffer {
+		return fmt.Errorf("interval must be greater than %v, got %s", minIntervalBuffer, interval)
 	}
 
 	c.interval = interval
@@ -116,8 +121,8 @@ func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][
 
 // Collect collects metrics from all domains and returns them
 func (c *Collector) Collect() ([]*blip.Metrics, error) {
-	// Create a context with timeout (leave 500ms buffer for cleanup)
-	ctx, cancel := context.WithTimeout(context.Background(), c.interval-500*time.Millisecond)
+	// Create a context with timeout (leave minIntervalBuffer for cleanup)
+	ctx, cancel := context.WithTimeout(context.Background(), c.interval-minIntervalBuffer)
 	defer cancel()
 
 	// Collect metrics for this interval
