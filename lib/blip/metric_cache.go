@@ -131,18 +131,29 @@ func (mc *MetricCache) GetTimeString() string {
 	} else {
 		// File mode: show duration based on uptime difference from first sample
 		currentUptime := mc.GetUptime()
-		elapsedSeconds := currentUptime - mc.firstUptime
 
-		// Handle case where uptime is missing or invalid (would produce negative duration)
-		if elapsedSeconds < 0 || currentUptime == 0 {
-			// Fallback to timestamp-based display when uptime is missing or invalid
-			// This can happen if a sample is missing the uptime metric after previous samples had it
-			if mc.previous != nil {
+		// Handle case where uptime is missing in current sample
+		if currentUptime == 0 {
+			// If we had uptime before (firstUptime > 0), this means uptime is now missing
+			// Fallback to timestamp-based display to avoid negative duration
+			if mc.firstUptime > 0 && mc.previous != nil {
 				// Use timestamp difference from previous sample
 				elapsedDuration := mc.current.End.Sub(mc.previous.End)
 				return elapsedDuration.String()
 			}
-			// If no previous sample, return "0s"
+			// If uptime was never available (firstUptime == 0), return "0s"
+			return "0s"
+		}
+
+		elapsedSeconds := currentUptime - mc.firstUptime
+
+		// Handle case where elapsedSeconds is negative (shouldn't happen with valid uptime)
+		if elapsedSeconds < 0 {
+			// Fallback to timestamp-based display if we have a previous sample
+			if mc.previous != nil {
+				elapsedDuration := mc.current.End.Sub(mc.previous.End)
+				return elapsedDuration.String()
+			}
 			return "0s"
 		}
 
