@@ -192,13 +192,12 @@ func (f *FileParser) parseSample(data []byte) (map[string]string, error) {
 			if divideridx == 0 {
 				divideridx = bytes.Index(line, []byte(` | `))
 				// If divider not found, skip this line
+				// bytes.Index returns -1 if not found, or the index (>= 0) if found
 				if divideridx < 0 {
 					continue
 				}
-				// Validate divideridx is positive
-				if divideridx <= 0 {
-					continue
-				}
+				// Note: divideridx == 0 is valid (divider at start of line after the leading '|')
+				// but unlikely in normal MySQL output. We allow it for robustness.
 			} else {
 				// For subsequent lines, verify the divider still exists at the same position
 				// In well-formed tabular output, all lines should have the same divider position.
