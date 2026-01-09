@@ -1,0 +1,57 @@
+# Test wsrep view with mysqladmin.two file
+exec myq_status -file mysqladmin.two -interval 1s wsrep
+cmp stdout expected.txt
+
+-- expected.txt --
+         Cluster  Node    Outbound      Inbound       FlowC     Conflct Gcache     Appl
+    time P cnf  #  i stat msgs data que msgs data que pause snt lcf bfa   ist  idx  %ef
+      0s P 117  3  2 Sync 3.1m  10G   0 246k 1.9M   0 4.37s   0   0   0  315k 1763    -
+      1s P 117  3  2 Sync  110 276K   0   11  88b   0   0ns   0   0   0  315k 1019    -
+-- mysqladmin.two --
++---------------------------------------+----------------------------------------------------+
+| Variable_name                         | Value                                              |
++---------------------------------------+----------------------------------------------------+
+| wsrep_cluster_status                  | Primary                                            |
+| wsrep_cluster_conf_id                 | 117                                                |
+| wsrep_cluster_size                    | 3                                                  |
+| wsrep_local_index                     | 2                                                  |
+| wsrep_local_state_comment             | Synced                                             |
+| wsrep_replicated                      | 3119304                                            |
+| wsrep_replicated_bytes                | 10641997157                                        |
+| wsrep_local_send_queue                | 0                                                  |
+| wsrep_received                        | 245849                                             |
+| wsrep_received_bytes                  | 1968113                                            |
+| wsrep_local_recv_queue                | 0                                                  |
+| wsrep_flow_control_paused_ns          | 4367461719                                         |
+| wsrep_flow_control_sent               | 0                                                  |
+| wsrep_local_cert_failures             | 0                                                  |
+| wsrep_local_bf_aborts                 | 0                                                  |
+| wsrep_last_committed                  | 1356722569                                         |
+| wsrep_local_cached_downto             | 1356407818                                         |
+| wsrep_cert_index_size                 | 1763                                               |
+| Uptime                                | 1000                                               |
++---------------------------------------+----------------------------------------------------+
+
++---------------------------------------+----------------------------------------------------+
+| Variable_name                         | Value                                              |
++---------------------------------------+----------------------------------------------------+
+| wsrep_cluster_status                  | Primary                                            |
+| wsrep_cluster_conf_id                 | 117                                                |
+| wsrep_cluster_size                    | 3                                                  |
+| wsrep_local_index                     | 2                                                  |
+| wsrep_local_state_comment             | Synced                                             |
+| wsrep_replicated                      | 3119414                                            |
+| wsrep_replicated_bytes                | 10642279884                                        |
+| wsrep_local_send_queue                | 0                                                  |
+| wsrep_received                        | 245860                                             |
+| wsrep_received_bytes                  | 1968201                                            |
+| wsrep_local_recv_queue                | 0                                                  |
+| wsrep_flow_control_paused_ns          | 4367461719                                         |
+| wsrep_flow_control_sent               | 0                                                  |
+| wsrep_local_cert_failures             | 0                                                  |
+| wsrep_local_bf_aborts                 | 0                                                  |
+| wsrep_last_committed                  | 1356722679                                         |
+| wsrep_local_cached_downto             | 1356407910                                         |
+| wsrep_cert_index_size                 | 1019                                               |
+| Uptime                                | 1001                                               |
++---------------------------------------+----------------------------------------------------+

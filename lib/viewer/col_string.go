@@ -22,7 +22,18 @@ func (c StringCol) GetData(cache *blip.MetricCache) []string {
 	// Try to get string representation of the metric
 	var str string
 	if metric, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric); ok {
-		str = fmt.Sprintf("%.0f", metric.Value) // Convert numeric to string
+		// Check if this is a string value stored in Meta
+		if metric.Meta != nil {
+			if stringVal, hasString := metric.Meta["string_value"]; hasString {
+				str = stringVal
+			} else {
+				// Numeric value, convert to string
+				str = fmt.Sprintf("%.0f", metric.Value)
+			}
+		} else {
+			// Numeric value, convert to string
+			str = fmt.Sprintf("%.0f", metric.Value)
+		}
 	} else {
 		str = `-`
 	}

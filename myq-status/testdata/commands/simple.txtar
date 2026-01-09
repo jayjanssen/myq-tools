@@ -1,0 +1,80 @@
+# Test commands view with mysqladmin.two file
+exec myq_status -file mysqladmin.two -interval 1s commands
+cmp stdout expected.txt
+
+-- expected.txt --
+    time query count
+      0s 65.2m      
+      1s  1835      
+-- mysqladmin.two --
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Com_select                            | 49706085   |
+| Com_insert                            | 2569052    |
+| Com_insert_select                     | 0          |
+| Com_update                            | 3662304    |
+| Com_update_multi                      | 0          |
+| Com_delete                            | 216524     |
+| Com_delete_multi                      | 0          |
+| Com_replace                           | 0          |
+| Com_replace_select                    | 0          |
+| Com_load                              | 0          |
+| Com_truncate                          | 0          |
+| Com_alter_db                          | 0          |
+| Com_alter_table                       | 0          |
+| Com_create_db                         | 0          |
+| Com_create_table                      | 0          |
+| Com_drop_db                           | 0          |
+| Com_drop_table                        | 0          |
+| Com_rename_table                      | 0          |
+| Com_admin_commands                    | 32253      |
+| Com_show_status                       | 72591      |
+| Com_show_tables                       | 282649     |
+| Com_show_variables                    | 4753       |
+| Com_set_option                        | 303610     |
+| Com_lock_tables                       | 0          |
+| Com_unlock_tables                     | 0          |
+| Com_begin                             | 4000469    |
+| Com_commit                            | 3999763    |
+| Com_rollback                          | 701        |
+| Com_savepoint                         | 0          |
+| Queries                               | 65243497   |
+| Uptime                                | 1000       |
++---------------------------------------+------------+
+
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Com_select                            | 49707483   |
+| Com_insert                            | 2569151    |
+| Com_insert_select                     | 0          |
+| Com_update                            | 3662398    |
+| Com_update_multi                      | 0          |
+| Com_delete                            | 216527     |
+| Com_delete_multi                      | 0          |
+| Com_replace                           | 0          |
+| Com_replace_select                    | 0          |
+| Com_load                              | 0          |
+| Com_truncate                          | 0          |
+| Com_alter_db                          | 0          |
+| Com_alter_table                       | 0          |
+| Com_create_db                         | 0          |
+| Com_create_table                      | 0          |
+| Com_drop_db                           | 0          |
+| Com_drop_table                        | 0          |
+| Com_rename_table                      | 0          |
+| Com_admin_commands                    | 32253      |
+| Com_show_status                       | 72594      |
+| Com_show_tables                       | 282654     |
+| Com_show_variables                    | 4753       |
+| Com_set_option                        | 303615     |
+| Com_lock_tables                       | 0          |
+| Com_unlock_tables                     | 0          |
+| Com_begin                             | 4000579    |
+| Com_commit                            | 3999873    |
+| Com_rollback                          | 701        |
+| Com_savepoint                         | 0          |
+| Queries                               | 65245332   |
+| Uptime                                | 1001       |
++---------------------------------------+------------+

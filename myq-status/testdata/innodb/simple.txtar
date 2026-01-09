@@ -1,0 +1,55 @@
+# Test innodb view with mysqladmin.two file
+exec myq_status -file mysqladmin.two -interval 1s innodb
+cmp stdout expected.txt
+
+-- expected.txt --
+         Row ops     Buffer pool                      Log              Data             
+    time  read   dml  data dirt  rreq read  wreq writ Chkpt    %   lsn  read   lsn  Hist
+      0s 30.9g  212m 63.7G   1% 90.4g 3.0m  665m 4.8m  509M  31% 12.1T 46.4G  175G  1181
+      1s  276k  5715 63.7G   1%  862k    0 18001   86  507M  31%  781K    0b 3590K  1256
+-- mysqladmin.two --
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Innodb_rows_read                      | 30852953238|
+| Innodb_rows_inserted                  | 206532943  |
+| Innodb_rows_updated                   | 5047478    |
+| Innodb_rows_deleted                   | 266430     |
+| Innodb_buffer_pool_bytes_data         | 68411260928|
+| Innodb_buffer_pool_pages_dirty        | 86716      |
+| Innodb_buffer_pool_pages_total        | 15999992   |
+| Innodb_buffer_pool_read_requests      | 90370625297|
+| Innodb_buffer_pool_reads              | 3032436    |
+| Innodb_buffer_pool_write_requests     | 665481209  |
+| Innodb_buffer_pool_pages_flushed      | 4789658    |
+| Innodb_checkpoint_age                 | 533727643  |
+| Innodb_checkpoint_max_age             | 1738750649 |
+| Innodb_lsn_current                    | 13286364623919|
+| Innodb_data_read                      | 49782231040|
+| Innodb_data_written                   | 187909578752|
+| Innodb_history_list_length            | 1181       |
+| Uptime                                | 1000       |
++---------------------------------------+------------+
+
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Innodb_rows_read                      | 30853228967|
+| Innodb_rows_inserted                  | 206538489  |
+| Innodb_rows_updated                   | 5047643    |
+| Innodb_rows_deleted                   | 266434     |
+| Innodb_buffer_pool_bytes_data         | 68411736064|
+| Innodb_buffer_pool_pages_dirty        | 86767      |
+| Innodb_buffer_pool_pages_total        | 15999992   |
+| Innodb_buffer_pool_read_requests      | 90371487780|
+| Innodb_buffer_pool_reads              | 3032436    |
+| Innodb_buffer_pool_write_requests     | 665499210  |
+| Innodb_buffer_pool_pages_flushed      | 4789744    |
+| Innodb_checkpoint_age                 | 532036659  |
+| Innodb_checkpoint_max_age             | 1738750649 |
+| Innodb_lsn_current                    | 13286365423828|
+| Innodb_data_read                      | 49782231040|
+| Innodb_data_written                   | 187913254912|
+| Innodb_history_list_length            | 1256       |
+| Uptime                                | 1001       |
++---------------------------------------+------------+

@@ -1,0 +1,25 @@
+# Test throughput view with mysqladmin.two file
+exec myq_status -file mysqladmin.two -interval 1s throughput
+cmp stdout expected.txt
+
+-- expected.txt --
+         Received      Send         
+    time   recv recv/s   sent sent/s
+      0s 18211M 18211M 135.1G 135.1G
+      1s 510.7K 510.7K  7385K  7385K
+-- mysqladmin.two --
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Bytes_received                        | 19095555804|
+| Bytes_sent                            | 145079721601|
+| Uptime                                | 1000       |
++---------------------------------------+------------+
+
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Bytes_received                        | 19096078726|
+| Bytes_sent                            | 145087283580|
+| Uptime                                | 1001       |
++---------------------------------------+------------+

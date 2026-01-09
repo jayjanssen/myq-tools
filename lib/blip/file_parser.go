@@ -257,10 +257,6 @@ func (f *FileParser) convertToBlipMetrics(data map[string]string, interval uint,
 	for key, valStr := range data {
 		// Try to convert to float64
 		val, err := strconv.ParseFloat(valStr, 64)
-		if err != nil {
-			// Not a numeric value, skip
-			continue
-		}
 
 		metricType := blip.CUMULATIVE_COUNTER
 		if gaugeMetrics[key] {
@@ -268,9 +264,19 @@ func (f *FileParser) convertToBlipMetrics(data map[string]string, interval uint,
 		}
 
 		mv := blip.MetricValue{
-			Name:  key,
-			Value: val,
-			Type:  metricType,
+			Name: key,
+			Type: metricType,
+		}
+
+		if err != nil {
+			// Not a numeric value, store as string in Meta and set Value to 0
+			mv.Value = 0
+			mv.Meta = map[string]string{
+				"string_value": valStr,
+			}
+		} else {
+			// Numeric value
+			mv.Value = val
 		}
 
 		// For now, put everything in status.global
