@@ -12,6 +12,22 @@ import (
 	"github.com/jayjanssen/myq-tools/lib/testutil"
 )
 
+/*
+Integration tests for view compatibility with MySQL.
+
+Running:
+
+	# Requires MySQL running locally or via environment variables
+	export MYSQL_HOST=localhost
+	export MYSQL_PORT=3306
+	export MYSQL_USER=root
+	export MYSQL_PASSWORD=
+
+	go test -tags=integration ./lib/viewer -v
+
+Views in viewsToSkip are skipped (e.g., Percona-specific views like wsrep).
+*/
+
 // viewsToSkip contains views that should be skipped in MySQL compatibility tests
 var viewsToSkip = map[string]string{
 	"wsrep": "Percona/Galera specific metrics",
