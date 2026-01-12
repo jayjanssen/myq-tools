@@ -1,4 +1,4 @@
-.PHONY: install test test-race test-verbose test-coverage benchmark benchmark-ci build clean
+.PHONY: install test test-race test-verbose test-coverage test-integration docker-mysql-up docker-mysql-down docker-mysql-status test-integration-docker benchmark benchmark-ci build clean
 
 # Install all myq-* binaries
 install:
@@ -26,6 +26,22 @@ test-coverage:
 # Run integration tests (requires MySQL)
 test-integration:
 	go test -tags=integration ./...
+
+# Start MySQL containers for integration tests (8.0, 8.4, 9.5)
+docker-mysql-up:
+	@./scripts/docker-mysql.sh up
+
+# Stop and remove MySQL containers
+docker-mysql-down:
+	@./scripts/docker-mysql.sh down
+
+# Show MySQL container status
+docker-mysql-status:
+	@./scripts/docker-mysql.sh status
+
+# Run integration tests against all Docker MySQL versions
+test-integration-docker: docker-mysql-up
+	@./scripts/run-integration-tests.sh
 
 # Run benchmarks
 benchmark:
