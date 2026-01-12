@@ -113,7 +113,7 @@
     - name: Hist
       description: History list length
       type: Gauge
-      key: status/innodb_history_list_length
+      key: innodb/trx_rseg_history_len
       units: Number
       length: 5
       precision: 0 
