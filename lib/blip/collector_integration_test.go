@@ -5,100 +5,17 @@ package blip
 
 import (
 	"context"
-	"database/sql"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/cashapp/blip"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/jayjanssen/myq-tools/lib/testutil"
 )
 
-// getMySQLDSN returns a DSN for connecting to MySQL.
-// It uses environment variables or defaults for CI environments.
-func getMySQLDSN() string {
-	// Check for standard MySQL environment variables
-	user := os.Getenv("MYSQL_USER")
-	if user == "" {
-		user = "root"
-	}
-
-	password := os.Getenv("MYSQL_PASSWORD")
-	// Don't set default password - allow empty password for local dev
-
-	host := os.Getenv("MYSQL_HOST")
-	if host == "" {
-		host = "localhost"
-	}
-
-	port := os.Getenv("MYSQL_PORT")
-	if port == "" {
-		port = "3306"
-	}
-
-	// Handle empty password case
-	if password == "" {
-		return user + "@tcp(" + host + ":" + port + ")/"
-	}
-	return user + ":" + password + "@tcp(" + host + ":" + port + ")/"
-}
-
-// connectMySQL attempts to connect to MySQL and returns the DB connection.
-// Returns nil if connection fails (allows tests to skip gracefully).
-func connectMySQL(t *testing.T) *sql.DB {
-	dsn := getMySQLDSN()
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		t.Skipf("Failed to open MySQL connection: %v", err)
-		return nil
-	}
-
-	// Test the connection
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := db.PingContext(ctx); err != nil {
-		db.Close()
-		t.Skipf("Failed to ping MySQL server: %v", err)
-		return nil
-	}
-
-	return db
-}
-
-// getTestConfig returns a blip.ConfigMonitor configured from environment variables
-func getTestConfig() blip.ConfigMonitor {
-	host := os.Getenv("MYSQL_HOST")
-	if host == "" {
-		host = "localhost"
-	}
-
-	port := os.Getenv("MYSQL_PORT")
-	if port == "" {
-		port = "3306"
-	}
-
-	username := os.Getenv("MYSQL_USER")
-	if username == "" {
-		username = "root"
-	}
-
-	password := os.Getenv("MYSQL_PASSWORD")
-	// Allow empty password for local development
-
-	return blip.ConfigMonitor{
-		MonitorId: host + ":" + port,
-		Hostname:  host + ":" + port,
-		Username:  username,
-		Password:  password,
-	}
-}
-
 func TestPrepare_WithWildcards_Integration(t *testing.T) {
-	db := connectMySQL(t)
+	db := testutil.ConnectMySQL(t)
 	defer db.Close()
 
-	cfg := getTestConfig()
+	cfg := testutil.GetTestConfig()
 
 	collector := NewCollector(cfg, db)
 
@@ -155,10 +72,10 @@ func TestPrepare_WithWildcards_Integration(t *testing.T) {
 }
 
 func TestPrepare_SpecificMetrics_Integration(t *testing.T) {
-	db := connectMySQL(t)
+	db := testutil.ConnectMySQL(t)
 	defer db.Close()
 
-	cfg := getTestConfig()
+	cfg := testutil.GetTestConfig()
 
 	collector := NewCollector(cfg, db)
 
@@ -191,10 +108,10 @@ func TestPrepare_SpecificMetrics_Integration(t *testing.T) {
 }
 
 func TestPrepare_EmptyDomains_Integration(t *testing.T) {
-	db := connectMySQL(t)
+	db := testutil.ConnectMySQL(t)
 	defer db.Close()
 
-	cfg := getTestConfig()
+	cfg := testutil.GetTestConfig()
 
 	collector := NewCollector(cfg, db)
 
@@ -217,10 +134,10 @@ func TestPrepare_EmptyDomains_Integration(t *testing.T) {
 }
 
 func TestGetMetrics_Cancellation_Integration(t *testing.T) {
-	db := connectMySQL(t)
+	db := testutil.ConnectMySQL(t)
 	defer db.Close()
 
-	cfg := getTestConfig()
+	cfg := testutil.GetTestConfig()
 
 	collector := NewCollector(cfg, db)
 
@@ -266,10 +183,10 @@ func TestGetMetrics_Cancellation_Integration(t *testing.T) {
 }
 
 func TestPrepare_WildcardDetection_Integration(t *testing.T) {
-	db := connectMySQL(t)
+	db := testutil.ConnectMySQL(t)
 	defer db.Close()
 
-	cfg := getTestConfig()
+	cfg := testutil.GetTestConfig()
 
 	collector := NewCollector(cfg, db)
 
@@ -327,10 +244,10 @@ func TestPrepare_WildcardDetection_Integration(t *testing.T) {
 }
 
 func TestCollector_IntervalStorage_Integration(t *testing.T) {
-	db := connectMySQL(t)
+	db := testutil.ConnectMySQL(t)
 	defer db.Close()
 
-	cfg := getTestConfig()
+	cfg := testutil.GetTestConfig()
 
 	collector := NewCollector(cfg, db)
 
