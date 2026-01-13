@@ -28,6 +28,19 @@ type Collector struct {
 	levelName       string
 	startTime       time.Time
 	collectionCount uint
+	metricsByDomain map[string][]string
+}
+
+// MissingMetricsWarning describes metrics that were requested but not collected
+type MissingMetricsWarning struct {
+	Domain  string
+	Metrics []string
+	Hint    string
+}
+
+// domainWarnings maps domains to their fix hints for missing metrics
+var domainWarnings = map[string]string{
+	"innodb": "SET GLOBAL innodb_monitor_enable = '<metric_name>';",
 }
 
 // NewCollector creates a new blip-based collector
@@ -51,6 +64,7 @@ func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][
 	c.levelName = "default"
 	c.startTime = time.Now()
 	c.collectionCount = 0
+	c.metricsByDomain = metricsByDomain
 
 	// Build the collect map dynamically based on required metrics
 	collectMap := make(map[string]blip.Domain)
@@ -187,4 +201,48 @@ func (c *Collector) GetMetrics(ctx context.Context) <-chan *blip.Metrics {
 // ListDomains returns all available blip domains
 func ListDomains() []string {
 	return metrics.List()
+}
+
+// CheckMissingMetrics compares requested metrics against collected results
+// and returns warnings for domains that have known fix hints
+func (c *Collector) CheckMissingMetrics(collected []*blip.Metrics) []MissingMetricsWarning {
+	var warnings []MissingMetricsWarning
+
+	// Build set of collected metrics by domain
+	collectedByDomain := make(map[string]map[string]bool)
+	for _, m := range collected {
+		for domain, metricValues := range m.Values {
+			if collectedByDomain[domain] == nil {
+				collectedByDomain[domain] = make(map[string]bool)
+			}
+			for _, mv := range metricValues {
+				collectedByDomain[domain][mv.Name] = true
+			}
+		}
+	}
+
+	// Check each domain that has a warning hint
+	for domain, hint := range domainWarnings {
+		requestedMetrics, ok := c.metricsByDomain[domain]
+		if !ok {
+			continue
+		}
+
+		var missing []string
+		for _, metric := range requestedMetrics {
+			if !collectedByDomain[domain][metric] {
+				missing = append(missing, metric)
+			}
+		}
+
+		if len(missing) > 0 {
+			warnings = append(warnings, MissingMetricsWarning{
+				Domain:  domain,
+				Metrics: missing,
+				Hint:    hint,
+			})
+		}
+	}
+
+	return warnings
 }

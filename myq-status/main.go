@@ -179,6 +179,15 @@ func main() {
 		}
 		defer collector.Stop()
 
+		// Probe for missing metrics and warn (don't cache - it affects first render)
+		probeMetrics, err := collector.Collect()
+		if err == nil && len(probeMetrics) > 0 {
+			for _, w := range collector.CheckMissingMetrics(probeMetrics) {
+				fmt.Fprintf(os.Stderr, "Warning: %s metrics %v require: %s\n",
+					w.Domain, w.Metrics, w.Hint)
+			}
+		}
+
 		metricsChan = collector.GetMetrics(ctx)
 		cache = blip.NewMetricCache(true)
 	} else {
