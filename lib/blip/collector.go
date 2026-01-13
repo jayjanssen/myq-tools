@@ -13,11 +13,6 @@ import (
 	"github.com/cashapp/blip/monitor"
 )
 
-// minIntervalBuffer is the minimum buffer time needed for cleanup operations
-// when calculating context timeout in Collect(). The interval must be greater
-// than this value to ensure a positive timeout.
-const minIntervalBuffer = 500 * time.Millisecond
-
 // Collector wraps blip's monitor.Engine to collect metrics
 type Collector struct {
 	cfg             blip.ConfigMonitor
@@ -54,11 +49,6 @@ func NewCollector(cfg blip.ConfigMonitor, db *sql.DB) *Collector {
 
 // Prepare initializes the collector with a plan for the specified metrics
 func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][]string) error {
-	// Validate interval is greater than minIntervalBuffer to ensure positive context timeout
-	// (Collect subtracts minIntervalBuffer for cleanup buffer, so interval must be > minIntervalBuffer)
-	if interval <= minIntervalBuffer {
-		return fmt.Errorf("interval must be greater than %v, got %s", minIntervalBuffer, interval)
-	}
 
 	c.interval = interval
 	c.levelName = "default"
@@ -135,8 +125,9 @@ func (c *Collector) Prepare(interval time.Duration, metricsByDomain map[string][
 
 // Collect collects metrics from all domains and returns them
 func (c *Collector) Collect() ([]*blip.Metrics, error) {
-	// Create a context with timeout (leave minIntervalBuffer for cleanup)
-	ctx, cancel := context.WithTimeout(context.Background(), c.interval-minIntervalBuffer)
+	// Create a context with timeout matching the interval
+	// (blip's Freq setting controls the actual collector timeouts)
+	ctx, cancel := context.WithTimeout(context.Background(), c.interval)
 	defer cancel()
 
 	// Collect metrics for this interval
@@ -162,6 +153,9 @@ func (c *Collector) Stop() {
 	}
 }
 
+// Debug enables debug logging for the collector
+var Debug bool
+
 // GetMetrics starts a ticker and returns a channel of metrics.
 // The goroutine will stop when the context is cancelled.
 func (c *Collector) GetMetrics(ctx context.Context) <-chan *blip.Metrics {
@@ -177,10 +171,27 @@ func (c *Collector) GetMetrics(ctx context.Context) <-chan *blip.Metrics {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
+				collectStart := time.Now()
 				metricsSlice, err := c.Collect()
+				collectDuration := time.Since(collectStart)
+
 				if err != nil {
 					// Log error but continue (partial success possible)
 					fmt.Fprintf(os.Stderr, "Collection error: %v\n", err)
+				}
+
+				// DEBUG: Log collection details
+				if Debug {
+					fmt.Fprintf(os.Stderr, "DEBUG [Collector] Collect returned %d metrics objects in %v\n",
+						len(metricsSlice), collectDuration)
+					for i, m := range metricsSlice {
+						domains := make([]string, 0, len(m.Values))
+						for d := range m.Values {
+							domains = append(domains, d)
+						}
+						fmt.Fprintf(os.Stderr, "DEBUG [Collector]   [%d] interval=%d begin=%s end=%s domains=%v\n",
+							i, m.Interval, m.Begin.Format("15:04:05.000"), m.End.Format("15:04:05.000"), domains)
+					}
 				}
 
 				// Send all collected metrics to channel

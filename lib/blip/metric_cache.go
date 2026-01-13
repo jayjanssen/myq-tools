@@ -2,10 +2,14 @@ package blip
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/cashapp/blip"
 )
+
+// DebugCache enables debug logging for MetricCache
+var DebugCache bool
 
 // MetricCache stores current and previous metrics for easy lookup
 type MetricCache struct {
@@ -29,6 +33,23 @@ func NewMetricCache(isLiveMode bool) *MetricCache {
 
 // Update updates the cache with new metrics
 func (mc *MetricCache) Update(metrics *blip.Metrics) {
+	// DEBUG: Log cache update
+	if DebugCache {
+		var prevEnd, curEnd string
+		if mc.current != nil {
+			prevEnd = mc.current.End.Format("15:04:05.000")
+		} else {
+			prevEnd = "nil"
+		}
+		if metrics != nil {
+			curEnd = metrics.End.Format("15:04:05.000")
+		} else {
+			curEnd = "nil"
+		}
+		fmt.Fprintf(os.Stderr, "DEBUG [Cache] Update: prev.End=%s -> cur.End=%s interval=%d\n",
+			prevEnd, curEnd, metrics.Interval)
+	}
+
 	// Shift current to previous
 	mc.previous = mc.current
 	mc.prevIndex = mc.index
@@ -101,7 +122,8 @@ func (mc *MetricCache) SecondsDiff() float64 {
 
 	if mc.isLiveMode {
 		// Live mode: use timestamp differences
-		return mc.current.End.Sub(mc.previous.End).Seconds()
+		diff := mc.current.End.Sub(mc.previous.End).Seconds()
+		return diff
 	} else {
 		// File mode: use uptime differences for accurate rate calculations
 		// This handles cases where actual sample intervals differ from configured interval

@@ -36,6 +36,7 @@ func main() {
 	version := flag.Bool("version", false, "print the version")
 
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
+	debug := flag.Bool("debug", false, "enable debug logging to stderr")
 	header := flag.Int("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
 
@@ -71,6 +72,13 @@ func main() {
 		f, _ := os.Create(*profile)
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	// Enable debug logging if set
+	if *debug {
+		blip.Debug = true
+		blip.DebugCache = true
+		fmt.Fprintln(os.Stderr, "DEBUG mode enabled")
 	}
 
 	if *version {
