@@ -3,10 +3,10 @@ exec myq_status -file mysqladmin.two -interval 1s cttf
 cmp stdout expected.txt
 
 -- expected.txt --
-         Connects       Threads                  Pool      Tables              Defs      Files    
-    time cons acns acls conn  run cach crtd slow  tot  run open opns immd wait open opns open opns
-      0s 376k  21k    3  117    7   11  149    0    0    0  402  409 355m    0  189  189   67  10m
-      1s    7    0    0  116    4   12    0    0    0    0  402    0 7158    0  189    0   67  276
+         Connects       Threads                  Tables              Defs      Files    
+    time cons acns acls conn  run cach crtd slow open opns immd wait open opns open opns
+      0s 376k  21k    3  117    7   11  149    0  402  409 355m    0  189  189   67  10m
+      1s    7    0    0  116    4   12    0    0  402    0 7158    0  189    0   67  276
 -- mysqladmin.two --
 +---------------------------------------+------------+
 | Variable_name                         | Value      |

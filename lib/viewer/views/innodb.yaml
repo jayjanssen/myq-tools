@@ -73,22 +73,22 @@
         - name: Chkpt
           description: Checkpoint age
           type: Gauge
-          key: status/innodb_checkpoint_age
+          key: innodb/log_lsn_checkpoint_age
           units: Memory
           length: 5
-          precision: 0 
+          precision: 0
         - name: '%'
-          description: Percent of max checkpoint
+          description: Percent of redo log capacity used
           type: Percent
-          numerator: status/innodb_checkpoint_age
-          denominator: status/innodb_checkpoint_max_age
+          numerator: innodb/log_lsn_checkpoint_age
+          denominator: var.global/innodb_redo_log_capacity
           units: Percent
           length: 4
-          precision: 0 
+          precision: 0
         - name: lsn
           description: Log growth (log sequence number) per second
           type: Rate
-          key: status/innodb_lsn_current
+          key: innodb/log_lsn_current
           units: Memory
           length: 5
           precision: 0 

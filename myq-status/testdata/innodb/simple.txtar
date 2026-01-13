@@ -5,8 +5,8 @@ cmp stdout expected.txt
 -- expected.txt --
          Row ops     Buffer pool                      Log              Data             
     time  read   dml  data dirt  rreq read  wreq writ Chkpt    %   lsn  read   lsn  Hist
-      0s 30.9g  212m 63.7G   1% 90.4g 3.0m  665m 4.8m  509M  31% 12.1T 46.4G  175G  1181
-      1s  276k  5715 63.7G   1%  862k    0 18001   86  507M  31%  781K    0b 3590K  1256
+      0s 30.9g  212m 63.7G   1% 90.4g 3.0m  665m 4.8m     -    -     - 46.4G  175G     -
+      1s  276k  5715 63.7G   1%  862k    0 18001   86     -    -     -    0b 3590K     -
 -- mysqladmin.two --
 +---------------------------------------+------------+
 | Variable_name                         | Value      |

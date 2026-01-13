@@ -64,24 +64,6 @@
           units: Number
           length: 4
           precision: 0
-    - name: Pool
-      description: Thread pool metrics
-      cols:
-        - name: tot
-          description: Threadpool threads
-          key: status/threadpool_threads
-          type: Gauge
-          units: Number
-          length: 4
-          precision: 0
-        - name: run
-          description: Threadpool threads running
-          type: Subtract
-          bigger: status/threadpool_threads
-          smaller: status/threadpool_idle_threads
-          units: Number
-          length: 4
-          precision: 0 
     - name: Tables
       description: Table metrics
       cols:
