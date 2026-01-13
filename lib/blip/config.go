@@ -66,7 +66,8 @@ func MakeDSN(cfg blip.ConfigMonitor, originalCfg ...*mysql.Config) (string, erro
 
 	mysqlCfg.User = cfg.Username
 	mysqlCfg.Passwd = cfg.Password
-	mysqlCfg.DBName = "" // Don't need to specify a database
+	mysqlCfg.DBName = ""              // Don't need to specify a database
+	mysqlCfg.InterpolateParams = true // Required for blip metrics collection
 
 	return mysqlCfg.FormatDSN(), nil
 }
