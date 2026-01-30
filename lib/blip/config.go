@@ -2,6 +2,7 @@ package blip
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cashapp/blip"
 	"github.com/go-sql-driver/mysql"
@@ -68,6 +69,13 @@ func MakeDSN(cfg blip.ConfigMonitor, originalCfg ...*mysql.Config) (string, erro
 	mysqlCfg.Passwd = cfg.Password
 	mysqlCfg.DBName = ""              // Don't need to specify a database
 	mysqlCfg.InterpolateParams = true // Required for blip metrics collection
+
+	// Set TCP-level timeouts to prevent connections from hanging indefinitely
+	// when network issues occur (e.g., cross-country connections with packet loss).
+	// Without these, a stuck TCP connection can block for 30-75 seconds (OS default).
+	mysqlCfg.Timeout = 5 * time.Second      // TCP dial timeout
+	mysqlCfg.ReadTimeout = 5 * time.Second  // I/O read timeout
+	mysqlCfg.WriteTimeout = 5 * time.Second // I/O write timeout
 
 	return mysqlCfg.FormatDSN(), nil
 }
