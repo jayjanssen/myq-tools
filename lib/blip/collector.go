@@ -156,14 +156,55 @@ func (c *Collector) Stop() {
 // Debug enables debug logging for the collector
 var Debug bool
 
+// collectAndSend performs a collection and sends results to the channel.
+// Returns false if the context was cancelled during sending.
+func (c *Collector) collectAndSend(ctx context.Context, ch chan<- *blip.Metrics, label string) bool {
+	collectStart := time.Now()
+	metricsSlice, err := c.Collect()
+	collectDuration := time.Since(collectStart)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s collection error: %v\n", label, err)
+	}
+
+	if Debug {
+		fmt.Fprintf(os.Stderr, "DEBUG [Collector] %s collect returned %d metrics objects in %v\n",
+			label, len(metricsSlice), collectDuration)
+		for i, m := range metricsSlice {
+			domains := make([]string, 0, len(m.Values))
+			for d := range m.Values {
+				domains = append(domains, d)
+			}
+			fmt.Fprintf(os.Stderr, "DEBUG [Collector]   [%d] interval=%d begin=%s end=%s domains=%v\n",
+				i, m.Interval, m.Begin.Format("15:04:05.000"), m.End.Format("15:04:05.000"), domains)
+		}
+	}
+
+	for _, m := range metricsSlice {
+		select {
+		case ch <- m:
+		case <-ctx.Done():
+			return false
+		}
+	}
+	return true
+}
+
 // GetMetrics starts a ticker and returns a channel of metrics.
 // The goroutine will stop when the context is cancelled.
 func (c *Collector) GetMetrics(ctx context.Context) <-chan *blip.Metrics {
 	ch := make(chan *blip.Metrics, 1)
 
-	ticker := time.NewTicker(c.interval)
 	go func() {
 		defer close(ch)
+
+		// Immediate first collection (no ticker wait)
+		if !c.collectAndSend(ctx, ch, "Initial") {
+			return
+		}
+
+		// Now start ticker for subsequent collections
+		ticker := time.NewTicker(c.interval)
 		defer ticker.Stop()
 
 		for {
@@ -171,36 +212,8 @@ func (c *Collector) GetMetrics(ctx context.Context) <-chan *blip.Metrics {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				collectStart := time.Now()
-				metricsSlice, err := c.Collect()
-				collectDuration := time.Since(collectStart)
-
-				if err != nil {
-					// Log error but continue (partial success possible)
-					fmt.Fprintf(os.Stderr, "Collection error: %v\n", err)
-				}
-
-				// DEBUG: Log collection details
-				if Debug {
-					fmt.Fprintf(os.Stderr, "DEBUG [Collector] Collect returned %d metrics objects in %v\n",
-						len(metricsSlice), collectDuration)
-					for i, m := range metricsSlice {
-						domains := make([]string, 0, len(m.Values))
-						for d := range m.Values {
-							domains = append(domains, d)
-						}
-						fmt.Fprintf(os.Stderr, "DEBUG [Collector]   [%d] interval=%d begin=%s end=%s domains=%v\n",
-							i, m.Interval, m.Begin.Format("15:04:05.000"), m.End.Format("15:04:05.000"), domains)
-					}
-				}
-
-				// Send all collected metrics to channel
-				for _, m := range metricsSlice {
-					select {
-					case ch <- m:
-					case <-ctx.Done():
-						return
-					}
+				if !c.collectAndSend(ctx, ch, "Tick") {
+					return
 				}
 			}
 		}
