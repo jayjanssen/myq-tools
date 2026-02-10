@@ -2,8 +2,10 @@ package viewer
 
 import (
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 func getTestView() View {
@@ -21,32 +23,42 @@ func TestViewImplementsViewer(t *testing.T) {
 	var _ Viewer = view
 }
 
-// Create a state reader to test with
-func getTestViewState() loader.StateReader {
-	sp := loader.NewState()
-	prevss := loader.NewSampleSet()
+// Create a metric cache to test with
+func getTestViewCache() *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+	// Add previous sample
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "connections", Value: 10, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "threads_connected", Value: 3, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	prevsamp := loader.NewSample()
-	prevss.SetSample(`status`, prevsamp)
-	sp.SetPrevious(prevss)
+	// Add current sample
+	cache.Update(&blip.Metrics{
+		Begin: time.Now().Add(1 * time.Second),
+		End:   time.Now().Add(1 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "connections", Value: 15, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "threads_connected", Value: 4, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	cursamp.Data[`connections`] = `15`
-	prevsamp.Data[`connections`] = `10`
-
-	cursamp.Data[`threads_connect`] = `4`
-	prevsamp.Data[`threads_connect`] = `3`
-
-	return sp
+	return cache
 }
 
 func TestViewGetHeader(t *testing.T) {
 	view := getTestView()
-	sr := getTestGroupState()
+	cache := getTestViewCache()
 
-	lines := view.GetHeader(sr)
+	lines := view.GetHeader(cache)
 
 	expectedLines := []string{
 		`         Connects `,
@@ -58,16 +70,16 @@ func TestViewGetHeader(t *testing.T) {
 	}
 	for i, expected := range expectedLines {
 		if lines[i] != expected {
-			t.Errorf(`unexpected line %d output: '%s'`, i, lines[i])
+			t.Errorf(`unexpected line %d output: '%s' (expected '%s')`, i, lines[i], expected)
 		}
 	}
 }
 
 func TestViewGetData(t *testing.T) {
 	view := getTestView()
-	sr := getTestViewState()
+	cache := getTestViewCache()
 
-	lines := view.GetData(sr)
+	lines := view.GetData(cache)
 
 	expectedLines := []string{
 		`      0s    5    4`,
@@ -78,7 +90,7 @@ func TestViewGetData(t *testing.T) {
 	}
 	for i, expected := range expectedLines {
 		if lines[i] != expected {
-			t.Errorf(`unexpected line %d output: '%s'`, i, lines[i])
+			t.Errorf(`unexpected line %d output: '%s' (expected '%s')`, i, lines[i], expected)
 		}
 	}
 }

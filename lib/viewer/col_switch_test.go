@@ -3,13 +3,15 @@ package viewer
 import (
 	"reflect"
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 	"gopkg.in/yaml.v3"
 )
 
 func getTestSwitchCol() SwitchCol {
-	sk := loader.SourceKey{SourceName: "status", Key: "wsrep_local_state_comment"}
+	sk, _ := ParseSourceKey("status/wsrep_local_state_comment")
 	col := SwitchCol{}
 	col.Name = "state"
 	col.Description = "State of this node"
@@ -78,26 +80,44 @@ func TestSwitchColParse(t *testing.T) {
 	if !reflect.DeepEqual(rc, col) {
 		t.Error(`cols not matching`)
 		t.Logf("rc: %+v", rc)
-		t.Logf("rc: %+v", col)
+		t.Logf("col: %+v", col)
 	}
 }
 
-// Create a state reader to test with
-func getTestSwitchState(con_cur string) loader.StateReader {
-	sp := loader.NewState()
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+// Create a metric cache to test with
+func getTestSwitchCache(value string) *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp.Data[`wsrep_local_state_comment`] = con_cur
+	if value == "" {
+		// Missing metric - don't add it
+		return cache
+	}
 
-	return sp
+	metricValue := blip.MetricValue{
+		Name:  "wsrep_local_state_comment",
+		Value: 0,
+		Type:  blip.GAUGE,
+		Meta: map[string]string{
+			"string_value": value,
+		},
+	}
+
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {metricValue},
+		},
+	})
+
+	return cache
 }
 
 func TestSwitchColGetData(t *testing.T) {
 	col := getTestSwitchCol()
 
-	state := getTestSwitchState(`Joining`)
-	outputs := col.GetData(state)
+	cache := getTestSwitchCache(`Joining`)
+	outputs := col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}
@@ -105,8 +125,8 @@ func TestSwitchColGetData(t *testing.T) {
 		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
 	}
 
-	state = getTestSwitchState(`Joining: requested State Transfer`)
-	outputs = col.GetData(state)
+	cache = getTestSwitchCache(`Joining: requested State Transfer`)
+	outputs = col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}
@@ -114,8 +134,8 @@ func TestSwitchColGetData(t *testing.T) {
 		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
 	}
 
-	state = getTestSwitchState(`Something not in the switch`)
-	outputs = col.GetData(state)
+	cache = getTestSwitchCache(`Something not in the switch`)
+	outputs = col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}
@@ -124,8 +144,9 @@ func TestSwitchColGetData(t *testing.T) {
 	}
 
 	// Missing key
-	col.Key.Key = `notfound`
-	outputs = col.GetData(state)
+	col.Key.Metric = `notfound`
+	cache = getTestSwitchCache(`Joining`)
+	outputs = col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}

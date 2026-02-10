@@ -1,18 +1,25 @@
 package viewer
 
 import (
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"fmt"
+
+	"github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 type RateCol struct {
 	colNum `yaml:",inline"`
-	Key    loader.SourceKey `yaml:"key"`
+	Key    SourceKey `yaml:"key"`
 }
 
-// Data for this view based on the state
-func (c RateCol) GetData(sr loader.StateReader) []string {
+// A list of source keys that this column requires
+func (c RateCol) GetRequiredMetrics() []SourceKey {
+	return []SourceKey{c.Key}
+}
+
+// Data for this view based on the metrics
+func (c RateCol) GetData(cache *blip.MetricCache) []string {
 	var str string
-	raw, err := c.getRate(sr)
+	raw, err := c.getRate(cache)
 	if err != nil {
 		str = FitString(`-`, c.Length)
 	} else {
@@ -22,21 +29,20 @@ func (c RateCol) GetData(sr loader.StateReader) []string {
 	return []string{str}
 }
 
-// Calculates the rate for the given StateReader, returns an error if there's a data problem.
-func (c RateCol) getRate(sr loader.StateReader) (float64, error) {
-	// get cur, or else return an error
-	currssp := sr.GetCurrent()
-	cur, err := currssp.GetFloat(c.Key)
-	if err != nil {
-		return 0, err
+// Calculates the rate for the given MetricCache, returns an error if there's a data problem.
+func (c RateCol) getRate(cache *blip.MetricCache) (float64, error) {
+	// Get current value - must exist
+	cur, ok := cache.GetMetric(c.Key.Domain, c.Key.Metric)
+	if !ok {
+		return 0, fmt.Errorf("metric not found: %s/%s", c.Key.Domain, c.Key.Metric)
 	}
 
-	// prev will be 0.0 if there is an error fetching it
+	// Get previous value (0 if not available)
 	var prev float64
-	if prevssp := sr.GetPrevious(); prevssp != nil {
-		prev = prevssp.GetF(c.Key)
+	if prevMetric, ok := cache.GetPrevMetric(c.Key.Domain, c.Key.Metric); ok {
+		prev = prevMetric.Value
 	}
 
 	// Return the calculated rate
-	return calculateRate(cur, prev, sr.SecondsDiff()), nil
+	return calculateRate(cur.Value, prev, cache.SecondsDiff()), nil
 }

@@ -1,0 +1,35 @@
+# Test transactions view with mysqladmin.two file
+exec myq_status -file mysqladmin.two -interval 1s transactions
+cmp stdout expected.txt
+
+-- expected.txt --
+         Commands          Handler     Locking           
+    time begin commi rollb hcomm hroll lockw lockt oldest
+      0s 4000k 4000k   701  127m  1837   966 8.91s      -
+      1s   110   110     0  3691     0     0 8.91s      -
+-- mysqladmin.two --
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Com_begin                             | 4000469    |
+| Com_commit                            | 3999763    |
+| Com_rollback                          | 701        |
+| Handler_commit                        | 127179233  |
+| Handler_rollback                      | 1837       |
+| Innodb_row_lock_waits                 | 966        |
+| Innodb_row_lock_time                  | 8907       |
+| Uptime                                | 1000       |
++---------------------------------------+------------+
+
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Com_begin                             | 4000579    |
+| Com_commit                            | 3999873    |
+| Com_rollback                          | 701        |
+| Handler_commit                        | 127182924  |
+| Handler_rollback                      | 1837       |
+| Innodb_row_lock_waits                 | 966        |
+| Innodb_row_lock_time                  | 8907       |
+| Uptime                                | 1001       |
++---------------------------------------+------------+

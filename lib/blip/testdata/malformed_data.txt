@@ -1,0 +1,9 @@
+This is not valid mysqladmin output
+It doesn't follow the expected format
+No tabs or pipes
+Just random text
+MYQTOOLSEND
+Some_valid_metric	123
+But_missing_uptime	1
+MYQTOOLSEND
+

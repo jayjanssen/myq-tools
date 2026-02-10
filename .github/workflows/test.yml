@@ -49,7 +49,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mysql-version: ['8.0', '8.4']
+        mysql-version: ['8.0', '8.4', '9.5']
+
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql-version }}
+        env:
+          MYSQL_ROOT_PASSWORD: testpass
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout code
@@ -61,7 +75,26 @@ jobs:
           go-version: '1.25.x'
           cache: true
 
-      - name: Run tests with MySQL ${{ matrix.mysql-version }}
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            if nc -z 127.0.0.1 3306 2>/dev/null; then
+              echo "MySQL port is open, waiting a bit more for initialization..."
+              sleep 3
+              echo "MySQL should be ready now"
+              exit 0
+            fi
+            echo "Waiting for MySQL port to open... ($i/30)"
+            sleep 2
+          done
+          echo "MySQL failed to become ready"
+          exit 1
+
+      - name: Run integration tests with MySQL ${{ matrix.mysql-version }}
         env:
           MYSQL_VERSION: ${{ matrix.mysql-version }}
-        run: make test
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: testpass
+        run: make test-integration

@@ -1,0 +1,77 @@
+# Test that an invalid view name shows an error and full usage
+! exec myq_status nonexistent_view
+cmp stderr error.txt
+
+-- error.txt --
+view nonexistent_view not found
+myq-tools  ()
+
+Usage:
+  myq_status [flags] <view>
+Description:
+  iostat-like views for MySQL servers
+Options:
+  -P string
+    	short for -port
+  -S string
+    	short for -socket
+  -debug
+    	enable debug logging to stderr
+  -defaults-file string
+    	mysql defaults file
+  -enable-cleartext-plugin
+    	mysql enable cleartext plugin
+  -f string
+    	short for -file
+  -file string
+    	parse mysqladmin ext output file instead of connecting to mysql
+  -h string
+    	short for -host
+  -header int
+    	repeat the header after this many data points (default: 0, autocalculates)
+  -help
+    	this help text
+  -host string
+    	mysql host, defaults to 127.0.0.1
+  -i duration
+    	short for -interval (default 1s)
+  -interval duration
+    	Time between samples (example: 1s or 1h30m) (default 1s)
+  -p string
+    	short for -password
+  -password string
+    	mysql password
+  -port string
+    	mysql port, defaults to 3306
+  -profile string
+    	enable profiling and store the result in this file
+  -socket string
+    	mysql socket
+  -ssl-ca string
+    	mysql ssl CA
+  -ssl-cert string
+    	mysql ssl cert
+  -ssl-key string
+    	mysql ssl key
+  -u string
+    	short for -user
+  -user string
+    	mysql user, defaults to your username
+  -varfile string
+    	parse mysqladmin variables file instead of connecting to mysql, for optional use with -file
+  -version
+    	print the version
+  -vf string
+    	short for -varfile
+  -width
+    	Truncate the output based on the width of the terminal
+
+Views:
+   commands: Sorted list of all command run in the interval
+   coms: MySQL commands
+   throughput: MySQL Server throughput
+   cttf: Connections, Threads, Tables, and Files
+   innodb: Innodb metrics
+   query: Query types, sorts temp tables.  To see _all_ commands, use the `commands` view.
+   transactions: Transaction activity and locking metrics
+   wsrep: Galera Wsrep statistics

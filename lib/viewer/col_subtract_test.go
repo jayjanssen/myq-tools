@@ -1,127 +1,175 @@
 package viewer
 
 import (
-	"reflect"
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
-	"gopkg.in/yaml.v3"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
-func getTestSubtractCol() SubtractCol {
-	bk := loader.SourceKey{SourceName: "status", Key: "wsrep_last_committed"}
-	sk := loader.SourceKey{SourceName: "status", Key: "wsrep_local_cached_downto"}
-	col := SubtractCol{}
-	col.Name = "ist"
-	col.Description = "Gcached transactions"
-	col.Type = "Subtract"
-	col.Bigger = bk
-	col.Smaller = sk
-	col.Units = NUMBER
-	col.Length = 5
-	col.Precision = 0
+func TestSubtractCol_MissingMetric(t *testing.T) {
+	cache := myqblip.NewMetricCache(false)
 
-	return col
-}
+	col := SubtractCol{
+		colNum: colNum{
+			defaultCol: defaultCol{
+				Name:   "test",
+				Length: 5,
+			},
+			Precision: 0,
+		},
+		Bigger: SourceKey{
+			Domain: "status.global",
+			Metric: "bigger_metric",
+		},
+		Smaller: SourceKey{
+			Domain: "status.global",
+			Metric: "smaller_metric",
+		},
+	}
 
-func TestSubtractCol(t *testing.T) {
-	col := getTestSubtractCol()
-	if col.Name != "ist" {
-		t.Errorf("Unexpected col name (ist): %s", col.Name)
+	result := col.GetData(cache)
+
+	if len(result) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(result))
+	}
+
+	// Should display "-" for missing metric
+	if result[0] != "    -" {
+		t.Errorf("Expected '-', got '%s'", result[0])
 	}
 }
 
-func TestSubtractColImplementsViewer(t *testing.T) {
-	var _ Viewer = getTestSubtractCol()
+func TestSubtractCol_MissingBigger(t *testing.T) {
+	cache := myqblip.NewMetricCache(false)
+
+	// Add only smaller metric
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "smaller_metric", Value: 50, Type: blip.GAUGE},
+			},
+		},
+	})
+
+	col := SubtractCol{
+		colNum: colNum{
+			defaultCol: defaultCol{
+				Name:   "test",
+				Length: 5,
+			},
+			Precision: 0,
+		},
+		Bigger: SourceKey{
+			Domain: "status.global",
+			Metric: "bigger_metric",
+		},
+		Smaller: SourceKey{
+			Domain: "status.global",
+			Metric: "smaller_metric",
+		},
+	}
+
+	result := col.GetData(cache)
+
+	if len(result) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(result))
+	}
+
+	// Should display "-" for missing bigger metric
+	if result[0] != "    -" {
+		t.Errorf("Expected '-', got '%s'", result[0])
+	}
 }
 
-func TestSubtractColParse(t *testing.T) {
-	yaml_str := `---
-- name: ist
-  description: Gcached transactions
-  type: Subtract
-  bigger: status/wsrep_last_committed
-  smaller: status/wsrep_local_cached_downto
-  units: Number
-  length: 5
-  precision: 0 
-`
+func TestSubtractCol_MissingSmaller(t *testing.T) {
+	cache := myqblip.NewMetricCache(false)
 
-	var cols ViewerList
-	err := yaml.Unmarshal([]byte(yaml_str), &cols)
+	// Add only bigger metric
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "bigger_metric", Value: 100, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	if err != nil {
-		t.Error(err)
+	col := SubtractCol{
+		colNum: colNum{
+			defaultCol: defaultCol{
+				Name:   "test",
+				Length: 5,
+			},
+			Precision: 0,
+		},
+		Bigger: SourceKey{
+			Domain: "status.global",
+			Metric: "bigger_metric",
+		},
+		Smaller: SourceKey{
+			Domain: "status.global",
+			Metric: "smaller_metric",
+		},
 	}
 
-	if len(cols) != 1 {
-		t.Errorf("not enough cols parsed: %d", len(cols))
+	result := col.GetData(cache)
+
+	if len(result) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(result))
 	}
 
-	col := cols[0]
-
-	if col.GetShortHelp() != `ist: Gcached transactions` {
-		t.Errorf("bad description: '%s'", cols[0].GetShortHelp())
-	}
-
-	rc := getTestSubtractCol()
-	if !reflect.DeepEqual(rc, col) {
-		t.Error(`cols not matching`)
-		t.Logf("rc: %+v", rc)
-		t.Logf("rc: %+v", col)
+	// Should display "-" for missing smaller metric
+	if result[0] != "    -" {
+		t.Errorf("Expected '-', got '%s'", result[0])
 	}
 }
 
-// Create a state reader to test with
-func getTestSubtractState(bigger, smaller string) loader.StateReader {
-	sp := loader.NewState()
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+func TestSubtractCol_ExistingMetrics(t *testing.T) {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp.Data[`wsrep_last_committed`] = bigger
-	cursamp.Data[`wsrep_local_cached_downto`] = smaller
+	// Add both metrics
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "bigger_metric", Value: 100, Type: blip.GAUGE},
+				{Name: "smaller_metric", Value: 30, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	return sp
-}
-
-func TestSubtractColGetData(t *testing.T) {
-	col := getTestSubtractCol()
-
-	state := getTestSubtractState(`2`, `1`)
-	outputs := col.GetData(state)
-	if len(outputs) != 1 {
-		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
-	}
-	if outputs[0] != `    1` {
-		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
-	}
-
-	// Negative
-	state = getTestSubtractState(`1`, `2`)
-	outputs = col.GetData(state)
-	if len(outputs) != 1 {
-		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
-	}
-	if outputs[0] != `#####` {
-		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
-	}
-
-	// Missing key
-	col.Smaller.Key = `notfound`
-	outputs = col.GetData(state)
-	if len(outputs) != 1 {
-		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
-	}
-	if outputs[0] != `    -` {
-		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
-	}
-	col.Bigger.Key = `notfound`
-	outputs = col.GetData(state)
-	if len(outputs) != 1 {
-		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
-	}
-	if outputs[0] != `    -` {
-		t.Errorf(`unexpected GetData(): '%s'`, outputs[0])
+	col := SubtractCol{
+		colNum: colNum{
+			defaultCol: defaultCol{
+				Name:   "test",
+				Length: 5,
+			},
+			Precision: 0,
+		},
+		Bigger: SourceKey{
+			Domain: "status.global",
+			Metric: "bigger_metric",
+		},
+		Smaller: SourceKey{
+			Domain: "status.global",
+			Metric: "smaller_metric",
+		},
 	}
 
+	result := col.GetData(cache)
+
+	if len(result) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(result))
+	}
+
+	// Should display the subtraction (100 - 30 = 70)
+	if result[0] != "   70" {
+		t.Errorf("Expected '   70', got '%s'", result[0])
+	}
 }

@@ -1,19 +1,16 @@
 package viewer
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 // Funcs to get some test columns
 func getTestCol() defaultCol {
-	sources := []loader.SourceName{"status"}
 	return defaultCol{
 		Name:        "cons",
 		Description: "Connections per second",
-		Sources:     sources,
 		Length:      4,
 	}
 }
@@ -40,45 +37,15 @@ func TestColGetDetailedHelp(t *testing.T) {
 	}
 }
 
-func TestColGetSources(t *testing.T) {
-	loader.LoadDefaultSources()
-
-	col := getTestCol()
-	sources, err := col.GetSources()
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	fmt.Printf("sources: %v\n", sources)
-
-	if len(sources) != 1 {
-		t.Errorf("Got the wrong number of sources: %d", len(sources))
-	}
-}
-
-func getTestState() loader.StateReader {
-	sp := loader.NewState()
-	prevss := loader.NewSampleSet()
-
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
-
-	prevsamp := loader.NewSample()
-	prevss.SetSample(`status`, prevsamp)
-
-	sp.SetPrevious(prevss)
-
-	cursamp.Data[`connections`] = `105`
-	prevsamp.Data[`connections`] = `100`
-
-	return sp
+func getTestCache() *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
+	return cache
 }
 
 func TestColGetHeader(t *testing.T) {
 	col := getTestCol()
-	state := getTestState()
-	headers := col.GetHeader(state)
+	cache := getTestCache()
+	headers := col.GetHeader(cache)
 
 	// Expect one line header
 	if len(headers) != 1 {
@@ -96,7 +63,7 @@ func TestColGetHeader(t *testing.T) {
 
 	// Test too long name
 	col.Name = "consss"
-	headers = col.GetHeader(state)
+	headers = col.GetHeader(cache)
 	// Expect one line header
 	if len(headers) != 1 {
 		t.Errorf("Header more than 1 line: %d", len(headers))
@@ -108,15 +75,6 @@ func TestColGetHeader(t *testing.T) {
 	}
 
 	if header != "cons" {
-		t.Errorf("Expected header to be 'cons', not: %s", header)
-	}
-
-}
-
-func TestColGetBlank(t *testing.T) {
-	col := getTestCol()
-	line := col.GetBlank()
-	if line != `    ` {
-		t.Errorf(`unexpected blank line: '%s'`, line)
+		t.Errorf("Expected header to be truncated to 'cons', not: %s", header)
 	}
 }

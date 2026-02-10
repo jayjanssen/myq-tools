@@ -3,8 +3,10 @@ package viewer
 import (
 	"fmt"
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 func getTestPercentCol() PercentCol {
@@ -12,8 +14,8 @@ func getTestPercentCol() PercentCol {
 	rc.Name = "dirt"
 	rc.Description = "Buffer pool percent dirty"
 	rc.Type = "Percent"
-	rc.Numerator = loader.SourceKey{SourceName: "status", Key: "innodb_buffer_pool_pages_dirty"}
-	rc.Denominator = loader.SourceKey{SourceName: "status", Key: "innodb_buffer_pool_pages_total"}
+	rc.Numerator, _ = ParseSourceKey("status/innodb_buffer_pool_pages_dirty")
+	rc.Denominator, _ = ParseSourceKey("status/innodb_buffer_pool_pages_total")
 	rc.Length = 4
 	rc.Units = PERCENT
 	rc.Precision = 0
@@ -25,23 +27,49 @@ func TestPercentColImplementsViewer(t *testing.T) {
 	var _ Viewer = getTestPercentCol()
 }
 
-func getTestPercentState(numerator, denominator string) loader.StateReader {
-	sp := loader.NewState()
+func getTestPercentCache(numerator, denominator string) *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp := loader.NewSample()
-	cursamp.Data[`innodb_buffer_pool_pages_dirty`] = numerator
-	cursamp.Data[`innodb_buffer_pool_pages_total`] = denominator
+	var metrics []blip.MetricValue
 
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+	if numerator != "" {
+		if val, err := parseFloat(numerator); err == nil {
+			metrics = append(metrics, blip.MetricValue{
+				Name:  "innodb_buffer_pool_pages_dirty",
+				Value: val,
+				Type:  blip.GAUGE,
+			})
+		}
+	}
 
-	return sp
+	if denominator != "" {
+		if val, err := parseFloat(denominator); err == nil {
+			metrics = append(metrics, blip.MetricValue{
+				Name:  "innodb_buffer_pool_pages_total",
+				Value: val,
+				Type:  blip.GAUGE,
+			})
+		}
+	}
+
+	if len(metrics) > 0 {
+		cache.Update(&blip.Metrics{
+			Begin: time.Now(),
+			End:   time.Now(),
+			Values: map[string][]blip.MetricValue{
+				"status.global": metrics,
+			},
+		})
+	}
+
+	return cache
 }
 
 func TestPercentColgetPercent(t *testing.T) {
 	col := getTestPercentCol()
-	state := getTestPercentState(`86716`, `15999992`)
+	cache := getTestPercentCache(`86716`, `15999992`)
 
-	percent, err := col.getPercent(state)
+	percent, err := col.getPercent(cache)
 	if err != nil {
 		t.Error(err)
 	}
@@ -49,19 +77,19 @@ func TestPercentColgetPercent(t *testing.T) {
 		t.Errorf(`unexpected percent: '%s'`, fmt.Sprintf("%.5f", percent))
 	}
 
-	data := col.GetData(state)
+	data := col.GetData(cache)
 	if data[0] != `  1%` {
 		t.Errorf(`unexpected data: '%s'`, data)
 	}
 
-	state = getTestPercentState(`86716`, `notanum`)
-	_, err = col.getPercent(state)
+	cache = getTestPercentCache(`86716`, `notanum`)
+	_, err = col.getPercent(cache)
 	if err == nil {
 		t.Error(`expected denominator error`)
 	}
 
-	state = getTestPercentState(`notanum`, `15999992`)
-	_, err = col.getPercent(state)
+	cache = getTestPercentCache(`notanum`, `15999992`)
+	_, err = col.getPercent(cache)
 	if err == nil {
 		t.Error(`expected numerator error`)
 	}

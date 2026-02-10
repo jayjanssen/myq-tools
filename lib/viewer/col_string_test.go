@@ -3,13 +3,15 @@ package viewer
 import (
 	"reflect"
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 	"gopkg.in/yaml.v3"
 )
 
 func getTestStringCol() StringCol {
-	sk := loader.SourceKey{SourceName: "status", Key: "wsrep_cluster_status"}
+	sk, _ := ParseSourceKey("status/wsrep_cluster_status")
 	col := StringCol{}
 	col.Name = "P"
 	col.Description = "Primary (P) or Non-primary (N)"
@@ -61,26 +63,44 @@ func TestStringColParse(t *testing.T) {
 	if !reflect.DeepEqual(rc, col) {
 		t.Error(`cols not matching`)
 		t.Logf("rc: %+v", rc)
-		t.Logf("rc: %+v", col)
+		t.Logf("col: %+v", col)
 	}
 }
 
-// Create a state reader to test with
-func getTestStringState(con_cur string) loader.StateReader {
-	sp := loader.NewState()
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+// Create a metric cache to test with
+func getTestStringCache(value string) *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp.Data[`wsrep_cluster_status`] = con_cur
+	if value == "" {
+		// Missing metric - don't add it
+		return cache
+	}
 
-	return sp
+	metricValue := blip.MetricValue{
+		Name:  "wsrep_cluster_status",
+		Value: 0,
+		Type:  blip.GAUGE,
+		Meta: map[string]string{
+			"string_value": value,
+		},
+	}
+
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {metricValue},
+		},
+	})
+
+	return cache
 }
 
 func TestStringColGetData(t *testing.T) {
 	col := getTestStringCol()
 
-	state := getTestStringState(`Primary`)
-	outputs := col.GetData(state)
+	cache := getTestStringCache(`Primary`)
+	outputs := col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}
@@ -89,8 +109,9 @@ func TestStringColGetData(t *testing.T) {
 	}
 
 	// Missing key
-	col.Key.Key = `notfound`
-	outputs = col.GetData(state)
+	col.Key.Metric = `notfound`
+	cache = getTestStringCache(`Primary`)
+	outputs = col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}
@@ -105,8 +126,8 @@ func TestStringColGetDataFromEnd(t *testing.T) {
 	col.Fromend = true
 	col.Length = 3
 
-	state := getTestStringState(`Primary`)
-	outputs := col.GetData(state)
+	cache := getTestStringCache(`Primary`)
+	outputs := col.GetData(cache)
 	if len(outputs) != 1 {
 		t.Errorf(`unexpected amount of output strings %d`, len(outputs))
 	}

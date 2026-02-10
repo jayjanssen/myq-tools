@@ -2,8 +2,10 @@ package viewer
 
 import (
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
 func getTestGroupCol() GroupCol {
@@ -24,32 +26,42 @@ func TestGroupColImplementsViewer(t *testing.T) {
 	var _ Viewer = gc
 }
 
-// Create a state reader to test with
-func getTestGroupState() loader.StateReader {
-	sp := loader.NewState()
-	prevss := loader.NewSampleSet()
+// Create a metric cache to test with
+func getTestGroupCache() *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+	// Add previous sample
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "connections", Value: 10, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "threads_connected", Value: 3, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	prevsamp := loader.NewSample()
-	prevss.SetSample(`status`, prevsamp)
-	sp.SetPrevious(prevss)
+	// Add current sample
+	cache.Update(&blip.Metrics{
+		Begin: time.Now().Add(1 * time.Second),
+		End:   time.Now().Add(1 * time.Second),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "connections", Value: 15, Type: blip.CUMULATIVE_COUNTER},
+				{Name: "threads_connected", Value: 4, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	cursamp.Data[`connections`] = `15`
-	prevsamp.Data[`connections`] = `10`
-
-	cursamp.Data[`threads_connect`] = `4`
-	prevsamp.Data[`threads_connect`] = `3`
-
-	return sp
+	return cache
 }
 
 func TestGroupColGetHeader(t *testing.T) {
 	gc := getTestGroupCol()
-	sr := getTestGroupState()
+	cache := getTestGroupCache()
 
-	lines := gc.GetHeader(sr)
+	lines := gc.GetHeader(cache)
 	if len(lines) != 2 {
 		t.Errorf(`unexpected # of lines: %d`, len(lines))
 	}
@@ -65,13 +77,14 @@ func TestGroupColGetHeader(t *testing.T) {
 
 func TestGroupColGetData(t *testing.T) {
 	gc := getTestGroupCol()
-	sr := getTestGroupState()
+	cache := getTestGroupCache()
 
-	lines := gc.GetData(sr)
+	lines := gc.GetData(cache)
 	if len(lines) != 1 {
 		t.Errorf(`unexpected # of lines: %d`, len(lines))
 	}
 
+	// Rate should be ~5 (15-10), gauge should be 4
 	if lines[0] != `   5    4` {
 		t.Errorf(`unexpected GetData output: '%s'`, lines[0])
 	}

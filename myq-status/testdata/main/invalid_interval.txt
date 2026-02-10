@@ -1,0 +1,3 @@
+# Test that invalid interval (< 1s) shows proper error
+! exec myq_status -interval 500ms commands
+stderr 'Error: interval must be >= 1s'

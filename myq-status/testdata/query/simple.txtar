@@ -1,0 +1,51 @@
+# Test query view with mysqladmin.two file
+exec myq_status -file mysqladmin.two -interval 1s query
+cmp stdout expected.txt
+
+-- expected.txt --
+         All              Selects                       Sorts                   Temp Tables      
+    time queri quest slow fjoin rjoin range  rchk  scan  pass range  rows  scan  tmps  disk files
+      0s 65.2m 65.2m 1.2m   843     2 2137k     0 1540k  1110 5703k  207m  124m 12.7m 2543k  1221
+      1s  1835  1835   24     0     0    86     0    31     0   129  4172     1   371    70     0
+-- mysqladmin.two --
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Queries                               | 65243497   |
+| Questions                             | 65211244   |
+| Slow_queries                          | 1210873    |
+| Select_full_join                      | 843        |
+| Select_full_range_join                | 2          |
+| Select_range                          | 2136874    |
+| Select_range_check                    | 0          |
+| Select_scan                           | 1540484    |
+| Sort_merge_passes                     | 1110       |
+| Sort_range                            | 5702703    |
+| Sort_rows                             | 206827039  |
+| Sort_scan                             | 123674960  |
+| Created_tmp_tables                    | 12744612   |
+| Created_tmp_disk_tables               | 2543159    |
+| Created_tmp_files                     | 1221       |
+| Uptime                                | 1000       |
++---------------------------------------+------------+
+
++---------------------------------------+------------+
+| Variable_name                         | Value      |
++---------------------------------------+------------+
+| Queries                               | 65245332   |
+| Questions                             | 65213079   |
+| Slow_queries                          | 1210897    |
+| Select_full_join                      | 843        |
+| Select_full_range_join                | 2          |
+| Select_range                          | 2136960    |
+| Select_range_check                    | 0          |
+| Select_scan                           | 1540515    |
+| Sort_merge_passes                     | 1110       |
+| Sort_range                            | 5702832    |
+| Sort_rows                             | 206831211  |
+| Sort_scan                             | 123674961  |
+| Created_tmp_tables                    | 12744983   |
+| Created_tmp_disk_tables               | 2543229    |
+| Created_tmp_files                     | 1221       |
+| Uptime                                | 1001       |
++---------------------------------------+------------+

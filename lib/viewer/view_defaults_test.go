@@ -3,8 +3,6 @@ package viewer
 import (
 	"reflect"
 	"testing"
-
-	"github.com/jayjanssen/myq-tools/lib/loader"
 )
 
 func TestDefsParse(t *testing.T) {
@@ -18,7 +16,7 @@ func TestDefsParse(t *testing.T) {
 
 	cttf, ok := views[`cttf`]
 	if !ok {
-		t.Fatalf("Could not get `cttf` view: %v", err)
+		t.Fatalf("Could not get `cttf` view")
 	}
 
 	if len(cttf.Groups) == 0 {
@@ -27,7 +25,7 @@ func TestDefsParse(t *testing.T) {
 
 	group := cttf.Groups[0]
 	if group.Name != "Connects" {
-		t.Fatal("First cttf group not  Connects")
+		t.Fatal("First cttf group not Connects")
 	}
 
 	if len(group.Cols) == 0 {
@@ -41,7 +39,7 @@ func TestDefsParse(t *testing.T) {
 	mycons := RateCol{}
 	mycons.Name = "cons"
 	mycons.Description = "Connections per second"
-	mycons.Key = loader.SourceKey{SourceName: "status", Key: "connections"}
+	mycons.Key, _ = ParseSourceKey("status/connections")
 	mycons.Type = "Rate"
 	mycons.Units = NUMBER
 	mycons.Length = 4

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"math"
@@ -10,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jayjanssen/myq-tools/lib/blip"
 	"github.com/jayjanssen/myq-tools/lib/clientconf"
-	"github.com/jayjanssen/myq-tools/lib/loader"
 	"github.com/jayjanssen/myq-tools/lib/viewer"
 )
 
@@ -33,6 +36,7 @@ func main() {
 	version := flag.Bool("version", false, "print the version")
 
 	profile := flag.String("profile", "", "enable profiling and store the result in this file")
+	debug := flag.Bool("debug", false, "enable debug logging to stderr")
 	header := flag.Int("header", 0, "repeat the header after this many data points (default: 0, autocalculates)")
 	width := flag.Bool("width", false, "Truncate the output based on the width of the terminal")
 
@@ -47,22 +51,36 @@ func main() {
 
 	flag.Parse()
 
+	// Create context for cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Set up signal handling for graceful shutdown
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigs
+		cancel() // Cancel context to signal goroutines to stop; main loop will exit naturally
+	}()
+
 	// Enable profiling if set
 	if *profile != "" {
 		fmt.Println("Starting profiling to:", *profile)
-		f, _ := os.Create(*profile)
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
+		f, err := os.Create(*profile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to create profile file %s: %v\n", *profile, err)
+		} else {
+			defer f.Close()
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
+		}
+	}
 
-		// Need to trap interrupts in order for the profile to flush
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		go func() {
-			<-sigs
-			pprof.StopCPUProfile()
-			os.Exit(OK)
-		}()
-
+	// Enable debug logging if set
+	if *debug {
+		blip.Debug = true
+		blip.DebugCache = true
+		fmt.Fprintln(os.Stderr, "DEBUG mode enabled")
 	}
 
 	if *version {
@@ -125,32 +143,74 @@ func main() {
 		os.Exit(OK)
 	}
 
-	// The Loader and Timecol we will use
-	var load loader.Loader
+	// Extract required metrics from the view
+	metricsByDomain := view.GetMetricsByDomain()
 
+	// Create metrics channel based on mode (live or file)
+	var metricsChan <-chan *blip.Metrics
+
+	var cache *blip.MetricCache
 	if *statusfile == "" {
-		// No file given, this is a live collection and we use timestamps
-		config, err := clientconf.GenerateConfig()
+		// Live mode: connect to MySQL using blip
+		mysqlConfig, err := clientconf.GenerateConfig()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v", err)
+			fmt.Fprintf(os.Stderr, "Error generating config: %v\n", err)
+			os.Exit(LOADER_ERROR)
 		}
-		load = loader.NewLiveLoader(config)
+
+		// Convert to blip config
+		blipCfg, err := blip.ConfigFromMySQL(mysqlConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error converting config: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+
+		// Open database connection
+		// Pass the original mysqlConfig to preserve TLS settings and AllowCleartextPasswords
+		dsn, err := blip.MakeDSN(blipCfg, mysqlConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating DSN: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+
+		db, err := sql.Open("mysql", dsn)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error connecting to MySQL: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+		defer db.Close()
+
+		// Create and initialize collector
+		collector := blip.NewCollector(blipCfg, db)
+		err = collector.Prepare(*interval, metricsByDomain)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error preparing collector: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
+		defer collector.Stop()
+
+		// Probe for missing metrics and warn (don't cache - it affects first render)
+		probeMetrics, err := collector.Collect()
+		if err == nil && len(probeMetrics) > 0 {
+			for _, w := range collector.CheckMissingMetrics(probeMetrics) {
+				fmt.Fprintf(os.Stderr, "Warning: %s metrics %v require: %s\n",
+					w.Domain, w.Metrics, w.Hint)
+			}
+		}
+
+		metricsChan = collector.GetMetrics(ctx)
+		cache = blip.NewMetricCache(true)
 	} else {
-		// File given, load it (and the optional varfile)
-		load = loader.NewFileLoader(*statusfile, *varfile)
-	}
+		// File mode: parse mysqladmin output
+		parser := blip.NewFileParser(*statusfile, *varfile)
+		err = parser.Initialize(*interval)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error initializing file parser: %v\n", err)
+			os.Exit(LOADER_ERROR)
+		}
 
-	sources, err := view.GetSources()
-	if err != nil {
-		fmt.Fprint(os.Stderr, err)
-		os.Exit(SOURCES_ERROR)
-	}
-
-	// Initialize the loader
-	err = load.Initialize(*interval, sources)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(LOADER_ERROR)
+		metricsChan = parser.GetMetrics()
+		cache = blip.NewMetricCache(false)
 	}
 
 	// How big is our terminal?
@@ -173,18 +233,21 @@ func main() {
 		fmt.Println(s)
 	}
 
-	// Main loop through loader States
-	for state := range load.GetStateChannel() {
+	// Main loop through metrics
+	for metrics := range metricsChan {
+		// Update cache with new metrics
+		cache.Update(metrics)
+
 		// Reprint a header whenever lines == 0
 		if linesSinceHeader == 0 {
-			for _, headerLn := range view.GetHeader(state) {
+			for _, headerLn := range view.GetHeader(cache) {
 				printOutput(headerLn)
 				linesSinceHeader += 1
 			}
 		}
 
 		// Output data
-		for _, dataLn := range view.GetData(state) {
+		for _, dataLn := range view.GetData(cache) {
 			printOutput(dataLn)
 			linesSinceHeader += 1
 		}

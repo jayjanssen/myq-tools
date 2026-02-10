@@ -2,27 +2,34 @@ package viewer
 
 import (
 	"testing"
+	"time"
 
-	"github.com/jayjanssen/myq-tools/lib/loader"
+	"github.com/cashapp/blip"
+	myqblip "github.com/jayjanssen/myq-tools/lib/blip"
 )
 
-// Create a state reader to test with
-func getTestSampleTimeState() loader.StateReader {
-	sp := loader.NewState()
+// Create a metric cache to test with
+func getTestSampleTimeCache() *myqblip.MetricCache {
+	cache := myqblip.NewMetricCache(false)
 
-	cursamp := loader.NewSample()
-	sp.GetCurrentWriter().SetSample(`status`, cursamp)
+	cache.Update(&blip.Metrics{
+		Begin: time.Now(),
+		End:   time.Now(),
+		Values: map[string][]blip.MetricValue{
+			"status.global": {
+				{Name: "threads_connected", Value: 10, Type: blip.GAUGE},
+			},
+		},
+	})
 
-	cursamp.Data[`threads_connect`] = "10"
-
-	return sp
+	return cache
 }
 
 func TestSampleTimeColGetHeader(t *testing.T) {
 	tc := NewSampleTimeCol()
-	sr := getTestSampleTimeState()
+	cache := getTestSampleTimeCache()
 
-	h := tc.GetHeader(sr)
+	h := tc.GetHeader(cache)
 	if len(h) != 1 {
 		t.Errorf(`got wrong number of header lines: %d`, len(h))
 	}
@@ -34,13 +41,14 @@ func TestSampleTimeColGetHeader(t *testing.T) {
 
 func TestTimeColGetData(t *testing.T) {
 	tc := NewSampleTimeCol()
-	sr := getTestSampleTimeState()
+	cache := getTestSampleTimeCache()
 
-	h := tc.GetData(sr)
+	h := tc.GetData(cache)
 	if len(h) != 1 {
 		t.Errorf(`got wrong number of data lines: %d`, len(h))
 	}
 
+	// In file mode, time should start at 0s
 	if h[0] != `      0s` {
 		t.Errorf(`got wrong time data: '%s'`, h[0])
 	}
