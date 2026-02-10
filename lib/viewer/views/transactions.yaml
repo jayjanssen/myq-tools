@@ -56,7 +56,7 @@
           description: Average lock wait time (ms)
           type: Gauge
           key: status/innodb_row_lock_time
-          units: Microsecond
+          units: Millisecond
           length: 5
           precision: 0
   cols:
