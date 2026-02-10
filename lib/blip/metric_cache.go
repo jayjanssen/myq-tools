@@ -46,8 +46,12 @@ func (mc *MetricCache) Update(metrics *blip.Metrics) {
 		} else {
 			curEnd = "nil"
 		}
+		interval := uint(0)
+		if metrics != nil {
+			interval = metrics.Interval
+		}
 		fmt.Fprintf(os.Stderr, "DEBUG [Cache] Update: prev.End=%s -> cur.End=%s interval=%d\n",
-			prevEnd, curEnd, metrics.Interval)
+			prevEnd, curEnd, interval)
 	}
 
 	// Shift current to previous
@@ -123,6 +127,9 @@ func (mc *MetricCache) SecondsDiff() float64 {
 	if mc.isLiveMode {
 		// Live mode: use timestamp differences
 		diff := mc.current.End.Sub(mc.previous.End).Seconds()
+		if diff <= 0 {
+			return 0
+		}
 		return diff
 	} else {
 		// File mode: use uptime differences for accurate rate calculations

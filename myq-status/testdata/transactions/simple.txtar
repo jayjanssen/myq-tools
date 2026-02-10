@@ -5,8 +5,8 @@ cmp stdout expected.txt
 -- expected.txt --
          Commands          Handler     Locking           
     time begin commi rollb hcomm hroll lockw lockt oldest
-      0s 4000k 4000k   701  127m  1837   966 8.9ms      -
-      1s   110   110     0  3691     0     0 8.9ms      -
+      0s 4000k 4000k   701  127m  1837   966 8.91s      -
+      1s   110   110     0  3691     0     0 8.91s      -
 -- mysqladmin.two --
 +---------------------------------------+------------+
 | Variable_name                         | Value      |

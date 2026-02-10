@@ -28,7 +28,10 @@ func TestScripts(t *testing.T) {
 
 	// Run all script tests in testdata/*/*.* (both .txt and .txtar files)
 	txtPattern := filepath.Join("testdata", "*", "*")
-	txtFiles, _ := filepath.Glob(txtPattern)
+	txtFiles, err := filepath.Glob(txtPattern)
+	if err != nil {
+		t.Fatalf("failed to glob test files: %v", err)
+	}
 
 	if len(txtFiles) > 0 {
 		scripttest.Test(t, t.Context(), engine, env, txtPattern)

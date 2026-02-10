@@ -191,15 +191,36 @@ func (c DurationCol) buildDurationString(parts []struct {
 		}
 	}
 
+	// Apply rounding with carry normalization
+	if shouldRound {
+		// Unit maximums for carry
+		unitMax := map[string]int64{
+			"s": 60,
+			"m": 60,
+			"h": 24,
+			"d": 7,
+		}
+
+		// Increment the last displayed unit
+		selectedParts[len(selectedParts)-1].value++
+
+		// Carry overflow backwards into larger units
+		for i := len(selectedParts) - 1; i >= 0; i-- {
+			max, hasMax := unitMax[selectedParts[i].unit]
+			if !hasMax || selectedParts[i].value < max {
+				break
+			}
+			selectedParts[i].value = 0
+			if i-1 >= 0 {
+				selectedParts[i-1].value++
+			}
+		}
+	}
+
 	// Build the result string
 	result := ""
-	for i, part := range selectedParts {
-		value := part.value
-		// Round up the last part if we should round
-		if i == len(selectedParts)-1 && shouldRound {
-			value++
-		}
-		result += fmt.Sprintf("%d%s", value, part.unit)
+	for _, part := range selectedParts {
+		result += fmt.Sprintf("%d%s", part.value, part.unit)
 	}
 
 	return result, hasRemainingUnits

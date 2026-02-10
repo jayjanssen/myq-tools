@@ -60,18 +60,20 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigs
-		cancel() // Cancel context to signal goroutines to stop
-		// Give goroutines a moment to clean up
-		time.Sleep(100 * time.Millisecond)
-		os.Exit(OK)
+		cancel() // Cancel context to signal goroutines to stop; main loop will exit naturally
 	}()
 
 	// Enable profiling if set
 	if *profile != "" {
 		fmt.Println("Starting profiling to:", *profile)
-		f, _ := os.Create(*profile)
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
+		f, err := os.Create(*profile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to create profile file %s: %v\n", *profile, err)
+		} else {
+			defer f.Close()
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
+		}
 	}
 
 	// Enable debug logging if set
